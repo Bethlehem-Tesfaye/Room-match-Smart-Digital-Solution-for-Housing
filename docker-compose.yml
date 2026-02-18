@@ -1,0 +1,48 @@
+services:
+  api:
+    build: ./server
+    container_name: room-match-api
+    env_file:
+      - ./server/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    develop:
+      watch:
+        - path: ./server/package.json
+          action: rebuild
+        - path: ./server/package-lock.json
+          action: rebuild
+        - path: ./server
+          target: /app
+          action: sync
+          ignore:
+            - node_modules/
+
+  client:
+    build: ./frontend
+    container_name: room-match-client
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    develop:
+      watch:
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/package-lock.json
+          action: rebuild
+        - path: ./frontend
+          target: /app
+          action: sync
+          ignore:
+            - node_modules/
+    depends_on:
+      - api

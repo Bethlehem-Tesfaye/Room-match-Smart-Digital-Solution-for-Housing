@@ -1,3 +1,4 @@
 import warning from "./warning.png";
+import hero from "./hero.jpg";
 
-export { warning };
+export { hero, warning };
