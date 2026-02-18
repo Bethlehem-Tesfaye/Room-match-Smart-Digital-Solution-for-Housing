@@ -1,4 +1,31 @@
-# React + Vite
+# Frontend - React + Vite
+
+This is the frontend part of the application built using React and Vite. It provides a modern and fast user interface for the application.
+
+## Features
+
+- Fast Refresh with Vite
+- React Router for navigation
+- Integration with Google Authentication
+- User registration and login functionality
+- Responsive design
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (version 14 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd frontend
+   ```
+
+```
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
@@ -14,3 +41,4 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
