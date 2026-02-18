@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 
 // Logging
 app.use(httpLogger);

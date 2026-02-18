@@ -82,8 +82,8 @@ export const auth = betterAuth({
   socialProviders: {
     google: {
       prompt: "select_account",
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET
+      clientId: env.GOOGLE_CLIENT_ID_BAUTH,
+      clientSecret: env.GOOGLE_CLIENT_SECRET_BAUTH
     }
   },
 
@@ -95,7 +95,7 @@ export const auth = betterAuth({
         const newUser = ctx.context.newSession?.user;
 
         if (newUser) {
-          // ✅ Mongo version of profile creation
+          // Mongo version of profile creation
           await db
             .collection("profiles")
             .insertOne({
