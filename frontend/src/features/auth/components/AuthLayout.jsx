@@ -3,6 +3,8 @@ import Logo from "../../../components/logo";
 import { hero } from "../../../assets/index";
 
 function AuthLayout({ children }) {
+  const currentYear = new Date().getFullYear(); // Get the current year
+
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <div className="min-h-screen mx-auto grid grid-cols-1 md:grid-cols-2">
@@ -30,7 +32,7 @@ function AuthLayout({ children }) {
           </div>
 
           <div className="relative z-10 text-xs text-white/80">
-            © 2026 RoomMatch • Privacy Policy
+            © {currentYear} RoomMatch • Privacy Policy
           </div>
         </div>
 
