@@ -5,7 +5,7 @@ import { env } from "../config/evnironments.js";
 const cloudinaryConfig = {
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
   api_key: env.CLOUDINARY_API_KEY,
-  api_secret: env.CLOUDINARY_API_SECRET,
+  api_secret: env.CLOUDINARY_API_SECRET
 };
 
 cloudinary.config(cloudinaryConfig);
@@ -17,7 +17,7 @@ const hasValidConfig =
 
 if (!hasValidConfig) {
   logger.warn(
-    "Cloudinary credentials not set (CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET)",
+    "Cloudinary credentials not set (CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET)"
   );
 } else {
   (async () => {

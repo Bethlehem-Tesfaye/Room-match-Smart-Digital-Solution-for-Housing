@@ -1,10 +1,10 @@
 import { fromNodeHeaders } from "better-auth/node";
-import { auth } from "../modules/auth/auth";
+import { auth } from "../modules/auth/auth.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
     const session = await auth.api.getSession({
-      headers: fromNodeHeaders(req.headers),
+      headers: fromNodeHeaders(req.headers)
     });
 
     const user = session?.user;

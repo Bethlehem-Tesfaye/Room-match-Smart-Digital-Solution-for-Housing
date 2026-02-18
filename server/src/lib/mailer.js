@@ -4,11 +4,11 @@ import { env } from "../config/evnironments.js";
 
 const oAuth2Client = new google.auth.OAuth2(
   env.GOOGLE_CLIENT_ID,
-  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_CLIENT_SECRET
 );
 
 oAuth2Client.setCredentials({
-  refresh_token: env.GOOGLE_REFRESH_TOKEN,
+  refresh_token: env.GOOGLE_REFRESH_TOKEN
 });
 
 const base64UrlEncode = (input) =>
@@ -54,7 +54,7 @@ function buildRawMessage({ from, to, subject, html, attachments = [] }) {
 
     lines.push(`--${boundary}`);
     lines.push(
-      `Content-Type: ${att.mimeType ?? "application/octet-stream"}; name="${att.filename}"`,
+      `Content-Type: ${att.mimeType ?? "application/octet-stream"}; name="${att.filename}"`
     );
 
     if (att.cid) {
@@ -83,7 +83,7 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
       to,
       subject,
       html,
-      attachments,
+      attachments
     });
 
     const { token } = await oAuth2Client.getAccessToken();
@@ -93,7 +93,7 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
 
     const res = await gmail.users.messages.send({
       userId: "me",
-      requestBody: { raw },
+      requestBody: { raw }
     });
 
     logger.info({ to, subject, id: res.data?.id }, "Email sent");
@@ -110,7 +110,7 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
 
         return {
           message: e.message || "Error",
-          response,
+          response
         };
       }
 
@@ -122,9 +122,9 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
     logger.error(
       {
         message,
-        response,
+        response
       },
-      "Gmail API send failed",
+      "Gmail API send failed"
     );
 
     throw err;

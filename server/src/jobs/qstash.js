@@ -2,14 +2,14 @@ import { Client } from "@upstash/qstash";
 import { logger } from "../config/logger.js";
 
 const qstash = new Client({
-  token: process.env.QSTASH_TOKEN,
+  token: process.env.QSTASH_TOKEN
 });
 
 export async function publishEmailJob(payload) {
   try {
     const res = await qstash.publishJSON({
       url: process.env.EMAIL_API_URL,
-      body: payload,
+      body: payload
     });
 
     logger.info({ messageId: res.messageId }, "QStash email job published");

@@ -23,7 +23,7 @@ function extractMessage(e) {
 
   return "Internal Server Error";
 }
-
+/* eslint-disable no-unused-vars */
 export function errorHandler(err, _req, res, _next) {
   const statusCode = isErrWithStatus(err) ? err.statusCode : 500;
 
@@ -37,6 +37,6 @@ export function errorHandler(err, _req, res, _next) {
       typeof err === "object" &&
       "stack" in err
         ? err.stack
-        : undefined,
+        : undefined
   });
 }

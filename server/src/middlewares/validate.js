@@ -1,5 +1,5 @@
 import { z } from "zod";
-import CustomError from "../lib/errors";
+import CustomError from "../lib/errors.js";
 
 export const validate =
   (schema, target = "body") =>

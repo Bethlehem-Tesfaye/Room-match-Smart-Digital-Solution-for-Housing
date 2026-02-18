@@ -13,18 +13,18 @@ const db = client.db();
 
 export const auth = betterAuth({
   database: mongodbAdapter(db, {
-    client, // enables transactions
+    client // enables transactions
   }),
 
   experimental: {
-    joins: true,
+    joins: true
   },
 
   trustedOrigins: [
     env.CLIENT_URL,
     "http://localhost:5173",
     "http://localhost:3000",
-    "http://localhost:4000",
+    "http://localhost:4000"
   ].filter(Boolean),
 
   baseURL: env.BETTER_AUTH_BASE_URL || process.env.BETTER_AUTH_BASE_URL,
@@ -46,9 +46,9 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Reset your password",
         html,
-        token,
+        token
       });
-    },
+    }
   },
 
   emailVerification: {
@@ -68,7 +68,7 @@ export const auth = betterAuth({
         type: "verification",
         to: user.email,
         subject: "Verify your email",
-        html,
+        html
       });
     },
 
@@ -76,15 +76,15 @@ export const auth = betterAuth({
 
     async afterEmailVerification(user) {
       logger.info(`${user.email} successfully verified!`);
-    },
+    }
   },
 
   socialProviders: {
     google: {
       prompt: "select_account",
       clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
+      clientSecret: env.GOOGLE_CLIENT_SECRET
+    }
   },
 
   plugins: [openAPI()],
@@ -100,12 +100,12 @@ export const auth = betterAuth({
             .collection("profiles")
             .insertOne({
               userId: newUser.id,
-              createdAt: new Date(),
+              createdAt: new Date()
             })
             .catch(() => {});
         }
       }
-    }),
+    })
   },
 
   advanced: {
@@ -113,14 +113,14 @@ export const auth = betterAuth({
     defaultCookieAttributes: {
       secure: env.NODE_ENV === "production",
       sameSite: env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-    },
+      path: "/"
+    }
   },
 
   cookie: {
     secure: env.NODE_ENV === "production",
     sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     httpOnly: true,
-    path: "/",
-  },
+    path: "/"
+  }
 });
