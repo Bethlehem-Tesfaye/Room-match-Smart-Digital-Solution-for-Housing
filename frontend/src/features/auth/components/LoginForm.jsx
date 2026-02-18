@@ -30,7 +30,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={signInWithGoogle}
-          className="flex-1 border rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2"
+          className="flex-1 border rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
         >
           <span className="h-5 w-5 rounded-full border flex items-center justify-center text-xs font-bold text-[#7C67E4FF]">
             G
@@ -74,7 +74,10 @@ function LoginForm() {
             >
               Password
             </label>
-            <Link to="/forgot-password" className="text-xs text-[#7C67E4FF]">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-[#7C67E4FF] cursor-pointer"
+            >
               Forgot password?
             </Link>
           </div>
@@ -98,7 +101,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-[#7C67E4FF] text-white rounded-md py-2 font-semibold disabled:opacity-60"
+          className="w-full bg-[#7C67E4FF] text-white cursor-pointer rounded-md py-2 font-semibold disabled:opacity-60"
         >
           {isLoading ? "Signing in..." : "Sign in to RoomMatch"}
         </button>
@@ -106,7 +109,10 @@ function LoginForm() {
 
       <p className="text-sm text-gray-600 mt-6 text-center">
         Don’t have an account?{" "}
-        <Link to="/register" className="text-[#7C67E4FF] font-medium">
+        <Link
+          to="/register"
+          className="text-[#7C67E4FF] font-medium cursor-pointer"
+        >
           Create an account
         </Link>
       </p>

@@ -38,7 +38,7 @@ function RegistrationForm() {
         <button
           type="button"
           onClick={signInWithGoogle}
-          className="flex-1 border rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2"
+          className="flex-1 cursor-pointer border rounded-lg py-2 text-sm font-medium flex items-center justify-center gap-2"
         >
           <span className="h-5 w-5 rounded-full border flex items-center justify-center text-xs font-bold text-[#7C67E4FF]">
             G
@@ -128,7 +128,10 @@ function RegistrationForm() {
 
       <p className="text-sm text-gray-600 mt-6 text-center">
         Already have an account?{" "}
-        <Link to="/login" className="text-[#7C67E4FF] font-medium">
+        <Link
+          to="/login"
+          className="text-[#7C67E4FF] font-medium cursor-pointer"
+        >
           Sign in
         </Link>
       </p>
