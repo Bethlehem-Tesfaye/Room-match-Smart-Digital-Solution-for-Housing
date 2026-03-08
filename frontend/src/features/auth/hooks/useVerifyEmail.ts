@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { authClient } from "../../../lib/authClient";
 
-export const useVerifyEmail = (token) => {
+export const useVerifyEmail = (token: string | null | undefined) => {
   const query = useQuery({
     queryKey: ["verify-email", token],
     enabled: !!token,

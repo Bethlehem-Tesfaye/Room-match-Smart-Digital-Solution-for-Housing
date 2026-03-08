@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { useForgotPassword } from "../hooks/useForgotPassword";
 
 function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState<string>("");
   const { mutate, isPending, isSuccess } = useForgotPassword();
 
-  const onSubmit = (e) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     mutate(
@@ -18,9 +18,9 @@ function ForgotPasswordForm() {
       {
         onSuccess: () => {
           toast.success("Reset email sent successfully.");
-          setEmail(""); // Optional: clear input on success
+          setEmail("");
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           toast.error(error?.message || "Something went wrong.");
         },
       },
@@ -28,7 +28,6 @@ function ForgotPasswordForm() {
   };
 
   return (
-    // The Component handles the 'what' (The Card & Logic)
     <div className="w-full max-w-2xl border border-purple-500 rounded-xl p-6 bg-white shadow-sm">
       <div className="mb-6">
         <h2 className="text-2xl font-bold">Forgot your password?</h2>

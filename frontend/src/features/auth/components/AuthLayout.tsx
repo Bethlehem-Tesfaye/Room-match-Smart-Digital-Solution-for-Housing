@@ -1,9 +1,9 @@
-import { useState } from "react";
+import type { ReactNode } from "react";
 import Logo from "../../../components/logo";
-import { hero } from "../../../assets/index";
+import { hero } from "../../../assets";
 
-function AuthLayout({ children }) {
-  const currentYear = new Date().getFullYear(); // Get the current year
+function AuthLayout({ children }: { children: ReactNode }) {
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
@@ -17,6 +17,7 @@ function AuthLayout({ children }) {
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-purple-400/40" />
+
           <div className="relative z-10 flex items-center justify-center gap-3">
             <Logo />
           </div>

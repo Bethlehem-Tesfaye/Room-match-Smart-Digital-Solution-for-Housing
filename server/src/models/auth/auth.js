@@ -23,6 +23,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     env.CLIENT_URL,
     "http://localhost:5173",
+    "http://localhost:5175",
     "http://localhost:8000",
     "http://localhost:4000"
   ].filter(Boolean),

@@ -7,7 +7,7 @@ function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <ResetPasswordForm token={token} />
+      {token ? <ResetPasswordForm token={token} /> : null}
     </div>
   );
 }

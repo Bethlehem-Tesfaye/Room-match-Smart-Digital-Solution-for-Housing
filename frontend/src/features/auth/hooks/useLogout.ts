@@ -15,7 +15,7 @@ export const useLogout = () => {
       navigate("/");
       window.location.reload();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Logout failed, please try again.");
     },
   });
