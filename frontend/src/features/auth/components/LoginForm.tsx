@@ -3,12 +3,13 @@ import { Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { useLogin } from "../hooks/useLogin";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import type { LoginFormState } from "../types/type";
 
 function LoginForm() {
   const { login, isLoading } = useLogin();
   const signInWithGoogle = useGoogleAuth();
 
-  const [form, setForm] = useState<{ email: string; password: string }>({
+  const [form, setForm] = useState<LoginFormState>({
     email: "",
     password: "",
   });
