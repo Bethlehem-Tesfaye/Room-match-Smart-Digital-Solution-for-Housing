@@ -3,18 +3,21 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useResetPassword } from "../hooks/useResetPassword";
 
-function ResetPasswordForm({ token }) {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+function ResetPasswordForm({ token }: { token?: string }) {
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
   const resetPassword = useResetPassword();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     if (!token) {
       toast.error("Missing or invalid token.");
       return;
     }
+
     if (newPassword !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
@@ -27,7 +30,7 @@ function ResetPasswordForm({ token }) {
           toast.success("Password successfully reset!");
           navigate("/login");
         },
-        onError: (err) => {
+        onError: (err: Error) => {
           toast.error(err?.message || "Failed to reset password.");
         },
       },

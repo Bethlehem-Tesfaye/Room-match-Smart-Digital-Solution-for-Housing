@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useResendVerify } from "../hooks/useResendVerify";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -6,10 +5,11 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 function VerifyNoticePage() {
   const { user } = useCurrentUser();
   const email = user?.email;
-  const { mutate, isPending, isSuccess } = useResendVerify();
+  const { mutate, isPending } = useResendVerify();
 
-  const onResend = () => {
+  const onResend = (): void => {
     if (!email) return;
+
     mutate({
       email,
       callbackURL: `${window.location.origin}/verify-email`,

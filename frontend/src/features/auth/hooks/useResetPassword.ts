@@ -1,10 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { authClient } from "../../../lib/authClient";
 
-export const useForgotPassword = () => {
+export const useResetPassword = () => {
   return useMutation({
-    mutationFn: async (data) => {
-      const res = await authClient.requestPasswordReset(data);
+    mutationFn: async (data: { newPassword: string; token: string }) => {
+      const res = await authClient.resetPassword(data);
       return res.data;
     },
   });

@@ -7,18 +7,25 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 function RegistrationForm() {
   const { register, isLoading } = useRegister();
   const signInWithGoogle = useGoogleAuth();
-  const [form, setForm] = useState({
+
+  const [form, setForm] = useState<{
+    name: string;
+    email: string;
+    password: string;
+  }>({
     name: "",
     email: "",
     password: "",
   });
 
-  const onChange = (e) => {
-    setForm((s) => ({ ...s, [e.target.id]: e.target.value }));
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setForm((s) => ({ ...s, [id]: value }));
   };
 
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     await register({
       ...form,
       callbackURL: `${window.location.origin}/verify-email`,

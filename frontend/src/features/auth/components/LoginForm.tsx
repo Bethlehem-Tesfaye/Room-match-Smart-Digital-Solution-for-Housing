@@ -7,13 +7,18 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 function LoginForm() {
   const { login, isLoading } = useLogin();
   const signInWithGoogle = useGoogleAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
 
-  const onChange = (e) => {
-    setForm((s) => ({ ...s, [e.target.id]: e.target.value }));
+  const [form, setForm] = useState<{ email: string; password: string }>({
+    email: "",
+    password: "",
+  });
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setForm((s) => ({ ...s, [id]: value }));
   };
 
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     await login(form);
   };
@@ -26,6 +31,7 @@ function LoginForm() {
           Enter your credentials to access RoomMatch.
         </p>
       </div>
+
       <div className="flex gap-3 mb-6">
         <button
           type="button"
@@ -38,6 +44,7 @@ function LoginForm() {
           Continue with Google
         </button>
       </div>
+
       <div className="flex items-center gap-3 mb-6">
         <div className="h-px bg-gray-200 flex-1" />
         <span className="text-xs text-[#7C67E4FF]">OR CONTINUE WITH</span>
@@ -81,6 +88,7 @@ function LoginForm() {
               Forgot password?
             </Link>
           </div>
+
           <div className="relative">
             <Lock
               size={16}
