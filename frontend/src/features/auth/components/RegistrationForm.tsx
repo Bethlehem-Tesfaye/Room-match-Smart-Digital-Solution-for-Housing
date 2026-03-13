@@ -3,16 +3,13 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useRegister } from "../hooks/useRegister";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import type { RegistrationFormState } from "../types/type";
 
 function RegistrationForm() {
   const { register, isLoading } = useRegister();
   const signInWithGoogle = useGoogleAuth();
 
-  const [form, setForm] = useState<{
-    name: string;
-    email: string;
-    password: string;
-  }>({
+  const [form, setForm] = useState<RegistrationFormState>({
     name: "",
     email: "",
     password: "",

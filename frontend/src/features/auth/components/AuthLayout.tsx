@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
 import Logo from "../../../components/logo";
 import { hero } from "../../../assets";
+import type { AuthLayoutProps } from "../types/type";
 
-function AuthLayout({ children }: { children: ReactNode }) {
+function AuthLayout({ children }: AuthLayoutProps) {
   const currentYear = new Date().getFullYear();
 
   return (

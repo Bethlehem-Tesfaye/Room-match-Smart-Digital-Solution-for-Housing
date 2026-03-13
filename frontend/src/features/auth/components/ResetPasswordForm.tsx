@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useResetPassword } from "../hooks/useResetPassword";
+import type { ResetPasswordFormProps } from "../types/type";
 
-function ResetPasswordForm({ token }: { token?: string }) {
+function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
 
