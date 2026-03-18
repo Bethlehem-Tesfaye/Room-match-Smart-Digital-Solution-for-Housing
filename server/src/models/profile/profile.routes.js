@@ -1,7 +1,7 @@
 import { Router } from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
-import { getMyProfile, updateMyProfile } from "./profile.controller.js";
+import { getMyProfile, updateMyProfile } from "./profile.controllers.js";
 import { updateProfileSchema } from "./validation.js";
 
 const profileRouter = Router();

@@ -1,7 +1,7 @@
 import {
   getProfileByUserId,
   updateProfileByUserId
-} from "./profile.service.js";
+} from "./profile.services.js";
 
 export const getMyProfile = async (req, res, next) => {
   try {
