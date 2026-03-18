@@ -80,3 +80,7 @@ export const updatePropertySchema = z
     (payload) => Object.keys(payload).length > 0,
     "At least one field is required for update"
   );
+
+export const saveFavoriteSchema = z.object({
+  notes: z.string().trim().max(1000).optional()
+});

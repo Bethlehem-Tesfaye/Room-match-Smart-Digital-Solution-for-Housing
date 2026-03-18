@@ -2,9 +2,11 @@ import { Router } from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
 import * as creatorController from "./controllers/creator.controller.js";
+import * as browserController from "./controllers/browser.controller.js";
 import {
   createPropertySchema,
   propertyParamsSchema,
+  saveFavoriteSchema,
   updatePropertySchema
 } from "./validation.js";
 
@@ -16,12 +18,20 @@ propertyRouter.post(
   validate(createPropertySchema),
   creatorController.createPropertyHandler
 );
+
+propertyRouter.get(
+  "/my-properties",
+  authMiddleware,
+  creatorController.listMyPropertiesHandler
+);
+
 propertyRouter.get(
   "/:id",
   authMiddleware,
   validate(propertyParamsSchema, "params"),
   creatorController.getPropertyByIdHandler
 );
+
 propertyRouter.patch(
   "/:id",
   authMiddleware,
@@ -34,6 +44,29 @@ propertyRouter.delete(
   authMiddleware,
   validate(propertyParamsSchema, "params"),
   creatorController.deletePropertyHandler
+);
+
+propertyRouter.get("/browser", browserController.listBrowserPropertiesHandler);
+
+propertyRouter.get(
+  "/browser/:id",
+  validate(propertyParamsSchema, "params"),
+  browserController.getBrowserPropertyDetailsHandler
+);
+
+propertyRouter.post(
+  "/browser/:id/save-favorite",
+  authMiddleware,
+  validate(propertyParamsSchema, "params"),
+  validate(saveFavoriteSchema),
+  browserController.savePropertyToFavoriteHandler
+);
+
+propertyRouter.delete(
+  "/browser/:id/save-favorite",
+  authMiddleware,
+  validate(propertyParamsSchema, "params"),
+  browserController.removePropertyFromFavoriteHandler
 );
 
 export default propertyRouter;
