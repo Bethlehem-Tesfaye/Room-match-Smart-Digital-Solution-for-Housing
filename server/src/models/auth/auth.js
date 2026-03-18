@@ -6,7 +6,6 @@ import { MongoClient } from "mongodb";
 import { publishEmailJob } from "../../jobs/qstash.js";
 import { env } from "../../config/evnironments.js";
 
-// ✅ Mongo Client
 const client = new MongoClient(env.DATABASE_URL);
 await client.connect();
 const db = client.db();
@@ -92,19 +91,25 @@ export const auth = betterAuth({
 
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      if (ctx.path === "/sign-up/email") {
-        const newUser = ctx.context.newSession?.user;
+      const newUser = ctx.context.newSession?.user;
 
-        if (newUser) {
-          // Mongo version of profile creation
-          await db
-            .collection("profiles")
-            .insertOne({
+      if (newUser) {
+        await db.collection("userProfile").updateOne(
+          { userId: newUser.id },
+          {
+            $setOnInsert: {
               userId: newUser.id,
-              createdAt: new Date()
-            })
-            .catch(() => {});
-        }
+              fullName: newUser.name ?? "",
+              phoneNumber: null,
+              profilePictureUrl: null,
+              role: "user",
+              deletedAt: null,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          },
+          { upsert: true }
+        );
       }
     })
   },
