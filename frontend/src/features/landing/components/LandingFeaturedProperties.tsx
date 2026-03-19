@@ -22,7 +22,10 @@ function LandingFeaturedProperties({
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold" style={{ color: palette.deep }}>
+            <h2
+              className="text-3xl font-extrabold"
+              style={{ color: palette.deep }}
+            >
               Featured Properties
             </h2>
             <p className="mt-2 text-sm" style={{ color: palette.purple }}>
@@ -49,7 +52,10 @@ function LandingFeaturedProperties({
             ))}
           </div>
         ) : isError ? (
-          <div className="mt-8 rounded-2xl border p-6 text-sm" style={{ borderColor: "#E1D8FA", color: palette.purple }}>
+          <div
+            className="mt-8 rounded-2xl border p-6 text-sm"
+            style={{ borderColor: "#E1D8FA", color: palette.purple }}
+          >
             Couldn&apos;t load featured properties right now.
           </div>
         ) : (

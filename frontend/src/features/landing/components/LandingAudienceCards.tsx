@@ -1,4 +1,9 @@
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, Home } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CheckCircle2,
+  Home,
+} from "lucide-react";
 
 const palette = {
   deep: "#363B4E",
@@ -21,14 +26,20 @@ function LandingAudienceCards() {
           >
             <Home size={20} />
           </div>
-          <h3 className="mt-5 text-3xl font-bold" style={{ color: palette.deep }}>
+          <h3
+            className="mt-5 text-3xl font-bold"
+            style={{ color: palette.deep }}
+          >
             Looking for a Place?
           </h3>
           <p className="mt-3 text-sm" style={{ color: palette.purple }}>
-            Browse thousands of verified listings, find compatible roommates, and secure your
-            dream rental with ease.
+            Browse thousands of verified listings, find compatible roommates,
+            and secure your dream rental with ease.
           </p>
-          <ul className="mt-5 space-y-2 text-sm" style={{ color: palette.purple }}>
+          <ul
+            className="mt-5 space-y-2 text-sm"
+            style={{ color: palette.purple }}
+          >
             <li className="flex items-center gap-2">
               <CheckCircle2 size={16} /> Advanced search filters
             </li>
@@ -54,18 +65,27 @@ function LandingAudienceCards() {
         >
           <div
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl"
-            style={{ backgroundColor: palette.lightPurple, color: palette.deep }}
+            style={{
+              backgroundColor: palette.lightPurple,
+              color: palette.deep,
+            }}
           >
             <BriefcaseBusiness size={20} />
           </div>
-          <h3 className="mt-5 text-3xl font-bold" style={{ color: palette.deep }}>
+          <h3
+            className="mt-5 text-3xl font-bold"
+            style={{ color: palette.deep }}
+          >
             Have a Property?
           </h3>
           <p className="mt-3 text-sm" style={{ color: palette.purple }}>
-            List your property and connect with thousands of verified tenants looking for their
-            next home.
+            List your property and connect with thousands of verified tenants
+            looking for their next home.
           </p>
-          <ul className="mt-5 space-y-2 text-sm" style={{ color: palette.purple }}>
+          <ul
+            className="mt-5 space-y-2 text-sm"
+            style={{ color: palette.purple }}
+          >
             <li className="flex items-center gap-2">
               <CheckCircle2 size={16} /> Free listing creation
             </li>
@@ -79,7 +99,10 @@ function LandingAudienceCards() {
           <button
             type="button"
             className="mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
-            style={{ backgroundColor: palette.lightPurple, color: palette.deep }}
+            style={{
+              backgroundColor: palette.lightPurple,
+              color: palette.deep,
+            }}
           >
             List Your Property <ArrowRight size={16} />
           </button>

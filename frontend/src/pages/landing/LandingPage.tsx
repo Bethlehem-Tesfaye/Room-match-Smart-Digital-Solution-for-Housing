@@ -5,11 +5,7 @@ import LandingWhyChoose from "../../features/landing/components/LandingWhyChoose
 import { useBrowserProperties } from "../../features/property/hooks/usePropertyHooks";
 
 function LandingPage() {
-  const {
-    data: properties = [],
-    isLoading,
-    isError,
-  } = useBrowserProperties();
+  const { data: properties = [], isLoading, isError } = useBrowserProperties();
 
   return (
     <main>

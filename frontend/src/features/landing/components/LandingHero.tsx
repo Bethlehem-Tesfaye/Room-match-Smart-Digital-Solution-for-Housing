@@ -18,7 +18,10 @@ function LandingHero() {
       <div className="mx-auto max-w-5xl text-center text-white">
         <span
           className="inline-block rounded-full px-4 py-1 text-xs font-semibold"
-          style={{ backgroundColor: "rgba(196, 187, 240, 0.2)", color: "#FFFFFF" }}
+          style={{
+            backgroundColor: "rgba(196, 187, 240, 0.2)",
+            color: "#FFFFFF",
+          }}
         >
           The smarter way to find your next home
         </span>
@@ -30,8 +33,8 @@ function LandingHero() {
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-sm text-white/85 md:text-base">
-          Discover rental properties and connect with compatible roommates.
-          Your ideal living situation is just a few clicks away.
+          Discover rental properties and connect with compatible roommates. Your
+          ideal living situation is just a few clicks away.
         </p>
 
         <div className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/15 p-2 backdrop-blur-md">
