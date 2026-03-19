@@ -1,9 +1,16 @@
 import * as browserService from "../services/browser.service.js";
+import { browsePropertyQuerySchema } from "../validation.js";
 
-export const listBrowserPropertiesHandler = async (_req, res, next) => {
+export const listBrowserPropertiesHandler = async (req, res, next) => {
   try {
-    const properties = await browserService.listBrowserProperties();
-    return res.status(200).json({ properties });
+    const { page, limit, search } = browsePropertyQuerySchema.parse(req.query);
+    const result = await browserService.listBrowserProperties({
+      page,
+      limit,
+      search
+    });
+
+    return res.status(200).json(result);
   } catch (err) {
     return next(err);
   }

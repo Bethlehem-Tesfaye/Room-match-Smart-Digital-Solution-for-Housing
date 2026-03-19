@@ -1,10 +1,6 @@
 import type { Property } from "../../property/types/type";
+import { palette } from "../../../theme/palette";
 import FeaturedPropertyCard from "./FeaturedPropertyCard";
-
-const palette = {
-  deep: "#363B4E",
-  purple: "#4F3B78",
-};
 
 interface LandingFeaturedPropertiesProps {
   properties: Property[];

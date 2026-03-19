@@ -8,6 +8,8 @@ import {
 import { api } from "../../../lib/axios";
 import type {
   Amenity,
+  BrowsePropertiesQuery,
+  BrowserPropertiesResponse,
   CreatePropertyInput,
   Property,
   SaveFavoriteInput,
@@ -15,7 +17,9 @@ import type {
 } from "../types/type";
 
 const propertyQueryKeys = {
-  browserList: ["properties", "browser"] as const,
+  browserListBase: ["properties", "browser"] as const,
+  browserList: (query: BrowsePropertiesQuery) =>
+    ["properties", "browser", query] as const,
   browserDetail: (id: string) => ["properties", "browser", id] as const,
   amenities: ["amenities"] as const,
   creatorMine: ["properties", "creator", "mine"] as const,
@@ -41,14 +45,27 @@ const getErrorMessage = (error: unknown): string => {
   return "Request failed";
 };
 
-export const useBrowserProperties = (): UseQueryResult<Property[], Error> => {
-  return useQuery<Property[], Error>({
-    queryKey: propertyQueryKeys.browserList,
+export const useBrowserProperties = (
+  query: BrowsePropertiesQuery = {},
+): UseQueryResult<BrowserPropertiesResponse, Error> => {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 20;
+  const search = query.search ?? "";
+
+  return useQuery<BrowserPropertiesResponse, Error>({
+    queryKey: propertyQueryKeys.browserList({ page, limit, search }),
     queryFn: async () => {
-      const res = await api.get<{ properties: Property[] }>(
+      const res = await api.get<BrowserPropertiesResponse>(
         "/api/properties/browser",
+        {
+          params: {
+            page,
+            limit,
+            ...(search ? { search } : {}),
+          },
+        },
       );
-      return res.data.properties;
+      return res.data;
     },
   });
 };
@@ -129,7 +146,7 @@ export const useCreateProperty = (): UseMutationResult<
         queryKey: propertyQueryKeys.creatorMine,
       });
       queryClient.invalidateQueries({
-        queryKey: propertyQueryKeys.browserList,
+        queryKey: propertyQueryKeys.browserListBase,
       });
     },
   });
@@ -169,7 +186,7 @@ export const useUpdateProperty = (): UseMutationResult<
         queryKey: propertyQueryKeys.browserDetail(variables.propertyId),
       });
       queryClient.invalidateQueries({
-        queryKey: propertyQueryKeys.browserList,
+        queryKey: propertyQueryKeys.browserListBase,
       });
     },
   });
@@ -195,7 +212,7 @@ export const useDeleteProperty = (): UseMutationResult<
         queryKey: propertyQueryKeys.creatorMine,
       });
       queryClient.invalidateQueries({
-        queryKey: propertyQueryKeys.browserList,
+        queryKey: propertyQueryKeys.browserListBase,
       });
     },
   });

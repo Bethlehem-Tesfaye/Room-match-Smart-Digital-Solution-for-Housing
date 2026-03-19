@@ -1,8 +1,8 @@
 import { Heart, MapPin } from "lucide-react";
-import type { Property } from "../../property/types/type";
 import { palette } from "../../../theme/palette";
+import type { Property } from "../types/type";
 
-interface FeaturedPropertyCardProps {
+interface PropertyListCardProps {
   property: Property;
 }
 
@@ -14,7 +14,7 @@ const formatCurrency = (price: number, currency: string) => {
   return `${currency} ${numberFormatter.format(price)}`;
 };
 
-function FeaturedPropertyCard({ property }: FeaturedPropertyCardProps) {
+function PropertyListCard({ property }: PropertyListCardProps) {
   const primaryImage =
     property.images.find((image) => image.isPrimary) ?? property.images[0];
 
@@ -24,7 +24,7 @@ function FeaturedPropertyCard({ property }: FeaturedPropertyCardProps) {
       style={{ borderColor: "#E7E1FA" }}
     >
       <div
-        className="relative h-44 w-full overflow-hidden"
+        className="relative h-48 w-full overflow-hidden"
         style={{ backgroundColor: "#F2EEFD" }}
       >
         {primaryImage ? (
@@ -41,6 +41,7 @@ function FeaturedPropertyCard({ property }: FeaturedPropertyCardProps) {
             No image
           </div>
         )}
+
         <button
           type="button"
           className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90"
@@ -52,21 +53,28 @@ function FeaturedPropertyCard({ property }: FeaturedPropertyCardProps) {
 
       <div className="p-4">
         <h3
-          className="line-clamp-1 text-base font-bold"
+          className="line-clamp-1 text-lg font-bold"
           style={{ color: palette.deep }}
         >
           {property.title}
         </h3>
 
         <p
-          className="mt-1 flex items-center gap-1 text-sm"
+          className="mt-2 flex items-center gap-1 text-sm"
           style={{ color: palette.purple }}
         >
           <MapPin size={14} />
           {property.city}
         </p>
 
-        <div className="mt-3 flex items-end justify-between">
+        <p
+          className="mt-1 line-clamp-1 text-sm"
+          style={{ color: palette.softPurple }}
+        >
+          {property.address}
+        </p>
+
+        <div className="mt-4 flex items-end justify-between">
           <p
             className="text-2xl font-extrabold"
             style={{ color: palette.purple }}
@@ -82,4 +90,4 @@ function FeaturedPropertyCard({ property }: FeaturedPropertyCardProps) {
   );
 }
 
-export default FeaturedPropertyCard;
+export default PropertyListCard;

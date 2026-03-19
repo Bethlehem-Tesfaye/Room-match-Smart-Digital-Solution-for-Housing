@@ -1,13 +1,23 @@
 import { Search } from "lucide-react";
+import type { FormEvent } from "react";
+import { palette } from "../../../theme/palette";
 
-const palette = {
-  deep: "#363B4E",
-  purple: "#4F3B78",
-  softPurple: "#927FBF",
-  lightPurple: "#C4BBF0",
-};
+interface LandingHeroProps {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  onSearchSubmit: () => void;
+}
 
-function LandingHero() {
+function LandingHero({
+  searchValue,
+  onSearchChange,
+  onSearchSubmit,
+}: LandingHeroProps) {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSearchSubmit();
+  };
+
   return (
     <section
       className="relative overflow-hidden px-4 py-18 md:py-24"
@@ -37,21 +47,26 @@ function LandingHero() {
           ideal living situation is just a few clicks away.
         </p>
 
-        <div className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/15 p-2 backdrop-blur-md">
+        <form
+          className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/15 p-2 backdrop-blur-md"
+          onSubmit={handleSubmit}
+        >
           <input
             type="text"
             placeholder="Enter city, neighborhood, or zip code..."
             className="h-11 flex-1 rounded-xl border-0 bg-white px-4 text-sm text-slate-800 outline-none"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
           />
           <button
-            type="button"
+            type="submit"
             className="inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: palette.purple }}
           >
             <Search size={16} />
             Search
           </button>
-        </div>
+        </form>
       </div>
     </section>
   );

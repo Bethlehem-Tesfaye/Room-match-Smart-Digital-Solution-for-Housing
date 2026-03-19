@@ -4,6 +4,7 @@ import { validate } from "../../middlewares/validate.js";
 import * as creatorController from "./controllers/creator.controller.js";
 import * as browserController from "./controllers/browser.controller.js";
 import {
+  browsePropertyQuerySchema,
   createPropertySchema,
   propertyParamsSchema,
   saveFavoriteSchema,
@@ -23,6 +24,11 @@ propertyRouter.get(
   "/my-properties",
   authMiddleware,
   creatorController.listMyPropertiesHandler
+);
+propertyRouter.get(
+  "/browser",
+  validate(browsePropertyQuerySchema, "query"),
+  browserController.listBrowserPropertiesHandler
 );
 
 propertyRouter.get(
@@ -45,8 +51,6 @@ propertyRouter.delete(
   validate(propertyParamsSchema, "params"),
   creatorController.deletePropertyHandler
 );
-
-propertyRouter.get("/browser", browserController.listBrowserPropertiesHandler);
 
 propertyRouter.get(
   "/browser/:id",

@@ -9,6 +9,7 @@ import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import NotFound from "../components/NotFound";
 import LandingPage from "../pages/landing/LandingPage";
+import PropertiesPage from "../pages/properties/PropertiesPage";
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/properties",
+    element: <PropertiesPage />,
   },
 
   {

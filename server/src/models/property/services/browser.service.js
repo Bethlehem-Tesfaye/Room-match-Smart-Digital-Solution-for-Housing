@@ -5,14 +5,57 @@ import {
   toObjectId
 } from "../../../utils/property.creator.utils.js";
 
-export const listBrowserProperties = async () => {
-  const properties = await Property.find({ deletedAt: null })
-    .sort({ createdAt: -1 })
-    .lean();
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  return Promise.all(
+export const listBrowserProperties = async ({
+  page = 1,
+  limit = 20,
+  search = ""
+} = {}) => {
+  const normalizedSearch = search.trim();
+
+  const query = {
+    deletedAt: null,
+    ...(normalizedSearch
+      ? {
+          $or: [
+            { title: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+            { city: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+            {
+              address: {
+                $regex: escapeRegex(normalizedSearch),
+                $options: "i"
+              }
+            }
+          ]
+        }
+      : {})
+  };
+
+  const skip = (page - 1) * limit;
+
+  const [properties, total] = await Promise.all([
+    Property.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Property.countDocuments(query)
+  ]);
+
+  const hydratedProperties = await Promise.all(
     properties.map((property) => buildPropertyResponse(property))
   );
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+  return {
+    properties: hydratedProperties,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
 };
 
 export const getBrowserPropertyDetails = async (propertyId) => {

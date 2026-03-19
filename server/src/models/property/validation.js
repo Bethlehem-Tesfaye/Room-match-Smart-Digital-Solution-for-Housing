@@ -34,6 +34,12 @@ export const propertyParamsSchema = z.object({
   id: z.string().trim().min(1, "Property id is required")
 });
 
+export const browsePropertyQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  search: z.string().trim().max(100).optional().default("")
+});
+
 export const createPropertySchema = z.object({
   title: z.string().trim().min(3).max(200),
   description: z.string().trim().max(5000).optional().default(""),

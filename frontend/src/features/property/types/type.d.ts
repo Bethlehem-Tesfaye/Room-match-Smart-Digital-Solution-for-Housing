@@ -74,6 +74,26 @@ export interface SaveFavoriteInput {
   notes?: string;
 }
 
+export interface BrowsePropertiesQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface BrowserPropertiesResponse {
+  properties: Property[];
+  pagination: PaginationMeta;
+}
+
 export interface Amenity {
   _id: string;
   name: string;
