@@ -8,11 +8,12 @@ import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import NotFound from "../components/NotFound";
+import LandingPage from "../pages/landing/LandingPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <LoginPage />,
+    element: <LandingPage />,
   },
   {
     path: "/register",

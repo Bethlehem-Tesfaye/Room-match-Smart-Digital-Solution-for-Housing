@@ -1,8 +1,8 @@
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { logger } from "./logger.js";
 
-dotenv.config({ path: new URL("../.env", import.meta.url).pathname });
+// dotenv.config({ path: new URL("../.env", import.meta.url).pathname });
 
 const connectDB = async () => {
   try {
