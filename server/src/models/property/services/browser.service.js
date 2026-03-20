@@ -7,11 +7,10 @@ import {
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export const listBrowserProperties = async ({
-  page = 1,
-  limit = 20,
-  search = ""
-} = {}) => {
+export const listBrowserProperties = async (
+  { page = 1, limit = 20, search = "" } = {},
+  userId = null
+) => {
   const normalizedSearch = search.trim();
 
   const query = {
@@ -43,10 +42,32 @@ export const listBrowserProperties = async ({
     properties.map((property) => buildPropertyResponse(property))
   );
 
+  const propertyIds = hydratedProperties.map((property) => property._id);
+  const favoriteSet = new Set();
+
+  if (userId && propertyIds.length) {
+    const favorites = await SavedProperty.find({
+      userId,
+      propertyId: { $in: propertyIds },
+      deletedAt: null
+    })
+      .select({ propertyId: 1 })
+      .lean();
+
+    favorites.forEach((favorite) => {
+      favoriteSet.add(favorite.propertyId.toString());
+    });
+  }
+
+  const propertiesWithFavoriteState = hydratedProperties.map((property) => ({
+    ...property,
+    isSaved: favoriteSet.has(property._id.toString())
+  }));
+
   const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
   return {
-    properties: hydratedProperties,
+    properties: propertiesWithFavoriteState,
     pagination: {
       page,
       limit,
@@ -68,6 +89,133 @@ export const getBrowserPropertyDetails = async (propertyId) => {
   }
 
   return buildPropertyResponse(property);
+};
+
+export const getBrowserPropertyDetailsForUser = async ({
+  userId,
+  propertyId
+}) => {
+  const property = await getBrowserPropertyDetails(propertyId);
+
+  if (!userId) {
+    return {
+      ...property,
+      isSaved: false,
+      favoriteId: undefined,
+      savedAt: undefined,
+      favoriteNotes: undefined
+    };
+  }
+
+  const favorite = await SavedProperty.findOne({
+    userId,
+    propertyId: property._id,
+    deletedAt: null
+  }).lean();
+
+  return {
+    ...property,
+    isSaved: !!favorite,
+    favoriteId: favorite?._id?.toString(),
+    savedAt: favorite?.savedAt,
+    favoriteNotes: favorite?.notes
+  };
+};
+
+export const listSavedProperties = async ({
+  userId,
+  page = 1,
+  limit = 20,
+  search = ""
+}) => {
+  const normalizedSearch = search.trim();
+  const skip = (page - 1) * limit;
+
+  const pipeline = [
+    {
+      $match: {
+        userId,
+        deletedAt: null
+      }
+    },
+    {
+      $lookup: {
+        from: "property",
+        localField: "propertyId",
+        foreignField: "_id",
+        as: "property"
+      }
+    },
+    { $unwind: "$property" },
+    {
+      $match: {
+        "property.deletedAt": null,
+        ...(normalizedSearch
+          ? {
+              $or: [
+                {
+                  "property.title": {
+                    $regex: escapeRegex(normalizedSearch),
+                    $options: "i"
+                  }
+                },
+                {
+                  "property.city": {
+                    $regex: escapeRegex(normalizedSearch),
+                    $options: "i"
+                  }
+                },
+                {
+                  "property.address": {
+                    $regex: escapeRegex(normalizedSearch),
+                    $options: "i"
+                  }
+                }
+              ]
+            }
+          : {})
+      }
+    },
+    { $sort: { savedAt: -1 } },
+    {
+      $facet: {
+        items: [{ $skip: skip }, { $limit: limit }],
+        totalCount: [{ $count: "count" }]
+      }
+    }
+  ];
+
+  const [result] = await SavedProperty.aggregate(pipeline);
+  const savedItems = result?.items ?? [];
+  const total = result?.totalCount?.[0]?.count ?? 0;
+
+  const properties = await Promise.all(
+    savedItems.map(async (item) => {
+      const property = await buildPropertyResponse(item.property);
+
+      return {
+        ...property,
+        isSaved: true,
+        favoriteId: item._id.toString(),
+        savedAt: item.savedAt,
+        favoriteNotes: item.notes ?? ""
+      };
+    })
+  );
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+  return {
+    properties,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
 };
 
 export const savePropertyToFavorite = async ({ userId, propertyId, notes }) => {

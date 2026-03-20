@@ -1,18 +1,32 @@
 import { useEffect, useState } from "react";
 import LandingFooter from "../../features/landing/components/LandingFooter";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
+import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
+import FavoriteAuthModal from "../../features/property/components/FavoriteAuthModal";
 import PropertyListCard from "../../features/property/components/PropertyListCard";
 import PropertyPagination from "../../features/property/components/PropertyPagination";
-import { useBrowserProperties } from "../../features/property/hooks/usePropertyHooks";
+import {
+  useBrowserProperties,
+  useRemoveFavorite,
+  useSaveFavorite,
+} from "../../features/property/hooks/usePropertyHooks";
+import type { Property } from "../../features/property/types/type";
 import { palette } from "../../theme/palette";
 
 function PropertiesPage() {
   const [page, setPage] = useState(1);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { data, isLoading, isError } = useBrowserProperties({
     page,
     limit: 20,
   });
+  const { isPending, isRealUser } = useCurrentUser();
+  const saveFavorite = useSaveFavorite();
+  const removeFavorite = useRemoveFavorite();
+  const [favoritePropertyId, setFavoritePropertyId] = useState<string | null>(
+    null,
+  );
 
   const properties = data?.properties ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
@@ -23,11 +37,35 @@ function PropertiesPage() {
     }
   }, [page, totalPages]);
 
+  const handleToggleFavorite = async (property: Property) => {
+    if (isPending) return;
+
+    if (!isRealUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    setFavoritePropertyId(property._id);
+
+    try {
+      if (property.isSaved) {
+        await removeFavorite.mutateAsync({ propertyId: property._id });
+      } else {
+        await saveFavorite.mutateAsync({ propertyId: property._id });
+      }
+    } finally {
+      setFavoritePropertyId(null);
+    }
+  };
+
   return (
-    <main>
+    <main className="pt-24">
       <LandingNavbar />
 
-      <section className="px-4 py-12" style={{ backgroundColor: "#F7F5FF" }}>
+      <section
+        className="px-4 py-12 -mt-6"
+        style={{ backgroundColor: "#F7F5FF" }}
+      >
         <div className="mx-auto max-w-6xl">
           <div className="mb-8">
             <h1
@@ -70,7 +108,12 @@ function PropertiesPage() {
             <>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {properties.map((property) => (
-                  <PropertyListCard key={property._id} property={property} />
+                  <PropertyListCard
+                    key={property._id}
+                    property={property}
+                    onToggleFavorite={handleToggleFavorite}
+                    isFavoriteLoading={favoritePropertyId === property._id}
+                  />
                 ))}
               </div>
 
@@ -85,6 +128,11 @@ function PropertiesPage() {
       </section>
 
       <LandingFooter />
+
+      <FavoriteAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </main>
   );
 }

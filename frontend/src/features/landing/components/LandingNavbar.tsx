@@ -11,7 +11,10 @@ import { palette } from "../../../theme/palette";
 
 function LandingNavbar() {
   return (
-    <header className="border-b px-4" style={{ borderColor: "#E7E1FA" }}>
+    <header
+      className="fixed left-0 right-0 top-0 z-50 border-b bg-white/95 px-4 backdrop-blur"
+      style={{ borderColor: "#E7E1FA" }}
+    >
       <div className="mx-auto flex max-w-6xl items-center gap-6 py-4">
         <Link to="/" aria-label="Go to home">
           <Logo className="flex-row gap-2" />
@@ -30,8 +33,8 @@ function LandingNavbar() {
             <Building2 size={16} style={{ color: palette.softPurple }} />
             Browse Property
           </Link>
-          <button
-            type="button"
+          <Link
+            to="/properties/saved"
             className="inline-flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 text-md font-semibold transition-colors"
             style={{
               color: palette.deep,
@@ -41,31 +44,35 @@ function LandingNavbar() {
           >
             <Heart size={16} style={{ color: palette.softPurple }} />
             Saved Property
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 text-md font-semibold transition-colors"
-            style={{
-              color: palette.deep,
-              borderColor: "#E7E1FA",
-              backgroundColor: "#FFFFFF",
-            }}
-          >
-            <MessageCircle size={16} style={{ color: palette.softPurple }} />
-            Message
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 text-md font-semibold transition-colors"
-            style={{
-              color: palette.deep,
-              borderColor: "#E7E1FA",
-              backgroundColor: "#FFFFFF",
-            }}
-          >
-            <PlusSquare size={16} style={{ color: palette.softPurple }} />
-            Add Property
-          </button>
+          </Link>
+          <Link to="/message">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 text-md font-semibold transition-colors"
+              style={{
+                color: palette.deep,
+                borderColor: "#E7E1FA",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <MessageCircle size={16} style={{ color: palette.softPurple }} />
+              Message
+            </button>
+          </Link>
+          <Link to="/properties/create">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 text-md font-semibold transition-colors"
+              style={{
+                color: palette.deep,
+                borderColor: "#E7E1FA",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <PlusSquare size={16} style={{ color: palette.softPurple }} />
+              Add Property
+            </button>
+          </Link>
 
           <Link
             to="/login"

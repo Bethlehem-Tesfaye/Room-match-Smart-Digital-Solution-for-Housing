@@ -4,11 +4,14 @@ import { browsePropertyQuerySchema } from "../validation.js";
 export const listBrowserPropertiesHandler = async (req, res, next) => {
   try {
     const { page, limit, search } = browsePropertyQuerySchema.parse(req.query);
-    const result = await browserService.listBrowserProperties({
-      page,
-      limit,
-      search
-    });
+    const result = await browserService.listBrowserProperties(
+      {
+        page,
+        limit,
+        search
+      },
+      req.userId ?? null
+    );
 
     return res.status(200).json(result);
   } catch (err) {
@@ -18,10 +21,27 @@ export const listBrowserPropertiesHandler = async (req, res, next) => {
 
 export const getBrowserPropertyDetailsHandler = async (req, res, next) => {
   try {
-    const property = await browserService.getBrowserPropertyDetails(
-      req.params.id
-    );
+    const property = await browserService.getBrowserPropertyDetailsForUser({
+      userId: req.userId ?? null,
+      propertyId: req.params.id
+    });
     return res.status(200).json({ property });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const listSavedPropertiesHandler = async (req, res, next) => {
+  try {
+    const { page, limit, search } = browsePropertyQuerySchema.parse(req.query);
+    const result = await browserService.listSavedProperties({
+      userId: req.userId,
+      page,
+      limit,
+      search
+    });
+
+    return res.status(200).json(result);
   } catch (err) {
     return next(err);
   }

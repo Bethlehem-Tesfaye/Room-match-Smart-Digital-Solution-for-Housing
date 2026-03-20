@@ -12,6 +12,7 @@ import type {
   BrowserPropertiesResponse,
   CreatePropertyInput,
   Property,
+  SavedPropertiesResponse,
   SaveFavoriteInput,
   UpdatePropertyInput,
 } from "../types/type";
@@ -20,6 +21,9 @@ const propertyQueryKeys = {
   browserListBase: ["properties", "browser"] as const,
   browserList: (query: BrowsePropertiesQuery) =>
     ["properties", "browser", query] as const,
+  savedListBase: ["properties", "saved"] as const,
+  savedList: (query: BrowsePropertiesQuery) =>
+    ["properties", "saved", query] as const,
   browserDetail: (id: string) => ["properties", "browser", id] as const,
   amenities: ["amenities"] as const,
   creatorMine: ["properties", "creator", "mine"] as const,
@@ -81,6 +85,32 @@ export const useBrowserPropertyDetails = (
         `/api/properties/browser/${propertyId}`,
       );
       return res.data.property;
+    },
+  });
+};
+
+export const useSavedProperties = (
+  query: BrowsePropertiesQuery = {},
+): UseQueryResult<SavedPropertiesResponse, Error> => {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 20;
+  const search = query.search ?? "";
+
+  return useQuery<SavedPropertiesResponse, Error>({
+    queryKey: propertyQueryKeys.savedList({ page, limit, search }),
+    queryFn: async () => {
+      const res = await api.get<SavedPropertiesResponse>(
+        "/api/properties/browser/saved-properties",
+        {
+          params: {
+            page,
+            limit,
+            ...(search ? { search } : {}),
+          },
+        },
+      );
+
+      return res.data;
     },
   });
 };
@@ -223,6 +253,8 @@ export const useSaveFavorite = (): UseMutationResult<
   Error,
   SaveFavoriteInput
 > => {
+  const queryClient = useQueryClient();
+
   return useMutation<unknown, Error, SaveFavoriteInput>({
     mutationFn: async ({ propertyId, notes }) => {
       try {
@@ -237,6 +269,17 @@ export const useSaveFavorite = (): UseMutationResult<
         throw new Error(getErrorMessage(error));
       }
     },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.browserDetail(variables.propertyId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.browserListBase,
+      });
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.savedListBase,
+      });
+    },
   });
 };
 
@@ -245,6 +288,8 @@ export const useRemoveFavorite = (): UseMutationResult<
   Error,
   { propertyId: string }
 > => {
+  const queryClient = useQueryClient();
+
   return useMutation<unknown, Error, { propertyId: string }>({
     mutationFn: async ({ propertyId }) => {
       try {
@@ -255,6 +300,17 @@ export const useRemoveFavorite = (): UseMutationResult<
       } catch (error) {
         throw new Error(getErrorMessage(error));
       }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.browserDetail(variables.propertyId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.browserListBase,
+      });
+      queryClient.invalidateQueries({
+        queryKey: propertyQueryKeys.savedListBase,
+      });
     },
   });
 };

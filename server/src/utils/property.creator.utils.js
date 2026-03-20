@@ -6,6 +6,7 @@ import {
   PropertyAmenity,
   PropertyImage
 } from "../models/property/schema.js";
+import { User } from "../models/auth/schema.js";
 
 const { Types } = mongoose;
 
@@ -61,17 +62,55 @@ export const buildPropertyResponse = async (propertyDoc) => {
 
   const propertyId = propertyDoc._id;
 
-  const [images, propertyAmenities] = await Promise.all([
+  const ownerObjectId = Types.ObjectId.isValid(propertyDoc.ownerId)
+    ? new Types.ObjectId(propertyDoc.ownerId)
+    : null;
+
+  const [images, propertyAmenities, owner] = await Promise.all([
     PropertyImage.find({ propertyId, deletedAt: null })
       .sort({ isPrimary: -1, createdAt: 1 })
       .lean(),
-    PropertyAmenity.find({ propertyId, deletedAt: null }).lean()
+    PropertyAmenity.find({ propertyId, deletedAt: null }).lean(),
+    ownerObjectId
+      ? User.findOne({ _id: ownerObjectId })
+          .select({ _id: 1, name: 1, email: 1, image: 1 })
+          .lean()
+      : null
   ]);
+
+  const amenityObjectIds = propertyAmenities.map((item) => item.amenityId);
+
+  const amenities = amenityObjectIds.length
+    ? await Amenity.find({ _id: { $in: amenityObjectIds } })
+        .select({ _id: 1, name: 1, category: 1 })
+        .lean()
+    : [];
+
+  const amenityById = new Map(
+    amenities.map((amenity) => [amenity._id.toString(), amenity])
+  );
+
+  const resolvedAmenities = propertyAmenities
+    .map((item) => amenityById.get(item.amenityId.toString()))
+    .filter(Boolean);
 
   return {
     ...propertyDoc,
     images,
-    amenityIds: propertyAmenities.map((item) => item.amenityId.toString())
+    owner: owner
+      ? {
+          _id: owner._id.toString(),
+          name: owner.name,
+          email: owner.email,
+          image: owner.image ?? ""
+        }
+      : null,
+    amenityIds: propertyAmenities.map((item) => item.amenityId.toString()),
+    amenities: resolvedAmenities.map((amenity) => ({
+      _id: amenity._id.toString(),
+      name: amenity.name,
+      category: amenity.category
+    }))
   };
 };
 

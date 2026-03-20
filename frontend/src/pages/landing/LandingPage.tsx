@@ -24,7 +24,7 @@ function LandingPage() {
   };
 
   return (
-    <main>
+    <main className="pt-24">
       <LandingNavbar />
       <LandingHero
         searchValue={searchInput}

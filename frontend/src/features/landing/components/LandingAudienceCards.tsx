@@ -5,6 +5,7 @@ import {
   Home,
 } from "lucide-react";
 import { palette } from "../../../theme/palette";
+import { Link } from "react-router-dom";
 
 function LandingAudienceCards() {
   return (
@@ -44,13 +45,16 @@ function LandingAudienceCards() {
               <CheckCircle2 size={16} /> Direct messaging
             </li>
           </ul>
-          <button
-            type="button"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ backgroundColor: palette.purple }}
-          >
-            Start Searching <ArrowRight size={16} />
-          </button>
+          <Link to="/properties">
+            {" "}
+            <button
+              type="button"
+              className="mt-6 cursor-pointer inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+              style={{ backgroundColor: palette.purple }}
+            >
+              Start Searching <ArrowRight size={16} />
+            </button>{" "}
+          </Link>
         </article>
 
         <article

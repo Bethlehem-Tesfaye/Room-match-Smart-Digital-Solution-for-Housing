@@ -10,6 +10,10 @@ import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import NotFound from "../components/NotFound";
 import LandingPage from "../pages/landing/LandingPage";
 import PropertiesPage from "../pages/properties/PropertiesPage";
+import PropertyDetailsPage from "../pages/properties/PropertyDetailsPage";
+import SavedPropertiesPage from "../pages/properties/SavedPropertiesPage";
+import CreatePropertyPage from "../pages/createProperty/CreatePropertyPage";
+import MessagePage from "../pages/message/MessagePage";
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +32,10 @@ export const router = createBrowserRouter([
     path: "/properties",
     element: <PropertiesPage />,
   },
-
+  {
+    path: "/properties/:id",
+    element: <PropertyDetailsPage />,
+  },
   {
     path: "/verify-notice",
     element: <VerifyNoticePage />,
@@ -57,6 +64,18 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "/properties/create",
+        element: <CreatePropertyPage />,
+      },
+      {
+        path: "/properties/saved",
+        element: <SavedPropertiesPage />,
+      },
+      {
+        path: "/message",
+        element: <MessagePage />,
       },
     ],
   },

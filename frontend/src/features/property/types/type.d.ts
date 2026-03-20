@@ -20,6 +20,13 @@ export interface PropertyImage {
   uploadDate: string;
 }
 
+export interface PropertyOwner {
+  _id: string;
+  name: string;
+  email: string;
+  image: string;
+}
+
 export interface Property {
   _id: string;
   ownerId: string;
@@ -44,6 +51,12 @@ export interface Property {
   deletedAt: string | null;
   images: PropertyImage[];
   amenityIds: string[];
+  amenities?: Amenity[];
+  owner?: PropertyOwner | null;
+  isSaved?: boolean;
+  favoriteId?: string;
+  savedAt?: string;
+  favoriteNotes?: string;
 }
 
 export interface CreatePropertyInput {
@@ -93,6 +106,8 @@ export interface BrowserPropertiesResponse {
   properties: Property[];
   pagination: PaginationMeta;
 }
+
+export type SavedPropertiesResponse = BrowserPropertiesResponse;
 
 export interface Amenity {
   _id: string;
