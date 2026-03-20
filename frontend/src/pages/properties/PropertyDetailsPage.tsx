@@ -18,39 +18,32 @@ function PropertyDetailsSkeleton() {
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-4">
         <div className="grid gap-2 sm:grid-cols-3">
-          <div
-            className="h-72 animate-pulse rounded-2xl sm:col-span-2"
-            style={{ backgroundColor: "#EDE8FD" }}
-          />
+          <div className="skeleton h-72 rounded-2xl sm:col-span-2" />
           <div className="grid gap-2">
             {Array.from({ length: 3 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="h-22 animate-pulse rounded-xl"
-                style={{ backgroundColor: "#EDE8FD" }}
-              />
+              <div key={idx} className="skeleton h-22 rounded-xl" />
             ))}
           </div>
         </div>
 
         <div
-          className="h-72 animate-pulse rounded-2xl border"
-          style={{ backgroundColor: "#F1ECFF", borderColor: "#E7E1FA" }}
+          className="skeleton h-72 rounded-2xl border"
+          style={{ borderColor: palette.border }}
         />
 
         {Array.from({ length: 3 }).map((_, idx) => (
           <div
             key={idx}
-            className="h-40 animate-pulse rounded-2xl border"
-            style={{ backgroundColor: "#F1ECFF", borderColor: "#E7E1FA" }}
+            className="skeleton h-40 rounded-2xl border"
+            style={{ borderColor: palette.border }}
           />
         ))}
       </div>
 
       <aside>
         <div
-          className="h-64 animate-pulse rounded-2xl border"
-          style={{ backgroundColor: "#F1ECFF", borderColor: "#E7E1FA" }}
+          className="skeleton h-64 rounded-2xl border"
+          style={{ borderColor: palette.border }}
         />
       </aside>
     </div>
@@ -63,14 +56,14 @@ function PropertyDetailsPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { data: property, isLoading, isError } = useBrowserPropertyDetails(id);
-  const { isPending, isRealUser } = useCurrentUser();
+  const { isPending, isAuthenticated } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
 
   const handleToggleFavorite = async (targetProperty: Property) => {
     if (isPending) return;
 
-    if (!isRealUser) {
+    if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
@@ -92,7 +85,10 @@ function PropertyDetailsPage() {
     <main className="pt-24">
       <LandingNavbar />
 
-      <section className="px-4 py-8" style={{ backgroundColor: "#F7F5FF" }}>
+      <section
+        className="px-4 py-8"
+        style={{ backgroundColor: palette.sectionBg }}
+      >
         <div className="mx-auto max-w-6xl">
           <Link
             to="/properties"

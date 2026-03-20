@@ -14,7 +14,10 @@ function LandingFeaturedProperties({
   isError,
 }: LandingFeaturedPropertiesProps) {
   return (
-    <section className="px-4 py-16" style={{ backgroundColor: "#F7F5FF" }}>
+    <section
+      className="px-4 py-16"
+      style={{ backgroundColor: palette.pageBg }}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -31,7 +34,7 @@ function LandingFeaturedProperties({
           <button
             type="button"
             className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: "#C4BBF0", color: palette.purple }}
+            style={{ borderColor: palette.lightPurple, color: palette.purple }}
           >
             View All
           </button>
@@ -42,15 +45,14 @@ function LandingFeaturedProperties({
             {Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
-                className="h-72 animate-pulse rounded-2xl"
-                style={{ backgroundColor: "#EDE8FD" }}
+                className="skeleton h-72 rounded-2xl"
               />
             ))}
           </div>
         ) : isError ? (
           <div
             className="mt-8 rounded-2xl border p-6 text-sm"
-            style={{ borderColor: "#E1D8FA", color: palette.purple }}
+            style={{ borderColor: palette.border, color: palette.purple }}
           >
             Couldn&apos;t load featured properties right now.
           </div>

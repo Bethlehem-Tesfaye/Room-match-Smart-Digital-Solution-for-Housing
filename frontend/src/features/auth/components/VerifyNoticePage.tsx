@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useResendVerify } from "../hooks/useResendVerify";
 import { useCurrentUser } from "../hooks/useCurrentUser";
+import { palette } from "../../../theme/palette";
 
 function VerifyNoticePage() {
   const { user } = useCurrentUser();
@@ -17,17 +18,32 @@ function VerifyNoticePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl border border-purple-500 rounded-xl p-6 bg-white">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: palette.pageBg }}
+    >
+      <div
+        className="w-full max-w-2xl border rounded-xl p-6"
+        style={{ borderColor: palette.lightPurple, backgroundColor: palette.cardBg }}
+      >
         <div className="mb-6">
-          <h2 className="text-2xl font-bold">Verify your email</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-2xl font-bold" style={{ color: palette.deep }}>
+            Verify your email
+          </h2>
+          <p className="text-sm" style={{ color: palette.softPurple }}>
             We’ve sent a verification link to your email. Please check your
             inbox and click the link to continue.
           </p>
         </div>
 
-        <div className="border rounded-lg p-4 bg-gray-50 text-sm text-gray-600">
+        <div
+          className="border rounded-lg p-4 text-sm"
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.sectionBg,
+            color: palette.softPurple,
+          }}
+        >
           If you don’t see the email, check your spam folder or try resending.
         </div>
 
@@ -36,14 +52,16 @@ function VerifyNoticePage() {
             type="button"
             disabled={!email || isPending}
             onClick={onResend}
-            className="w-full bg-[#7C67E4FF] text-white rounded-md py-2 font-semibold disabled:opacity-60"
+            className="w-full text-white rounded-md py-2 font-semibold disabled:opacity-60"
+            style={{ backgroundColor: palette.purple }}
           >
             {isPending ? "Sending..." : "Resend verification email"}
           </button>
 
           <Link
             to="/login"
-            className="block text-center text-sm text-[#7C67E4FF] font-medium"
+            className="block text-center text-sm font-medium"
+            style={{ color: palette.purple }}
           >
             Back to login
           </Link>

@@ -14,7 +14,7 @@ function VerifyEmailPage() {
 
   useEffect(() => {
     if (!sessionPending && user) {
-      navigate("/dashboard");
+      navigate("/");
     }
   }, [sessionPending, user, navigate]);
 

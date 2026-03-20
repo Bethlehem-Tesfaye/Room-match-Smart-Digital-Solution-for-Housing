@@ -14,6 +14,8 @@ import PropertyDetailsPage from "../pages/properties/PropertyDetailsPage";
 import SavedPropertiesPage from "../pages/properties/SavedPropertiesPage";
 import CreatePropertyPage from "../pages/createProperty/CreatePropertyPage";
 import MessagePage from "../pages/message/MessagePage";
+import ProfilePage from "../pages/profile/ProfilePage";
+import SettingPage from "../pages/setting/SettingPage";
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +78,14 @@ export const router = createBrowserRouter([
       {
         path: "/message",
         element: <MessagePage />,
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />,
+      },
+      {
+        path: "/setting",
+        element: <SettingPage />,
       },
     ],
   },

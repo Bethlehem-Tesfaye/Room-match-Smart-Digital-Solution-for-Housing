@@ -32,7 +32,7 @@ function LandingWhyChoose() {
   return (
     <section
       className="px-4 py-16 md:py-20"
-      style={{ backgroundColor: "#F6F5FC" }}
+      style={{ backgroundColor: palette.sectionBg }}
     >
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
@@ -59,7 +59,10 @@ function LandingWhyChoose() {
               <article
                 key={feature.title}
                 className="rounded-2xl border p-5 shadow-sm"
-                style={{ backgroundColor: "#FFFFFF", borderColor: "#E7E1FA" }}
+                style={{
+                  backgroundColor: palette.cardBg,
+                  borderColor: palette.border,
+                }}
               >
                 <div
                   className="inline-flex h-11 w-11 items-center justify-center rounded-xl"

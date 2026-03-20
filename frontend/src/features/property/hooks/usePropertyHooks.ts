@@ -30,6 +30,32 @@ const propertyQueryKeys = {
   creatorDetail: (id: string) => ["properties", "creator", id] as const,
 };
 
+type FavoriteMutationContext = {
+  previousBrowserLists: Array<
+    readonly [readonly unknown[], BrowserPropertiesResponse | undefined]
+  >;
+  previousSavedLists: Array<
+    readonly [readonly unknown[], SavedPropertiesResponse | undefined]
+  >;
+  previousDetail?: Property;
+  propertyId: string;
+};
+
+const updateSavedFlagInList = (
+  list: BrowserPropertiesResponse | SavedPropertiesResponse | undefined,
+  propertyId: string,
+  isSaved: boolean,
+) => {
+  if (!list) return list;
+
+  return {
+    ...list,
+    properties: list.properties.map((property) =>
+      property._id === propertyId ? { ...property, isSaved } : property,
+    ),
+  };
+};
+
 const getErrorMessage = (error: unknown): string => {
   if (typeof error === "object" && error !== null && "response" in error) {
     const maybeResponse = error as {
@@ -255,7 +281,12 @@ export const useSaveFavorite = (): UseMutationResult<
 > => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, Error, SaveFavoriteInput>({
+  return useMutation<
+    unknown,
+    Error,
+    SaveFavoriteInput,
+    FavoriteMutationContext
+  >({
     mutationFn: async ({ propertyId, notes }) => {
       try {
         const res = await api.post(
@@ -267,6 +298,73 @@ export const useSaveFavorite = (): UseMutationResult<
         return res.data;
       } catch (error) {
         throw new Error(getErrorMessage(error));
+      }
+    },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.browserListBase,
+      });
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.savedListBase,
+      });
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.browserDetail(variables.propertyId),
+      });
+
+      const previousBrowserLists =
+        queryClient.getQueriesData<BrowserPropertiesResponse>({
+          queryKey: propertyQueryKeys.browserListBase,
+        });
+
+      const previousSavedLists =
+        queryClient.getQueriesData<SavedPropertiesResponse>({
+          queryKey: propertyQueryKeys.savedListBase,
+        });
+
+      const previousDetail = queryClient.getQueryData<Property>(
+        propertyQueryKeys.browserDetail(variables.propertyId),
+      );
+
+      previousBrowserLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(
+          queryKey,
+          updateSavedFlagInList(data, variables.propertyId, true),
+        );
+      });
+
+      if (previousDetail) {
+        queryClient.setQueryData(
+          propertyQueryKeys.browserDetail(variables.propertyId),
+          {
+            ...previousDetail,
+            isSaved: true,
+          },
+        );
+      }
+
+      return {
+        previousBrowserLists,
+        previousSavedLists,
+        previousDetail,
+        propertyId: variables.propertyId,
+      };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+
+      context.previousBrowserLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+
+      context.previousSavedLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+
+      if (context.previousDetail) {
+        queryClient.setQueryData(
+          propertyQueryKeys.browserDetail(context.propertyId),
+          context.previousDetail,
+        );
       }
     },
     onSuccess: (_, variables) => {
@@ -290,7 +388,12 @@ export const useRemoveFavorite = (): UseMutationResult<
 > => {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, Error, { propertyId: string }>({
+  return useMutation<
+    unknown,
+    Error,
+    { propertyId: string },
+    FavoriteMutationContext
+  >({
     mutationFn: async ({ propertyId }) => {
       try {
         const res = await api.delete(
@@ -299,6 +402,87 @@ export const useRemoveFavorite = (): UseMutationResult<
         return res.data;
       } catch (error) {
         throw new Error(getErrorMessage(error));
+      }
+    },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.browserListBase,
+      });
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.savedListBase,
+      });
+      await queryClient.cancelQueries({
+        queryKey: propertyQueryKeys.browserDetail(variables.propertyId),
+      });
+
+      const previousBrowserLists =
+        queryClient.getQueriesData<BrowserPropertiesResponse>({
+          queryKey: propertyQueryKeys.browserListBase,
+        });
+
+      const previousSavedLists =
+        queryClient.getQueriesData<SavedPropertiesResponse>({
+          queryKey: propertyQueryKeys.savedListBase,
+        });
+
+      const previousDetail = queryClient.getQueryData<Property>(
+        propertyQueryKeys.browserDetail(variables.propertyId),
+      );
+
+      previousBrowserLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(
+          queryKey,
+          updateSavedFlagInList(data, variables.propertyId, false),
+        );
+      });
+
+      previousSavedLists.forEach(([queryKey, data]) => {
+        if (!data) {
+          queryClient.setQueryData(queryKey, data);
+          return;
+        }
+
+        queryClient.setQueryData(queryKey, {
+          ...data,
+          properties: data.properties.filter(
+            (property) => property._id !== variables.propertyId,
+          ),
+        });
+      });
+
+      if (previousDetail) {
+        queryClient.setQueryData(
+          propertyQueryKeys.browserDetail(variables.propertyId),
+          {
+            ...previousDetail,
+            isSaved: false,
+          },
+        );
+      }
+
+      return {
+        previousBrowserLists,
+        previousSavedLists,
+        previousDetail,
+        propertyId: variables.propertyId,
+      };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+
+      context.previousBrowserLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+
+      context.previousSavedLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+
+      if (context.previousDetail) {
+        queryClient.setQueryData(
+          propertyQueryKeys.browserDetail(context.propertyId),
+          context.previousDetail,
+        );
       }
     },
     onSuccess: (_, variables) => {

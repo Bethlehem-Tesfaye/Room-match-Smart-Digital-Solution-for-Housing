@@ -12,7 +12,6 @@ interface LoginResponse {
   user: {
     id: string;
     email: string;
-    isAnonymous?: boolean | null;
     [key: string]: any;
   };
   [key: string]: any;
@@ -31,7 +30,7 @@ export const useLogin = () => {
       },
       onSuccess: (data) => {
         toast.success(`Welcome back, ${data.user.email}!`);
-        navigate("/dashboard");
+        navigate("/");
       },
       onError: (error: Error) => {
         toast.error(error.message || "Login failed, try again");

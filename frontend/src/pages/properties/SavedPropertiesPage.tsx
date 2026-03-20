@@ -40,14 +40,13 @@ function SavedPropertiesPage() {
   };
 
   return (
-    <main className="pt-24">
+    <main className="flex min-h-screen flex-col pt-24">
       <LandingNavbar />
-
-      <section
-        className="px-4 py-12 -mt-6"
-        style={{ backgroundColor: "#F7F5FF" }}
+      <div
+        className="-mt-6 flex-1 px-4 py-12"
+        style={{ backgroundColor: palette.pageBg }}
       >
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto flex h-full w-full max-w-6xl flex-col">
           <div className="mb-8">
             <h1
               className="text-3xl font-extrabold"
@@ -59,7 +58,6 @@ function SavedPropertiesPage() {
               Your favorite listings, saved for quick access.
             </p>
           </div>
-
           <SavedPropertiesSection
             properties={properties}
             isLoading={isLoading}
@@ -71,7 +69,7 @@ function SavedPropertiesPage() {
             favoritePropertyId={favoritePropertyId}
           />
         </div>
-      </section>
+      </div>
     </main>
   );
 }

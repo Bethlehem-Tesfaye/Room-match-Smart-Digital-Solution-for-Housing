@@ -28,11 +28,7 @@ function SavedPropertiesSection({
     return (
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="h-80 animate-pulse rounded-2xl"
-            style={{ backgroundColor: "#EDE8FD" }}
-          />
+          <div key={idx} className="skeleton h-80 rounded-2xl" />
         ))}
       </div>
     );
@@ -41,7 +37,7 @@ function SavedPropertiesSection({
   if (isError) {
     return (
       <div
-        className="rounded-2xl border p-6 text-sm"
+        className="flex min-h-[45vh] items-center justify-center rounded-2xl border p-6 text-sm"
         style={{ borderColor: "#E1D8FA", color: palette.purple }}
       >
         Couldn&apos;t load saved properties right now.
@@ -52,7 +48,7 @@ function SavedPropertiesSection({
   if (properties.length === 0) {
     return (
       <div
-        className="rounded-2xl border p-6 text-sm"
+        className="flex min-h-[45vh] items-center justify-center rounded-2xl border p-6 text-sm"
         style={{ borderColor: "#E1D8FA", color: palette.purple }}
       >
         You have no saved properties yet.

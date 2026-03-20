@@ -134,7 +134,7 @@ function PropertyDetailsView({
               type="button"
               onClick={() => openLightbox(0)}
               className="group relative overflow-hidden rounded-2xl sm:col-span-2"
-              style={{ backgroundColor: "#F2EEFD" }}
+              style={{ backgroundColor: palette.cardMutedBg }}
             >
               <img
                 src={orderedImages[0].imageUrl}
@@ -153,7 +153,7 @@ function PropertyDetailsView({
                   type="button"
                   onClick={() => openLightbox(index + 1)}
                   className="overflow-hidden rounded-xl"
-                  style={{ backgroundColor: "#F2EEFD" }}
+                  style={{ backgroundColor: palette.cardMutedBg }}
                 >
                   <img
                     src={image.imageUrl}
@@ -167,7 +167,10 @@ function PropertyDetailsView({
         ) : (
           <div
             className="flex h-72 items-center justify-center rounded-2xl border text-sm"
-            style={{ borderColor: "#E7E1FA", color: palette.softPurple }}
+            style={{
+              borderColor: palette.skeleton,
+              color: palette.softPurple,
+            }}
           >
             No images available
           </div>
@@ -175,24 +178,27 @@ function PropertyDetailsView({
 
         <div
           className="rounded-2xl border bg-white p-5"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+          }}
         >
           <div className="flex flex-wrap gap-2">
             <span
               className="rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={{ backgroundColor: "#F1ECFF", color: palette.purple }}
+              style={{ backgroundColor: palette.chipBg, color: palette.purple }}
             >
               {property.propertyType}
             </span>
             <span
               className="rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={{ backgroundColor: "#F1ECFF", color: palette.purple }}
+              style={{ backgroundColor: palette.chipBg, color: palette.purple }}
             >
               {property.isFurnished ? "Furnished" : "Unfurnished"}
             </span>
             <span
               className="rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={{ backgroundColor: "#F1ECFF", color: palette.purple }}
+              style={{ backgroundColor: palette.chipBg, color: palette.purple }}
             >
               {property.status}
             </span>
@@ -229,7 +235,7 @@ function PropertyDetailsView({
           <div className="mt-5 grid gap-3 sm:grid-cols-4">
             <div
               className="rounded-xl border p-3"
-              style={{ borderColor: "#E7E1FA" }}
+              style={{ borderColor: palette.border }}
             >
               <Bed size={16} style={{ color: palette.purple }} />
               <p
@@ -245,7 +251,7 @@ function PropertyDetailsView({
 
             <div
               className="rounded-xl border p-3"
-              style={{ borderColor: "#E7E1FA" }}
+              style={{ borderColor: palette.border }}
             >
               <Bath size={16} style={{ color: palette.purple }} />
               <p
@@ -261,7 +267,7 @@ function PropertyDetailsView({
 
             <div
               className="rounded-xl border p-3"
-              style={{ borderColor: "#E7E1FA" }}
+              style={{ borderColor: palette.border }}
             >
               <Maximize size={16} style={{ color: palette.purple }} />
               <p
@@ -277,7 +283,7 @@ function PropertyDetailsView({
 
             <div
               className="rounded-xl border p-3"
-              style={{ borderColor: "#E7E1FA" }}
+              style={{ borderColor: palette.border }}
             >
               <CalendarDays size={16} style={{ color: palette.purple }} />
               <p
@@ -295,7 +301,10 @@ function PropertyDetailsView({
 
         <div
           className="rounded-2xl border bg-white p-5"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+          }}
         >
           <h2 className="text-lg font-bold" style={{ color: palette.deep }}>
             About This Property
@@ -307,7 +316,10 @@ function PropertyDetailsView({
 
         <div
           className="rounded-2xl border bg-white p-5"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+          }}
         >
           <h2 className="text-lg font-bold" style={{ color: palette.deep }}>
             Property Details
@@ -321,7 +333,10 @@ function PropertyDetailsView({
                 <div key={item.label} className="flex items-start gap-3">
                   <div
                     className="inline-flex h-12 w-12 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: "#F3EFFD", color: palette.deep }}
+                    style={{
+                      backgroundColor: palette.chipBg,
+                      color: palette.deep,
+                    }}
                   >
                     <Icon size={20} />
                   </div>
@@ -348,7 +363,10 @@ function PropertyDetailsView({
 
         <div
           className="rounded-2xl border bg-white p-5"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+          }}
         >
           <h2 className="text-lg font-bold" style={{ color: palette.deep }}>
             Amenities
@@ -360,7 +378,10 @@ function PropertyDetailsView({
                 <span
                   key={amenity._id}
                   className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: "#F3EFFD", color: palette.purple }}
+                  style={{
+                    backgroundColor: palette.chipBg,
+                    color: palette.purple,
+                  }}
                 >
                   {amenity.name}
                 </span>
@@ -370,7 +391,10 @@ function PropertyDetailsView({
                 <span
                   key={amenityId}
                   className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: "#F3EFFD", color: palette.purple }}
+                  style={{
+                    backgroundColor: palette.chipBg,
+                    color: palette.purple,
+                  }}
                 >
                   {amenityId}
                 </span>
@@ -387,12 +411,15 @@ function PropertyDetailsView({
       <aside>
         <div
           className="rounded-2xl border bg-white p-5 lg:sticky lg:top-4"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+          }}
         >
           <button
             type="button"
             className="mb-4 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold"
-            style={{ borderColor: "#E7E1FA", color: palette.deep }}
+            style={{ borderColor: palette.border, color: palette.deep }}
             onClick={() => onToggleFavorite?.(property)}
             disabled={isFavoriteLoading}
           >
@@ -419,7 +446,11 @@ function PropertyDetailsView({
 
           <textarea
             className="mt-4 min-h-28 w-full rounded-xl border p-3 text-sm outline-none"
-            style={{ borderColor: "#E7E1FA", color: palette.deep }}
+            style={{
+              borderColor: palette.border,
+              color: palette.deep,
+              backgroundColor: palette.inputBg,
+            }}
             placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
           />
 
@@ -441,7 +472,7 @@ function PropertyDetailsView({
           <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-center">
             <div
               className="relative h-full w-full rounded-2xl border bg-black"
-              style={{ borderColor: "#E7E1FA" }}
+              style={{ borderColor: palette.border }}
               onClick={(event) => event.stopPropagation()}
             >
               <button

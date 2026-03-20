@@ -21,7 +21,7 @@ function PropertiesPage() {
     page,
     limit: 20,
   });
-  const { isPending, isRealUser } = useCurrentUser();
+  const { isPending, isAuthenticated } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
   const [favoritePropertyId, setFavoritePropertyId] = useState<string | null>(
@@ -40,7 +40,7 @@ function PropertiesPage() {
   const handleToggleFavorite = async (property: Property) => {
     if (isPending) return;
 
-    if (!isRealUser) {
+    if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
@@ -64,7 +64,7 @@ function PropertiesPage() {
 
       <section
         className="px-4 py-12 -mt-6"
-        style={{ backgroundColor: "#F7F5FF" }}
+        style={{ backgroundColor: palette.sectionBg }}
       >
         <div className="mx-auto max-w-6xl">
           <div className="mb-8">
@@ -83,11 +83,7 @@ function PropertiesPage() {
           {isLoading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-80 animate-pulse rounded-2xl"
-                  style={{ backgroundColor: "#EDE8FD" }}
-                />
+                <div key={idx} className="skeleton h-80 rounded-2xl" />
               ))}
             </div>
           ) : isError ? (

@@ -1,4 +1,4 @@
-import { Heart, MapPin } from "lucide-react";
+import { Heart, MapPin, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
@@ -29,7 +29,7 @@ function PropertyListCard({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isInternalFavoriteLoading, setIsInternalFavoriteLoading] =
     useState(false);
-  const { isPending, isRealUser } = useCurrentUser();
+  const { isPending, isAuthenticated } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
 
@@ -41,7 +41,7 @@ function PropertyListCard({
   const handleFavoriteClick = async () => {
     if (favoriteLoading || isPending) return;
 
-    if (!isRealUser) {
+    if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
@@ -69,11 +69,11 @@ function PropertyListCard({
       <Link to={`/properties/${property._id}`} className="block">
         <article
           className="overflow-hidden rounded-2xl border bg-white shadow-sm"
-          style={{ borderColor: "#E7E1FA" }}
+          style={{ borderColor: palette.border }}
         >
           <div
             className="relative h-48 w-full overflow-hidden"
-            style={{ backgroundColor: "#F2EEFD" }}
+            style={{ backgroundColor: palette.cardMutedBg }}
           >
             {primaryImage ? (
               <img
@@ -103,11 +103,19 @@ function PropertyListCard({
               }}
               disabled={favoriteLoading}
             >
-              <Heart
-                size={15}
-                fill={property.isSaved ? palette.purple : "transparent"}
-                style={{ color: palette.purple }}
-              />
+              {favoriteLoading ? (
+                <RefreshCw
+                  size={15}
+                  className="animate-spin"
+                  style={{ color: palette.purple }}
+                />
+              ) : (
+                <Heart
+                  size={15}
+                  fill={property.isSaved ? palette.purple : "transparent"}
+                  style={{ color: palette.purple }}
+                />
+              )}
             </button>
           </div>
 

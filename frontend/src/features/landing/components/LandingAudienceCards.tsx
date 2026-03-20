@@ -9,11 +9,14 @@ import { Link } from "react-router-dom";
 
 function LandingAudienceCards() {
   return (
-    <section className="px-4 py-16" style={{ backgroundColor: "#FFFFFF" }}>
+    <section className="px-4 py-16" style={{ backgroundColor: palette.cardBg }}>
       <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2">
         <article
           className="rounded-2xl border p-7"
-          style={{ backgroundColor: "#F4F1FE", borderColor: "#E1D8FA" }}
+          style={{
+            backgroundColor: palette.cardMutedBg,
+            borderColor: palette.border,
+          }}
         >
           <div
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl"
@@ -59,7 +62,10 @@ function LandingAudienceCards() {
 
         <article
           className="rounded-2xl border p-7"
-          style={{ backgroundColor: "#F9F7FF", borderColor: "#E6DEFB" }}
+          style={{
+            backgroundColor: palette.cardMutedAltBg,
+            borderColor: palette.border,
+          }}
         >
           <div
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl"

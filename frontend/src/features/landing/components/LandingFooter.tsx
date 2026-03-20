@@ -5,7 +5,7 @@ function LandingFooter() {
   return (
     <footer
       className="border-t px-4 py-8"
-      style={{ borderColor: "#E7E1FA", backgroundColor: palette.deep }}
+      style={{ borderColor: "#E7E1FA", backgroundColor: palette.purple }}
     >
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
         <div>
