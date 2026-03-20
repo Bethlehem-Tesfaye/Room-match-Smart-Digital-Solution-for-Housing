@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import LandingFooter from "../../features/landing/components/LandingFooter";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import SavedPropertiesSection from "../../features/property/components/SavedPropertiesSection";
 import {
