@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CircleCheck,
   EllipsisVertical,
@@ -7,12 +8,28 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  useDeleteCreatorProperty,
+  useUpdateCreatorProperty,
+} from "../../addListing/hooks/useCreatorPropertyHooks";
 import PropertyPagination from "../../property/components/PropertyPagination";
 import { useMyPropertiesOverview } from "../hooks/useDashboardHooks";
 import { palette } from "../../../theme/palette";
 
 function MyPropertyList() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const updateProperty = useUpdateCreatorProperty();
+  const deleteProperty = useDeleteCreatorProperty();
   const [page, setPage] = useState(1);
+  const [markingRentedPropertyId, setMarkingRentedPropertyId] = useState<
+    string | null
+  >(null);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(
+    null,
+  );
   const [openMenuPropertyId, setOpenMenuPropertyId] = useState<string | null>(
     null,
   );
@@ -48,6 +65,67 @@ function MyPropertyList() {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
+
+  const handleMarkAsRented = async (propertyId: string, status?: string) => {
+    if (status === "Rented") {
+      toast.info("This listing is already marked as rented.");
+      setOpenMenuPropertyId(null);
+      return;
+    }
+
+    setMarkingRentedPropertyId(propertyId);
+
+    try {
+      await updateProperty.mutateAsync({
+        propertyId,
+        payload: { status: "Rented" },
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "my-properties-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "listing-counts"],
+        }),
+      ]);
+
+      toast.success("Listing marked as rented.");
+      setOpenMenuPropertyId(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update listing";
+      toast.error(message);
+    } finally {
+      setMarkingRentedPropertyId(null);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId: string) => {
+    setDeletingPropertyId(propertyId);
+
+    try {
+      await deleteProperty.mutateAsync({ propertyId });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "my-properties-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "listing-counts"],
+        }),
+      ]);
+
+      toast.success("Listing deleted successfully.");
+      setOpenMenuPropertyId(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete listing";
+      toast.error(message);
+    } finally {
+      setDeletingPropertyId(null);
+    }
+  };
 
   return (
     <>
@@ -116,15 +194,21 @@ function MyPropertyList() {
                       >
                         <button
                           type="button"
+                          onClick={() =>
+                            navigate(`/properties/preview/${property._id}`)
+                          }
                           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
                           style={{ color: palette.deep }}
                         >
                           <Eye size={16} />
-                          View Listing
+                          Get Preview
                         </button>
 
                         <button
                           type="button"
+                          onClick={() =>
+                            navigate(`/properties/${property._id}/edit`)
+                          }
                           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
                           style={{ color: palette.deep }}
                         >
@@ -134,20 +218,35 @@ function MyPropertyList() {
 
                         <button
                           type="button"
+                          onClick={() =>
+                            void handleMarkAsRented(
+                              property._id,
+                              property.status,
+                            )
+                          }
+                          disabled={markingRentedPropertyId === property._id}
                           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-50"
                           style={{ color: palette.deep }}
                         >
                           <CircleCheck size={16} />
-                          Mark as Rented
+                          {markingRentedPropertyId === property._id
+                            ? "Marking..."
+                            : "Mark as Rented"}
                         </button>
 
                         <button
                           type="button"
+                          onClick={() =>
+                            void handleDeleteProperty(property._id)
+                          }
+                          disabled={deletingPropertyId === property._id}
                           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-red-50"
                           style={{ color: "#E11D48" }}
                         >
                           <Trash2 size={16} />
-                          Delete
+                          {deletingPropertyId === property._id
+                            ? "Deleting..."
+                            : "Delete"}
                         </button>
                       </div>
                     ) : null}

@@ -70,7 +70,7 @@ function PropertyPhotosStep({
           {draft.images.map((image) => (
             <div key={image.id} className="relative overflow-hidden rounded-xl">
               <img
-                src={image.imageBase64}
+                src={image.previewUrl}
                 alt="Property preview"
                 className="h-40 w-full object-cover"
               />

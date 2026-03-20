@@ -20,14 +20,6 @@ import type {
   SetAddListingField,
 } from "../types/types";
 
-const toBase64 = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Failed to read image"));
-    reader.readAsDataURL(file);
-  });
-
 function CreatePropertyForm() {
   const [step, setStep] = useState<AddListingStep>(1);
   const [draft, setDraft] = useState<AddListingDraft>(initialAddListingDraft);
@@ -130,16 +122,14 @@ function CreatePropertyForm() {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
 
-    const drafts = await Promise.all(
-      files.slice(0, 10).map(async (file, index) => {
-        const imageBase64 = await toBase64(file);
-        return {
-          id: `${file.name}-${Date.now()}-${index}`,
-          imageBase64,
-          isPrimary: false,
-        } as AddListingImageDraft;
-      }),
-    );
+    const drafts = files.slice(0, 10).map((file, index) => {
+      return {
+        id: `${file.name}-${Date.now()}-${index}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        isPrimary: false,
+      } as AddListingImageDraft;
+    });
 
     setDraft((prev) => {
       const merged = [...prev.images, ...drafts].slice(0, 10);
@@ -164,6 +154,11 @@ function CreatePropertyForm() {
 
   const removePhoto = (id: string) => {
     setDraft((prev) => {
+      const removedPhoto = prev.images.find((image) => image.id === id);
+      if (removedPhoto) {
+        URL.revokeObjectURL(removedPhoto.previewUrl);
+      }
+
       const next = prev.images.filter((image) => image.id !== id);
       if (!next.some((image) => image.isPrimary) && next[0]) {
         next[0] = { ...next[0], isPrimary: true };
@@ -185,33 +180,59 @@ function CreatePropertyForm() {
   };
 
   const onSubmit = async () => {
-    const payload: CreateListingPayload = {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      propertyType: draft.propertyType,
-      price: Number(draft.price || 0),
-      currency: draft.currency,
-      deposit: Number(draft.deposit || 0),
-      address: draft.address.trim(),
-      city: draft.city.trim(),
-      numberOfBedrooms: Number(draft.numberOfBedrooms || 0),
-      numberOfBathrooms: Number(draft.numberOfBathrooms || 0),
-      floorNumber: draft.floorNumber ? Number(draft.floorNumber) : null,
-      totalFloors: draft.totalFloors ? Number(draft.totalFloors) : null,
-      areaSqFt: draft.areaSqFt ? Number(draft.areaSqFt) : null,
-      availableFrom: draft.availableFrom || null,
-      isFurnished: draft.isFurnished,
-      images: draft.images.map((image) => ({
-        imageBase64: image.imageBase64,
-        isPrimary: image.isPrimary,
-      })),
-      amenityIds: draft.amenityIds,
-      status: "Active",
-    };
+    const payload: CreateListingPayload = new FormData();
+
+    payload.append("title", draft.title.trim());
+    payload.append("description", draft.description.trim());
+    payload.append("propertyType", draft.propertyType);
+    payload.append("price", String(Number(draft.price || 0)));
+    payload.append("currency", draft.currency);
+    payload.append("deposit", String(Number(draft.deposit || 0)));
+    payload.append("address", draft.address.trim());
+    payload.append("city", draft.city.trim());
+    payload.append(
+      "numberOfBedrooms",
+      String(Number(draft.numberOfBedrooms || 0)),
+    );
+    payload.append(
+      "numberOfBathrooms",
+      String(Number(draft.numberOfBathrooms || 0)),
+    );
+    payload.append(
+      "floorNumber",
+      draft.floorNumber ? String(Number(draft.floorNumber)) : "",
+    );
+    payload.append(
+      "totalFloors",
+      draft.totalFloors ? String(Number(draft.totalFloors)) : "",
+    );
+    payload.append(
+      "areaSqFt",
+      draft.areaSqFt ? String(Number(draft.areaSqFt)) : "",
+    );
+    payload.append("availableFrom", draft.availableFrom || "");
+    payload.append("isFurnished", String(draft.isFurnished));
+    payload.append("status", "Active");
+    payload.append("amenityIds", JSON.stringify(draft.amenityIds));
+
+    const primaryImageIndex = draft.images.findIndex(
+      (image) => image.isPrimary,
+    );
+    payload.append(
+      "primaryImageIndex",
+      String(primaryImageIndex >= 0 ? primaryImageIndex : 0),
+    );
+
+    draft.images.forEach((image) => {
+      payload.append("images", image.file);
+    });
 
     try {
       await createProperty.mutateAsync(payload);
       toast.success("Property created successfully.");
+      draft.images.forEach((image) => {
+        URL.revokeObjectURL(image.previewUrl);
+      });
       setDraft(initialAddListingDraft);
       setAttemptedSteps({ 1: false, 2: false, 3: false, 4: false });
       setStep(1);

@@ -17,7 +17,7 @@ export interface GetMyProfileResponse {
 export interface UpdateProfileInput {
   fullName?: string;
   phoneNumber?: string | null;
-  imageBase64?: string;
+  imageUrl?: string;
   removeProfilePicture?: boolean;
 }
 

@@ -36,11 +36,17 @@ const getErrorMessage = (error: unknown): string => {
   return "Request failed";
 };
 
-const hasAnyUpdatableField = (payload: UpdateProfileInput): boolean => {
+const hasAnyUpdatableField = (
+  payload: UpdateProfileInput | FormData,
+): boolean => {
+  if (payload instanceof FormData) {
+    return Array.from(payload.keys()).length > 0;
+  }
+
   return (
     payload.fullName !== undefined ||
     payload.phoneNumber !== undefined ||
-    payload.imageBase64 !== undefined ||
+    payload.imageUrl !== undefined ||
     payload.removeProfilePicture === true
   );
 };
@@ -65,11 +71,15 @@ export const useMyProfile = (
 export const useUpdateMyProfile = (): UseMutationResult<
   UpdateMyProfileResponse,
   Error,
-  UpdateProfileInput
+  UpdateProfileInput | FormData
 > => {
   const queryClient = useQueryClient();
 
-  return useMutation<UpdateMyProfileResponse, Error, UpdateProfileInput>({
+  return useMutation<
+    UpdateMyProfileResponse,
+    Error,
+    UpdateProfileInput | FormData
+  >({
     mutationFn: async (payload) => {
       if (!hasAnyUpdatableField(payload)) {
         throw new Error("At least one profile field must be provided");
@@ -79,6 +89,13 @@ export const useUpdateMyProfile = (): UseMutationResult<
         const res = await api.patch<UpdateMyProfileResponse>(
           "/api/profile",
           payload,
+          payload instanceof FormData
+            ? {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            : undefined,
         );
 
         return res.data;

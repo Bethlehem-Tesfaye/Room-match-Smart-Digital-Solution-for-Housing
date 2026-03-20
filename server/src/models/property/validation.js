@@ -13,22 +13,9 @@ const propertyStatusEnum = z.enum(["Active", "Rented", "Inactive"]);
 const imageInputSchema = z
   .object({
     imageUrl: z.string().trim().url().optional(),
-    imageBase64: z
-      .string()
-      .trim()
-      .refine(
-        (value) =>
-          value.startsWith("data:image/") ||
-          /^[A-Za-z0-9+/=\r\n]+$/.test(value),
-        "imageBase64 must be a valid base64 image string"
-      )
-      .optional(),
     isPrimary: z.boolean().optional()
   })
-  .refine(
-    (image) => !!image.imageBase64 || !!image.imageUrl,
-    "Each image must include imageBase64 or imageUrl"
-  );
+  .refine((image) => !!image.imageUrl, "Each image must include imageUrl");
 
 export const propertyParamsSchema = z.object({
   id: z.string().trim().min(1, "Property id is required")

@@ -44,16 +44,27 @@ const getErrorMessage = (error: unknown): string => {
 export const useCreateCreatorProperty = (): UseMutationResult<
   CreatorProperty,
   Error,
-  CreateCreatorPropertyInput
+  CreateCreatorPropertyInput | FormData
 > => {
   const queryClient = useQueryClient();
 
-  return useMutation<CreatorProperty, Error, CreateCreatorPropertyInput>({
+  return useMutation<
+    CreatorProperty,
+    Error,
+    CreateCreatorPropertyInput | FormData
+  >({
     mutationFn: async (payload) => {
       try {
         const res = await api.post<CreatorPropertyByIdResponse>(
           "/api/properties",
           payload,
+          payload instanceof FormData
+            ? {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            : undefined,
         );
 
         return res.data.property;
@@ -104,20 +115,27 @@ export const useCreatorPropertyById = (
 export const useUpdateCreatorProperty = (): UseMutationResult<
   CreatorProperty,
   Error,
-  { propertyId: string; payload: UpdateCreatorPropertyInput }
+  { propertyId: string; payload: UpdateCreatorPropertyInput | FormData }
 > => {
   const queryClient = useQueryClient();
 
   return useMutation<
     CreatorProperty,
     Error,
-    { propertyId: string; payload: UpdateCreatorPropertyInput }
+    { propertyId: string; payload: UpdateCreatorPropertyInput | FormData }
   >({
     mutationFn: async ({ propertyId, payload }) => {
       try {
         const res = await api.patch<CreatorUpdatePropertyResponse>(
           `/api/properties/${propertyId}`,
           payload,
+          payload instanceof FormData
+            ? {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            : undefined,
         );
 
         return res.data.property;

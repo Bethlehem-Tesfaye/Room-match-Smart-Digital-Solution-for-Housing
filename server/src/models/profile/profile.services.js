@@ -1,25 +1,10 @@
 import CustomError from "../../lib/errors.js";
-import { cloudinary } from "../../lib/cloudinary.js";
 import { UserProfile } from "./schema.js";
 
 const normalizePhoneNumber = (value) => {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   return value;
-};
-
-const uploadProfileImage = async (imageBase64, userId) => {
-  try {
-    const result = await cloudinary.uploader.upload(imageBase64, {
-      folder: "roomMatch/profile",
-      public_id: `user_${userId}_${Date.now()}`,
-      resource_type: "image"
-    });
-
-    return result.secure_url;
-  } catch (_err) {
-    throw new CustomError("Failed to upload profile image", 400);
-  }
 };
 
 export const getProfileByUserId = async (userId) => {
@@ -44,11 +29,8 @@ export const updateProfileByUserId = async ({ userId, name, payload }) => {
     updateSet.phoneNumber = normalizedPhoneNumber;
   }
 
-  if (payload.imageBase64) {
-    updateSet.profilePictureUrl = await uploadProfileImage(
-      payload.imageBase64,
-      userId
-    );
+  if (payload.imageUrl) {
+    updateSet.profilePictureUrl = payload.imageUrl;
   }
 
   if (payload.removeProfilePicture === true) {

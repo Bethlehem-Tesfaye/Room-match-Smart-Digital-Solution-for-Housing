@@ -114,33 +114,12 @@ export const buildPropertyResponse = async (propertyDoc) => {
   };
 };
 
-const uploadPropertyImage = async ({ imageBase64, propertyId }) => {
-  try {
-    const result = await cloudinary.uploader.upload(imageBase64, {
-      folder: "roomMatch/property",
-      public_id: `property_${propertyId}_${Date.now()}`,
-      resource_type: "image"
-    });
-
-    return result.secure_url;
-  } catch (_err) {
-    throw new CustomError("Failed to upload property image", 400);
-  }
-};
-
-const resolvePropertyImageUrl = async ({ image, propertyId }) => {
-  if (image.imageBase64) {
-    return uploadPropertyImage({
-      imageBase64: image.imageBase64,
-      propertyId
-    });
-  }
-
+const resolvePropertyImageUrl = async ({ image }) => {
   if (image.imageUrl) {
     return image.imageUrl;
   }
 
-  throw new CustomError("Each image must include imageBase64 or imageUrl", 400);
+  throw new CustomError("Each image must include imageUrl", 400);
 };
 
 export const syncPropertyImages = async ({ propertyId, images = [] }) => {
@@ -154,7 +133,7 @@ export const syncPropertyImages = async ({ propertyId, images = [] }) => {
   const uploadedImages = await Promise.all(
     images.map(async (image) => ({
       propertyId,
-      imageUrl: await resolvePropertyImageUrl({ image, propertyId }),
+      imageUrl: await resolvePropertyImageUrl({ image }),
       isPrimary: !!image.isPrimary,
       uploadDate: new Date(),
       deletedAt: null

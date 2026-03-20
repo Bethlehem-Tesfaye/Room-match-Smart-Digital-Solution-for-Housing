@@ -11,15 +11,6 @@ import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
 import { useMyProfile, useUpdateMyProfile } from "../hooks/useProfileHooks";
 import { palette } from "../../../theme/palette";
 
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Failed to read image file"));
-    reader.readAsDataURL(file);
-  });
-};
-
 function UpdateProfileForm() {
   const {
     user,
@@ -37,7 +28,9 @@ function UpdateProfileForm() {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
-  const [imageBase64, setImageBase64] = useState<string | undefined>(undefined);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | undefined>(
+    undefined,
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
 
@@ -48,6 +41,14 @@ function UpdateProfileForm() {
     setPhoneNumber(profile.phoneNumber ?? "");
     setPreviewUrl(profile.profilePictureUrl ?? null);
   }, [profile]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const profileEmail = user?.email ?? "";
   const initials = useMemo(() => {
@@ -62,46 +63,51 @@ function UpdateProfileForm() {
     isSessionPending ||
     !isAuthenticated;
 
-  const onSelectImage = async (event: ChangeEvent<HTMLInputElement>) => {
+  const onSelectImage = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
-    try {
-      const encoded = await fileToBase64(selectedFile);
-      setImageBase64(encoded);
-      setPreviewUrl(encoded);
-      setRemoveProfilePicture(false);
-    } catch (fileError) {
-      const message =
-        fileError instanceof Error ? fileError.message : "Image upload failed";
-      toast.error(message);
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
     }
+
+    setSelectedImageFile(selectedFile);
+    setPreviewUrl(URL.createObjectURL(selectedFile));
+    setRemoveProfilePicture(false);
   };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    updateProfileMutation.mutate(
-      {
-        fullName: fullName.trim(),
-        phoneNumber: phoneNumber.trim() || "",
-        ...(imageBase64 ? { imageBase64 } : {}),
-        ...(removeProfilePicture ? { removeProfilePicture: true } : {}),
+    const payload = new FormData();
+    payload.append("fullName", fullName.trim());
+    payload.append("phoneNumber", phoneNumber.trim() || "");
+
+    if (selectedImageFile) {
+      payload.append("profilePicture", selectedImageFile);
+    }
+
+    if (removeProfilePicture) {
+      payload.append("removeProfilePicture", "true");
+    }
+
+    updateProfileMutation.mutate(payload, {
+      onSuccess: (response) => {
+        toast.success(response.message || "Profile updated successfully");
+        setSelectedImageFile(undefined);
       },
-      {
-        onSuccess: (response) => {
-          toast.success(response.message || "Profile updated successfully");
-          setImageBase64(undefined);
-        },
-        onError: (mutationError) => {
-          toast.error(mutationError.message || "Failed to update profile");
-        },
+      onError: (mutationError) => {
+        toast.error(mutationError.message || "Failed to update profile");
       },
-    );
+    });
   };
 
   const onRemovePhoto = () => {
-    setImageBase64(undefined);
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setSelectedImageFile(undefined);
     setPreviewUrl(null);
     setRemoveProfilePicture(true);
   };

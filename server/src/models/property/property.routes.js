@@ -2,6 +2,11 @@ import { Router } from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import optionalAuthMiddleware from "../../middlewares/optionalAuth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
+import {
+  attachUploadedPropertyImages,
+  makeUploader,
+  normalizePropertyMultipartBody
+} from "../../middlewares/upload.middleware.js";
 import * as creatorController from "./controllers/creator.controller.js";
 import * as browserController from "./controllers/browser.controller.js";
 import {
@@ -13,11 +18,15 @@ import {
 } from "./validation.js";
 
 const propertyRouter = Router();
+const uploader = makeUploader();
 
 propertyRouter.post(
   "/",
   authMiddleware,
+  uploader.array("images", 10),
+  normalizePropertyMultipartBody,
   validate(createPropertySchema),
+  attachUploadedPropertyImages,
   creatorController.createPropertyHandler
 );
 
@@ -55,8 +64,11 @@ propertyRouter.get(
 propertyRouter.patch(
   "/:id",
   authMiddleware,
+  uploader.array("images", 10),
   validate(propertyParamsSchema, "params"),
+  normalizePropertyMultipartBody,
   validate(updatePropertySchema),
+  attachUploadedPropertyImages,
   creatorController.updatePropertyHandler
 );
 propertyRouter.delete(

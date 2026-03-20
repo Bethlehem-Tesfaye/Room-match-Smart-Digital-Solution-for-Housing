@@ -32,7 +32,8 @@ export type AddListingStep = 1 | 2 | 3 | 4;
 
 export interface AddListingImageDraft {
   id: string;
-  imageBase64: string;
+  file: File;
+  previewUrl: string;
   isPrimary: boolean;
 }
 
@@ -66,4 +67,4 @@ export interface AddListingStepMeta {
   title: string;
 }
 
-export type CreateListingPayload = CreateCreatorPropertyInput;
+export type CreateListingPayload = FormData;

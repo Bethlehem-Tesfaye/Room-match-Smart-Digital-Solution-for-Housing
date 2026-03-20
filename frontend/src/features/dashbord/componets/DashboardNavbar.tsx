@@ -10,7 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../../../components/logo";
 import { palette } from "../../../theme/palette";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
@@ -27,10 +27,11 @@ const dashboardTabs: DashboardTabItem[] = [
 
 interface DashboardNavbarProps {
   activeTab: DashboardTabKey;
-  onTabChange: (tab: DashboardTabKey) => void;
+  onTabChange?: (tab: DashboardTabKey) => void;
 }
 
 function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
+  const navigate = useNavigate();
   const { user, isPending: isSessionPending } = useCurrentUser();
   const { data: profile } = useMyProfile(true);
   const logoutMutation = useLogout();
@@ -57,6 +58,27 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
     };
   }, [isDropdownOpen]);
 
+  const handleTabChange = (tab: DashboardTabKey) => {
+    if (onTabChange) {
+      onTabChange(tab);
+      return;
+    }
+
+    if (tab === "dashboard") {
+      navigate("/dashboard");
+      return;
+    }
+
+    if (tab === "my-properties") {
+      navigate("/dashboard/my-properties");
+      return;
+    }
+
+    if (tab === "add-listing") {
+      navigate("/properties/create");
+    }
+  };
+
   return (
     <header
       className="border-b px-4"
@@ -79,7 +101,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => onTabChange(tab.key)}
+                  onClick={() => handleTabChange(tab.key)}
                   className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
                   style={{ color: isActive ? palette.purple : palette.deep }}
                 >
