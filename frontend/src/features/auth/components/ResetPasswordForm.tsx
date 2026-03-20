@@ -45,7 +45,10 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   return (
     <div
       className="w-full max-w-2xl border rounded-xl p-6 shadow-sm"
-      style={{ borderColor: palette.lightPurple, backgroundColor: palette.cardBg }}
+      style={{
+        borderColor: palette.lightPurple,
+        backgroundColor: palette.cardBg,
+      }}
     >
       <div className="mb-6">
         <h2 className="text-2xl font-bold" style={{ color: palette.deep }}>

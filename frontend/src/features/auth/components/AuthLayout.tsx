@@ -7,7 +7,10 @@ function AuthLayout({ children }: AuthLayoutProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen w-full" style={{ backgroundColor: palette.pageBg }}>
+    <div
+      className="min-h-screen w-full"
+      style={{ backgroundColor: palette.pageBg }}
+    >
       <div className="min-h-screen mx-auto grid grid-cols-1 md:grid-cols-2">
         {/* Left: Hero */}
         <div className="relative hidden md:flex flex-col justify-between p-10 text-white">

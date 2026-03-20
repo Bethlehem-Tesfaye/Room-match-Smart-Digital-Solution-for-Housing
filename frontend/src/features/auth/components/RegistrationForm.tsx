@@ -59,11 +59,17 @@ function RegistrationForm() {
       </div>
 
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-px flex-1" style={{ backgroundColor: palette.border }} />
+        <div
+          className="h-px flex-1"
+          style={{ backgroundColor: palette.border }}
+        />
         <span className="text-xs" style={{ color: palette.purple }}>
           OR CONTINUE WITH
         </span>
-        <div className="h-px flex-1" style={{ backgroundColor: palette.border }} />
+        <div
+          className="h-px flex-1"
+          style={{ backgroundColor: palette.border }}
+        />
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit}>
@@ -158,7 +164,10 @@ function RegistrationForm() {
         </button>
       </form>
 
-      <p className="text-sm mt-6 text-center" style={{ color: palette.softPurple }}>
+      <p
+        className="text-sm mt-6 text-center"
+        style={{ color: palette.softPurple }}
+      >
         Already have an account?{" "}
         <Link
           to="/login"
