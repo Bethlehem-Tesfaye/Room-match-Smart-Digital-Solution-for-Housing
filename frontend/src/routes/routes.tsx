@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
+import MyPropertiesPage from "../pages/dashboard/MyPropertiesPage";
 import ProtectedLayout from "../lib/ProtectedLayout";
 import VerifyNoticePage from "../features/auth/components/VerifyNoticePage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
@@ -12,10 +13,10 @@ import LandingPage from "../pages/landing/LandingPage";
 import PropertiesPage from "../pages/properties/PropertiesPage";
 import PropertyDetailsPage from "../pages/properties/PropertyDetailsPage";
 import SavedPropertiesPage from "../pages/properties/SavedPropertiesPage";
-import CreatePropertyPage from "../pages/createProperty/CreatePropertyPage";
 import MessagePage from "../pages/message/MessagePage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import SettingPage from "../pages/setting/SettingPage";
+import AddListingsPage from "../pages/addListing/AddListingsPage";
 
 export const router = createBrowserRouter([
   {
@@ -68,8 +69,12 @@ export const router = createBrowserRouter([
         element: <DashboardPage />,
       },
       {
+        path: "dashboard/my-properties",
+        element: <MyPropertiesPage />,
+      },
+      {
         path: "/properties/create",
-        element: <CreatePropertyPage />,
+        element: <AddListingsPage />,
       },
       {
         path: "/properties/saved",

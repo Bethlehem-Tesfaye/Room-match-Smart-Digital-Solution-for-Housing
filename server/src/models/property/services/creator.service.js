@@ -9,6 +9,8 @@ import {
   validateAmenityIdsExist
 } from "../../../utils/property.creator.utils.js";
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const createProperty = async ({ userId, payload }) => {
   const { images = [], amenityIds = [], ...propertyFields } = payload;
 
@@ -91,12 +93,70 @@ export const deletePropertyById = async ({ propertyId, userId }) => {
   ]);
 };
 
-export const getMyProperties = async (userId) => {
-  const properties = await Property.find({ ownerId: userId, deletedAt: null })
-    .sort({ createdAt: -1 })
-    .lean();
+export const getMyProperties = async ({
+  userId,
+  page = 1,
+  limit = 20,
+  search = ""
+}) => {
+  const normalizedSearch = search.trim();
+  const query = {
+    ownerId: userId,
+    deletedAt: null,
+    ...(normalizedSearch
+      ? {
+          $or: [
+            { title: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+            { city: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+            {
+              address: {
+                $regex: escapeRegex(normalizedSearch),
+                $options: "i"
+              }
+            }
+          ]
+        }
+      : {})
+  };
 
-  return Promise.all(
+  const skip = (page - 1) * limit;
+
+  const [properties, total] = await Promise.all([
+    Property.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Property.countDocuments(query)
+  ]);
+
+  const mappedProperties = await Promise.all(
     properties.map((property) => buildPropertyResponse(property))
   );
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+  return {
+    properties: mappedProperties,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
+};
+
+export const getMyListingCounts = async (userId) => {
+  const [totalListings, activeListings] = await Promise.all([
+    Property.countDocuments({ ownerId: userId, deletedAt: null }),
+    Property.countDocuments({
+      ownerId: userId,
+      deletedAt: null,
+      status: "Active"
+    })
+  ]);
+
+  return {
+    totalListings,
+    activeListings
+  };
 };

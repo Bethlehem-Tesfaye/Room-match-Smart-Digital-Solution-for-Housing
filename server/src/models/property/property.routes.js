@@ -24,7 +24,13 @@ propertyRouter.post(
 propertyRouter.get(
   "/my-properties",
   authMiddleware,
+  validate(browsePropertyQuerySchema, "query"),
   creatorController.listMyPropertiesHandler
+);
+propertyRouter.get(
+  "/my-properties/counts",
+  authMiddleware,
+  creatorController.getMyListingCountsHandler
 );
 propertyRouter.get(
   "/browser",

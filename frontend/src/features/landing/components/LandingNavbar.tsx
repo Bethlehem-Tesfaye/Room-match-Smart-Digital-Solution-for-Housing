@@ -21,7 +21,7 @@ const navItems = [
   { to: "/properties", label: "Browse Property", icon: Building2 },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
   { to: "/message", label: "Message", icon: MessageCircle },
-  { to: "/properties/create", label: "Add Property", icon: PlusSquare },
+  { to: "/dashboard", label: "Add Property", icon: PlusSquare },
 ];
 
 function LandingNavbar() {

@@ -1,4 +1,5 @@
 import * as propertyService from "../services/creator.service.js";
+import { browsePropertyQuerySchema } from "../validation.js";
 
 export const createPropertyHandler = async (req, res, next) => {
   try {
@@ -51,8 +52,23 @@ export const deletePropertyHandler = async (req, res, next) => {
 
 export const listMyPropertiesHandler = async (req, res, next) => {
   try {
-    const properties = await propertyService.getMyProperties(req.userId);
-    return res.status(200).json({ properties });
+    const { page, limit, search } = browsePropertyQuerySchema.parse(req.query);
+    const result = await propertyService.getMyProperties({
+      userId: req.userId,
+      page,
+      limit,
+      search
+    });
+    return res.status(200).json(result);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const getMyListingCountsHandler = async (req, res, next) => {
+  try {
+    const counts = await propertyService.getMyListingCounts(req.userId);
+    return res.status(200).json({ counts });
   } catch (err) {
     return next(err);
   }

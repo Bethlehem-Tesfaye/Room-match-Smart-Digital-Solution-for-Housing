@@ -1,7 +1,5 @@
-import React from "react";
+import DashboardShell from "../../features/dashbord/componets/DashboardShell";
 
-const DashboardPage: React.FC = () => {
-  return <div>DashboardPage</div>;
-};
+const DashboardPage = () => <DashboardShell />;
 
 export default DashboardPage;
