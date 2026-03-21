@@ -26,21 +26,10 @@ const getErrorMessage = (error: unknown): string => {
   return "Request failed";
 };
 
-const resolveSystemTheme = (): Exclude<ThemePreference, "system"> => {
-  if (typeof window === "undefined") return "light";
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-};
-
 const applyThemeToDocument = (theme: ThemePreference) => {
   if (typeof document === "undefined") return;
-
-  const resolvedTheme = theme === "system" ? resolveSystemTheme() : theme;
   const rootElement = document.documentElement;
-
-  if (resolvedTheme === "dark") {
+  if (theme === "dark") {
     rootElement.classList.add("dark");
   } else {
     rootElement.classList.remove("dark");
@@ -48,14 +37,10 @@ const applyThemeToDocument = (theme: ThemePreference) => {
 };
 
 const readStoredTheme = (): ThemePreference => {
-  if (typeof window === "undefined") return "system";
-
+  if (typeof window === "undefined") return "light";
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    return stored;
-  }
-
-  return "system";
+  if (stored === "dark") return "dark";
+  return "light";
 };
 
 const isCredentialProvider = (providerId: string): boolean => {
@@ -177,39 +162,15 @@ export const useSetPassword = (): UseMutationResult<
 
 export const useThemePreference = () => {
   const [theme, setThemeState] = useState<ThemePreference>(readStoredTheme());
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
-    theme === "system" ? resolveSystemTheme() : theme,
-  );
-
   useEffect(() => {
     applyThemeToDocument(theme);
-    setResolvedTheme(theme === "system" ? resolveSystemTheme() : theme);
-
     if (typeof window !== "undefined") {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     }
   }, [theme]);
-
-  useEffect(() => {
-    if (theme !== "system" || typeof window === "undefined") return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const handleSystemThemeChange = () => {
-      applyThemeToDocument("system");
-      setResolvedTheme(resolveSystemTheme());
-    };
-
-    mediaQuery.addEventListener("change", handleSystemThemeChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleSystemThemeChange);
-    };
-  }, [theme]);
-
   const setTheme = (nextTheme: ThemePreference) => {
     setThemeState(nextTheme);
   };
-
-  return { theme, setTheme, resolvedTheme };
+  // resolvedTheme is always theme now
+  return { theme, setTheme, resolvedTheme: theme };
 };
