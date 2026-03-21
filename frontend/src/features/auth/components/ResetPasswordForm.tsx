@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useResetPassword } from "../hooks/useResetPassword";
 import type { ResetPasswordFormProps } from "../types/type";
+import { palette } from "../../../theme/palette";
 
 function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState<string>("");
@@ -42,10 +43,20 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   return (
-    <div className="w-full max-w-2xl border border-purple-500 rounded-xl p-6 bg-white shadow-sm">
+    <div
+      className="w-full max-w-2xl border rounded-xl p-6 shadow-sm"
+      style={{
+        borderColor: palette.lightPurple,
+        backgroundColor: palette.cardBg,
+      }}
+    >
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Reset Password</h2>
-        <p className="text-sm text-gray-500">Enter your new password.</p>
+        <h2 className="text-2xl font-bold" style={{ color: palette.deep }}>
+          Reset Password
+        </h2>
+        <p className="text-sm" style={{ color: palette.softPurple }}>
+          Enter your new password.
+        </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -59,7 +70,13 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <input
             id="new-password"
             type="password"
-            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            className="w-full border rounded-md px-3 py-2 focus:ring-2 outline-none"
+            style={{
+              borderColor: palette.border,
+              color: palette.deep,
+              backgroundColor: palette.inputBg,
+              boxShadow: "none",
+            }}
             placeholder="Enter your new password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -77,7 +94,13 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <input
             id="confirm-password"
             type="password"
-            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            className="w-full border rounded-md px-3 py-2 focus:ring-2 outline-none"
+            style={{
+              borderColor: palette.border,
+              color: palette.deep,
+              backgroundColor: palette.inputBg,
+              boxShadow: "none",
+            }}
             placeholder="Confirm your new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -91,7 +114,8 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <button
           type="submit"
           disabled={resetPassword.isPending}
-          className="w-full bg-[#7C67E4FF] hover:bg-[#6b58c9] text-white rounded-md py-2 font-semibold transition-colors disabled:opacity-60"
+          className="w-full text-white rounded-md py-2 font-semibold transition-colors disabled:opacity-60"
+          style={{ backgroundColor: palette.purple }}
         >
           {resetPassword.isPending ? "Resetting..." : "Reset Password"}
         </button>
@@ -99,7 +123,8 @@ function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
       <Link
         to="/login"
-        className="block text-center text-sm text-[#7C67E4FF] font-medium mt-4 hover:underline"
+        className="block text-center text-sm font-medium mt-4 hover:underline"
+        style={{ color: palette.purple }}
       >
         Back to login
       </Link>

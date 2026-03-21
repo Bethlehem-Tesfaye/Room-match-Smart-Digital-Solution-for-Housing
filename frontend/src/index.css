@@ -1,1 +1,75 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  color-scheme: light;
+  --app-bg: #f7f5ff;
+  --app-text: #1f2937;
+  --app-surface: #ffffff;
+  --app-surface-border: #c4bbf0;
+  --palette-deep: #363b4e;
+  --palette-purple: #4f3b78;
+  --palette-soft-purple: #927fbf;
+  --palette-light-purple: #c4bbf0;
+  --palette-page-bg: #f7f5ff;
+  --palette-section-bg: #f6f5fc;
+  --palette-card-bg: #ffffff;
+  --palette-card-muted-bg: #f4f1fe;
+  --palette-card-muted-alt-bg: #f9f7ff;
+  --palette-border: #e7e1fa;
+  --palette-chip-bg: #f1ecff;
+  --palette-input-bg: #ffffff;
+  --palette-skeleton: #e6e0f8;
+}
+
+html.dark {
+  color-scheme: dark;
+  --app-bg: #0f172a;
+  --app-text: #e2e8f0;
+  --app-surface: #111827;
+  --app-surface-border: #334155;
+  --palette-deep: #e5e7eb;
+  --palette-purple: #c4b5fd;
+  --palette-soft-purple: #a78bfa;
+  --palette-light-purple: #334155;
+  --palette-page-bg: #020617;
+  --palette-section-bg: #0b1220;
+  --palette-card-bg: #111827;
+  --palette-card-muted-bg: #1f2937;
+  --palette-card-muted-alt-bg: #1b2433;
+  --palette-border: #334155;
+  --palette-chip-bg: #1e293b;
+  --palette-input-bg: #0b1220;
+  --palette-skeleton: #1f2937;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+html.dark .bg-white {
+  background-color: var(--app-surface) !important;
+}
+
+html.dark .border,
+html.dark [class*="border-"] {
+  border-color: var(--app-surface-border);
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.skeleton {
+  background-color: var(--palette-skeleton) !important;
+}

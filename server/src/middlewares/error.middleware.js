@@ -25,7 +25,17 @@ function extractMessage(e) {
 }
 /* eslint-disable no-unused-vars */
 export function errorHandler(err, _req, res, _next) {
-  const statusCode = isErrWithStatus(err) ? err.statusCode : 500;
+  const isMulterError =
+    typeof err === "object" &&
+    err !== null &&
+    "name" in err &&
+    err.name === "MulterError";
+
+  const statusCode = isErrWithStatus(err)
+    ? err.statusCode
+    : isMulterError
+      ? 400
+      : 500;
 
   logger.error({ err });
 

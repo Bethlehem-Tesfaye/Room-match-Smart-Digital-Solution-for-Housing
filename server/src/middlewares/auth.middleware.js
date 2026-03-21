@@ -1,7 +1,8 @@
 import { fromNodeHeaders } from "better-auth/node";
-import { auth } from "../modules/auth/auth.js";
+import { auth } from "../models/auth/auth.js";
+import CustomError from "../lib/errors.js";
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = async (req, _res, next) => {
   try {
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers)
@@ -10,21 +11,20 @@ const authMiddleware = async (req, res, next) => {
     const user = session?.user;
 
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized user" });
+      return next(new CustomError("Unauthorized user", 401));
     }
 
-    // Attach user info to request
     req.user = user;
 
     if (!user.id) {
-      return res.status(401).json({ error: "Unauthorized user" });
+      return next(new CustomError("Unauthorized user", 401));
     }
 
     req.userId = user.id;
 
     return next();
   } catch (err) {
-    return res.status(500).json({ error: "Internal server error" });
+    return next(new CustomError("Internal server error", 500));
   }
 };
 
