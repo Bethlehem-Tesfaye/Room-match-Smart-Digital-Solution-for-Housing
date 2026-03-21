@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import CustomError from "../lib/errors.js";
-import { cloudinary } from "../lib/cloudinary.js";
 import {
   Amenity,
   PropertyAmenity,

@@ -34,7 +34,7 @@ module.exports = [
       "import/no-unresolved": "off",
       "no-underscore-dangle": [
         "error",
-        { allow: ["_sum", "_count", "_avg", "_min", "_max"] }
+        { allow: ["_id", "_sum", "_count", "_avg", "_min", "_max"] }
       ]
     }
   },
