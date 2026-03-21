@@ -4,26 +4,67 @@ import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import FavoriteAuthModal from "../../features/property/components/FavoriteAuthModal";
 import PropertyListCard from "../../features/property/components/PropertyListCard";
 import PropertyPagination from "../../features/property/components/PropertyPagination";
+import PropertyFilter from "../../features/property/components/PropertyFilter";
 import {
   useBrowserProperties,
   useRemoveFavorite,
   useSaveFavorite,
 } from "../../features/property/hooks/usePropertyHooks";
-import type { Property } from "../../features/property/types/type";
+import type {
+  Property,
+  PropertyCountFilter,
+  PropertyType,
+} from "../../features/property/types/type";
 import { palette } from "../../theme/palette";
 import { ListFilter, Search } from "lucide-react";
 
+const DEFAULT_MIN_PRICE = 0;
+const DEFAULT_MAX_PRICE = 200000;
+
+type PropertyTypeFilter = PropertyType | "All Types";
+
+type PropertyFilters = {
+  minPrice: number;
+  maxPrice: number;
+  propertyType: PropertyTypeFilter;
+  bedrooms: PropertyCountFilter;
+  bathrooms: PropertyCountFilter;
+  amenities: string[];
+};
+
+const DEFAULT_FILTERS: PropertyFilters = {
+  minPrice: DEFAULT_MIN_PRICE,
+  maxPrice: DEFAULT_MAX_PRICE,
+  propertyType: "All Types",
+  bedrooms: "Any",
+  bathrooms: "Any",
+  amenities: [],
+};
+
 function PropertiesPage() {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Search
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useBrowserProperties({
     page,
     limit: 20,
     search: searchQuery,
+    minPrice:
+      filters.minPrice > DEFAULT_MIN_PRICE ? filters.minPrice : undefined,
+    maxPrice:
+      filters.maxPrice < DEFAULT_MAX_PRICE ? filters.maxPrice : undefined,
+    propertyType:
+      filters.propertyType === "All Types" ? undefined : filters.propertyType,
+    bedrooms: filters.bedrooms === "Any" ? undefined : filters.bedrooms,
+    bathrooms: filters.bathrooms === "Any" ? undefined : filters.bathrooms,
+    amenities: filters.amenities.length ? filters.amenities : undefined,
   });
   const { isPending, isAuthenticated } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
@@ -71,6 +112,17 @@ function PropertiesPage() {
     setPage(1);
   };
 
+  // Filter change handler
+  const handleFilterChange = (nextFilters: PropertyFilters) => {
+    setFilters(nextFilters);
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+  };
+
   return (
     <main className="pt-24  min-h-screen">
       <LandingNavbar />
@@ -95,6 +147,7 @@ function PropertiesPage() {
           <button
             className="flex items-center gap-2 px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
             type="button"
+            onClick={() => setIsFilterOpen(true)}
           >
             <ListFilter size={17} />
             Filters
@@ -149,6 +202,19 @@ function PropertiesPage() {
           )}
         </div>
       </section>
+
+      <PropertyFilter
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        minPrice={filters.minPrice}
+        maxPrice={filters.maxPrice}
+        propertyType={filters.propertyType}
+        bedrooms={filters.bedrooms}
+        bathrooms={filters.bathrooms}
+        amenities={filters.amenities}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+      />
 
       <FavoriteAuthModal
         isOpen={isAuthModalOpen}

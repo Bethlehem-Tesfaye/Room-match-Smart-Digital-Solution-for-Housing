@@ -1,11 +1,11 @@
 import {
-  Building2,
   ChevronDown,
   Heart,
   LayoutDashboard,
   LogIn,
   LogOut,
   MessageCircle,
+  Search,
   Settings,
   User,
   Users,
@@ -20,7 +20,7 @@ import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { palette } from "../../../theme/palette";
 
 const navItems = [
-  { to: "/properties", label: "Browse Property", icon: Building2 },
+  { to: "/properties", label: "Find Place", icon: Search },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
   { to: "/find-roommate", label: "Find Roommate", icon: Users },
   { to: "/message", label: "Message", icon: MessageCircle },

@@ -3,13 +3,9 @@ import { browsePropertyQuerySchema } from "../validation.js";
 
 export const listBrowserPropertiesHandler = async (req, res, next) => {
   try {
-    const { page, limit, search } = browsePropertyQuerySchema.parse(req.query);
+    const query = browsePropertyQuerySchema.parse(req.query);
     const result = await browserService.listBrowserProperties(
-      {
-        page,
-        limit,
-        search
-      },
+      query,
       req.userId ?? null
     );
 

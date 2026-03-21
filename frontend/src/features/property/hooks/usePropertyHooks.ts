@@ -78,12 +78,33 @@ const getErrorMessage = (error: unknown): string => {
 export const useBrowserProperties = (
   query: BrowsePropertiesQuery = {},
 ): UseQueryResult<BrowserPropertiesResponse, Error> => {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 20;
-  const search = query.search ?? "";
+  const {
+    page = 1,
+    limit = 20,
+    search = "",
+    minPrice,
+    maxPrice,
+    propertyType,
+    bedrooms,
+    bathrooms,
+    amenities,
+  } = query;
+  const normalizedAmenities =
+    amenities && amenities.length ? [...amenities].sort() : undefined;
 
   return useQuery<BrowserPropertiesResponse, Error>({
-    queryKey: propertyQueryKeys.browserList({ page, limit, search }),
+    queryKey: propertyQueryKeys.browserList({
+      page,
+      limit,
+      search,
+      minPrice,
+      maxPrice,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      amenities: normalizedAmenities,
+    }),
+
     queryFn: async () => {
       const res = await api.get<BrowserPropertiesResponse>(
         "/api/properties/browser",
@@ -92,9 +113,20 @@ export const useBrowserProperties = (
             page,
             limit,
             ...(search ? { search } : {}),
+            ...(minPrice !== undefined ? { minPrice } : {}),
+            ...(maxPrice !== undefined ? { maxPrice } : {}),
+            ...(propertyType ? { propertyType } : {}),
+            ...(bedrooms !== undefined ? { bedrooms: String(bedrooms) } : {}),
+            ...(bathrooms !== undefined
+              ? { bathrooms: String(bathrooms) }
+              : {}),
+            ...(normalizedAmenities?.length
+              ? { amenities: normalizedAmenities.join(",") }
+              : {}),
           },
         },
       );
+
       return res.data;
     },
   });
