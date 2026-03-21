@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  KeyRound,
-  LogOut,
-  Moon,
-  Monitor,
-  Sun,
-} from "lucide-react";
+import { AlertTriangle, KeyRound, LogOut, Moon, Sun } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useLogout } from "../../auth/hooks/useLogout";
@@ -38,7 +31,6 @@ function SettingsPanel() {
   }> = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: Monitor },
   ];
 
   const isPasswordMutationPending =

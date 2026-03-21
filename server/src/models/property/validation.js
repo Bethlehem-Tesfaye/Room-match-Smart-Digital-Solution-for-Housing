@@ -9,6 +9,22 @@ const propertyTypeEnum = z.enum([
 ]);
 
 const propertyStatusEnum = z.enum(["Active", "Rented", "Inactive"]);
+const browserCountFilterEnum = z.enum(["1", "2", "3", "4", "5+"]);
+
+const amenitiesQuerySchema = z
+  .union([z.string().trim(), z.array(z.string().trim())])
+  .optional()
+  .transform((value) => {
+    if (value === undefined) return undefined;
+
+    const normalizedAmenities = (
+      Array.isArray(value) ? value : value.split(",")
+    )
+      .map((amenity) => amenity.trim())
+      .filter(Boolean);
+
+    return normalizedAmenities.length ? normalizedAmenities : undefined;
+  });
 
 const imageInputSchema = z
   .object({
@@ -21,11 +37,26 @@ export const propertyParamsSchema = z.object({
   id: z.string().trim().min(1, "Property id is required")
 });
 
-export const browsePropertyQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).optional().default(1),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
-  search: z.string().trim().max(100).optional().default("")
-});
+export const browsePropertyQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).optional().default(1),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+    search: z.string().trim().max(100).optional().default(""),
+    minPrice: z.coerce.number().nonnegative().optional(),
+    maxPrice: z.coerce.number().nonnegative().optional(),
+    propertyType: propertyTypeEnum.optional(),
+    bedrooms: browserCountFilterEnum.optional(),
+    bathrooms: browserCountFilterEnum.optional(),
+    amenities: amenitiesQuerySchema
+  })
+  .refine(
+    ({ minPrice, maxPrice }) =>
+      minPrice === undefined || maxPrice === undefined || minPrice <= maxPrice,
+    {
+      message: "Minimum price cannot exceed maximum price",
+      path: ["minPrice"]
+    }
+  );
 
 export const createPropertySchema = z.object({
   title: z.string().trim().min(3).max(200),

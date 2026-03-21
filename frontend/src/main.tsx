@@ -4,19 +4,9 @@ import "./index.css";
 import App from "./App.tsx";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/reactQuery";
+import { initTheme } from "./theme/initTheme";
 
-const storedTheme = localStorage.getItem("roommatch-theme");
-const systemPrefersDark = window.matchMedia(
-  "(prefers-color-scheme: dark)",
-).matches;
-const shouldUseDark =
-  storedTheme === "dark" || (storedTheme !== "light" && systemPrefersDark);
-
-if (shouldUseDark) {
-  document.documentElement.classList.add("dark");
-} else {
-  document.documentElement.classList.remove("dark");
-}
+initTheme();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

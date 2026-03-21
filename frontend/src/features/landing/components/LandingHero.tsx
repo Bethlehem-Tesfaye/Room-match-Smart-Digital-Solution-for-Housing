@@ -20,7 +20,7 @@ function LandingHero({
 
   return (
     <section
-      className="relative overflow-hidden px-4 py-18 md:py-24 -mt-6"
+      className="relative overflow-hidden px-4 py-18 md:py-24 -mt-10"
       style={{
         background: `linear-gradient(135deg, ${palette.deep} 0%, ${palette.purple} 55%, ${palette.softPurple} 100%)`,
       }}

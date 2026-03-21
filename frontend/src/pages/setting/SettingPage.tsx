@@ -8,7 +8,7 @@ function SettingPage() {
       <LandingNavbar />
 
       <section
-        className="-mt-6 px-4 py-12"
+        className="-mt-10 px-4 py-12"
         style={{ backgroundColor: palette.pageBg }}
       >
         <div className="mx-auto max-w-6xl">

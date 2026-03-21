@@ -1,35 +1,135 @@
+import mongoose from "mongoose";
 import CustomError from "../../../lib/errors.js";
-import { Property, SavedProperty } from "../schema.js";
+import { Property, PropertyAmenity, SavedProperty } from "../schema.js";
 import {
   buildPropertyResponse,
   toObjectId
 } from "../../../utils/property.creator.utils.js";
 
+const { Types } = mongoose;
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const buildCountFilter = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (value === "5+") return { $gte: 5 };
+
+  const parsedValue = typeof value === "number" ? value : Number(value);
+  return Number.isNaN(parsedValue) ? undefined : parsedValue;
+};
+
+const resolveAmenityPropertyIds = async (amenities = []) => {
+  if (!amenities.length) return [];
+
+  const uniqueAmenityIds = [
+    ...new Set(amenities.map((amenity) => amenity.trim()))
+  ];
+
+  if (
+    uniqueAmenityIds.some((amenityId) => !Types.ObjectId.isValid(amenityId))
+  ) {
+    throw new CustomError("One or more amenities are invalid", 400);
+  }
+
+  const amenityObjectIds = uniqueAmenityIds.map(
+    (amenityId) => new Types.ObjectId(amenityId)
+  );
+
+  const propertyAmenityMatches = await PropertyAmenity.aggregate([
+    {
+      $match: {
+        amenityId: { $in: amenityObjectIds },
+        deletedAt: null
+      }
+    },
+    {
+      $group: {
+        _id: "$propertyId",
+        matchedAmenityIds: { $addToSet: "$amenityId" }
+      }
+    },
+    {
+      $match: {
+        $expr: {
+          $eq: [{ $size: "$matchedAmenityIds" }, amenityObjectIds.length]
+        }
+      }
+    }
+  ]);
+
+  return propertyAmenityMatches.map((propertyAmenity) => propertyAmenity._id);
+};
 
 export const listBrowserProperties = async (
-  { page = 1, limit = 20, search = "" } = {},
+  {
+    page = 1,
+    limit = 20,
+    search = "",
+    minPrice,
+    maxPrice,
+    propertyType,
+    bedrooms,
+    bathrooms,
+    amenities
+  } = {},
   userId = null
 ) => {
   const normalizedSearch = search.trim();
 
   const query = {
-    deletedAt: null,
-    ...(normalizedSearch
-      ? {
-          $or: [
-            { title: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
-            { city: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
-            {
-              address: {
-                $regex: escapeRegex(normalizedSearch),
-                $options: "i"
-              }
-            }
-          ]
-        }
-      : {})
+    deletedAt: null
   };
+
+  if (normalizedSearch) {
+    query.$or = [
+      { title: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+      { city: { $regex: escapeRegex(normalizedSearch), $options: "i" } },
+      {
+        address: {
+          $regex: escapeRegex(normalizedSearch),
+          $options: "i"
+        }
+      }
+    ];
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    query.price = {};
+    if (minPrice !== undefined) query.price.$gte = Number(minPrice);
+    if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
+  }
+
+  if (propertyType) {
+    query.propertyType = propertyType;
+  }
+
+  const bedroomFilter = buildCountFilter(bedrooms);
+  if (bedroomFilter !== undefined) {
+    query.numberOfBedrooms = bedroomFilter;
+  }
+
+  const bathroomFilter = buildCountFilter(bathrooms);
+  if (bathroomFilter !== undefined) {
+    query.numberOfBathrooms = bathroomFilter;
+  }
+
+  if (amenities?.length) {
+    const matchingPropertyIds = await resolveAmenityPropertyIds(amenities);
+
+    if (!matchingPropertyIds.length) {
+      return {
+        properties: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: page > 1
+        }
+      };
+    }
+
+    query._id = { $in: matchingPropertyIds };
+  }
 
   const skip = (page - 1) * limit;
 

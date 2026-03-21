@@ -6,6 +6,7 @@ export type PropertyType =
   | "SharedRoom";
 
 export type PropertyStatus = "Active" | "Rented" | "Inactive";
+export type PropertyCountFilter = "Any" | "1" | "2" | "3" | "4" | "5+";
 
 export interface PropertyImageInput {
   imageUrl?: string;
@@ -91,6 +92,13 @@ export interface BrowsePropertiesQuery {
   page?: number;
   limit?: number;
   search?: string;
+
+  minPrice?: number;
+  maxPrice?: number;
+  propertyType?: string;
+  bedrooms?: Exclude<PropertyCountFilter, "Any"> | number;
+  bathrooms?: Exclude<PropertyCountFilter, "Any"> | number;
+  amenities?: string[];
 }
 
 export interface PaginationMeta {

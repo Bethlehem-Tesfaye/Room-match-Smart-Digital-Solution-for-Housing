@@ -1,11 +1,11 @@
 import {
-  Building2,
   ChevronDown,
   Heart,
   LayoutDashboard,
   LogIn,
   LogOut,
   MessageCircle,
+  Search,
   Settings,
   User,
   Users,
@@ -20,7 +20,7 @@ import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { palette } from "../../../theme/palette";
 
 const navItems = [
-  { to: "/properties", label: "Browse Property", icon: Building2 },
+  { to: "/properties", label: "Find Place", icon: Search },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
   { to: "/find-roommate", label: "Find Roommate", icon: Users },
   { to: "/message", label: "Message", icon: MessageCircle },
@@ -62,10 +62,10 @@ function LandingNavbar() {
 
   return (
     <header
-      className="fixed left-0 right-0 top-0 z-50 border-b bg-white/95 px-4 backdrop-blur "
+      className="fixed left-0 right-0 top-0 z-500 border-b bg-white/95 px-4 backdrop-blur "
       style={{ backgroundColor: palette.skeleton }}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-6 py-4">
+      <div className="mx-auto flex max-w-6xl items-center gap-6 py-1">
         <Link to="/" aria-label="Go to home" className="cursor-pointer">
           <Logo className="flex-row gap-2" />
         </Link>
@@ -137,7 +137,7 @@ function LandingNavbar() {
               {isDropdownOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-900"
+                  className="absolute right-0 top-12 z-500 w-80 overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-900"
                   style={{ backgroundColor: palette.pageBg }}
                 >
                   <div

@@ -43,7 +43,7 @@ function SavedPropertiesPage() {
     <main className="flex min-h-screen flex-col pt-24">
       <LandingNavbar />
       <div
-        className="-mt-6 flex-1 px-4 py-12"
+        className="-mt-10 flex-1 px-4 py-12"
         style={{ backgroundColor: palette.pageBg }}
       >
         <div className="mx-auto flex h-full w-full max-w-6xl flex-col">
