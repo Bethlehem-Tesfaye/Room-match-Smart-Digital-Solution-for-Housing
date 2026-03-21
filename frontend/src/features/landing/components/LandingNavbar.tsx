@@ -65,7 +65,7 @@ function LandingNavbar() {
       className="fixed left-0 right-0 top-0 z-50 border-b bg-white/95 px-4 backdrop-blur "
       style={{ backgroundColor: palette.skeleton }}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-6 py-4">
+      <div className="mx-auto flex max-w-6xl items-center gap-6 py-1">
         <Link to="/" aria-label="Go to home" className="cursor-pointer">
           <Logo className="flex-row gap-2" />
         </Link>
