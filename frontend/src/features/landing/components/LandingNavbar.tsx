@@ -137,7 +137,7 @@ function LandingNavbar() {
               {isDropdownOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-12 z-500 w-80 overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-900"
+                  className="absolute right-0 top-12 z-100 w-80 overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-900"
                   style={{ backgroundColor: palette.pageBg }}
                 >
                   <div

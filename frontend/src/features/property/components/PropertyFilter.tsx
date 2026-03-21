@@ -1,8 +1,5 @@
 import { useAmenities } from "../hooks/usePropertyHooks";
-import type {
-  PropertyCountFilter,
-  PropertyType,
-} from "../types/type";
+import type { PropertyCountFilter, PropertyType } from "../types/type";
 
 type PropertyTypeFilter = PropertyType | "All Types";
 type PropertyFilters = {
@@ -152,13 +149,13 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/30 z-50 transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         onClick={onClose}
         aria-hidden="true"
       />
       {/* Drawer */}
       <aside
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-lg z-50 transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-lg z-700 transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
         style={{ borderTopLeftRadius: 16, borderBottomLeftRadius: 16 }}
         tabIndex={-1}
         aria-modal="true"
@@ -167,7 +164,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-bold">Filters</h2>
           <button
-            className="text-gray-500 hover:text-gray-800 text-2xl font-bold px-2 py-1 rounded-full focus:outline-none"
+            className="text-gray-500 cursor-pointer hover:text-gray-800 text-2xl font-bold px-2 py-1 rounded-full focus:outline-none"
             onClick={onClose}
             aria-label="Close filter panel"
           >
@@ -180,14 +177,14 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
             <label className="block text-sm font-medium mb-2">
               Price Range: ${minPrice} - ${maxPrice}
             </label>
-            <div className="flex gap-2 items-center mb-2">
+            <div className="flex gap-2  cursor-pointer items-center mb-2">
               <input
                 type="number"
                 min={MIN_PRICE}
                 max={maxPrice}
                 value={minPrice}
                 onChange={(e) => handlePriceChange(e, "min")}
-                className="w-24 border rounded px-2 py-1 text-sm"
+                className="w-24 border  cursor-pointer rounded px-2 py-1 text-sm"
               />
               <span>-</span>
               <input
@@ -196,7 +193,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
                 max={MAX_PRICE}
                 value={maxPrice}
                 onChange={(e) => handlePriceChange(e, "max")}
-                className="w-24 border rounded px-2 py-1 text-sm"
+                className="w-24 border rounded  cursor-pointer px-2 py-1 text-sm"
               />
             </div>
             <input
@@ -205,7 +202,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
               max={MAX_PRICE}
               value={minPrice}
               onChange={(e) => handlePriceChange(e, "min")}
-              className="w-full accent-purple-600 mb-1"
+              className="w-full accent-purple-600 cursor-pointer mb-1"
             />
             <input
               type="range"
@@ -213,7 +210,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
               max={MAX_PRICE}
               value={maxPrice}
               onChange={(e) => handlePriceChange(e, "max")}
-              className="w-full accent-purple-600"
+              className="w-full accent cursor-pointer-purple-600"
             />
           </div>
 
@@ -223,7 +220,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
               Property Type
             </label>
             <select
-              className="w-full border rounded px-3 py-2 bg-gray-50 text-sm"
+              className="w-full border rounded cursor-pointer px-3 py-2 bg-gray-50 text-sm"
               value={propertyType}
               onChange={handleTypeChange}
             >
@@ -239,7 +236,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">Bedrooms</label>
             <select
-              className="w-full border rounded px-3 py-2 bg-gray-50 text-sm"
+              className="w-full border rounded cursor-pointer px-3 py-2 bg-gray-50 text-sm"
               value={bedrooms}
               onChange={handleBedroomsChange}
             >
@@ -253,9 +250,11 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
 
           {/* Bathrooms */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Bathrooms</label>
+            <label className="block text-sm cursor-pointer font-medium mb-2">
+              Bathrooms
+            </label>
             <select
-              className="w-full border rounded px-3 py-2 bg-gray-50 text-sm"
+              className="w-full cursor-pointer border rounded px-3 py-2 bg-gray-50 text-sm"
               value={bathrooms}
               onChange={handleBathroomsChange}
             >
@@ -272,14 +271,18 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
             <label className="block text-sm font-medium mb-2">Amenities</label>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               {amenitiesLoading ? (
-                <span className="col-span-2 text-gray-400">
+                <span className="col-span-2 cursor-pointer text-gray-400">
                   Loading amenities...
                 </span>
               ) : amenitiesList && amenitiesList.length > 0 ? (
                 amenitiesList.map((amenity) => (
-                  <label key={amenity._id} className="flex items-center gap-2">
+                  <label
+                    key={amenity._id}
+                    className="flex cursor-pointer items-center gap-2"
+                  >
                     <input
                       type="checkbox"
+                      className=" cursor-pointer"
                       checked={amenities.includes(amenity._id)}
                       onChange={() => handleAmenityChange(amenity._id)}
                     />
@@ -296,7 +299,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
 
           {/* Clear All Filters Button */}
           <button
-            className="w-full mt-2 py-2 rounded bg-gray-100 text-gray-700 font-semibold border border-gray-200 hover:bg-gray-200 transition"
+            className="w-full mt-2 py-2 cursor-pointer rounded bg-gray-100 text-gray-700 font-semibold border border-gray-200 hover:bg-gray-200 transition"
             onClick={onClear}
           >
             Clear All Filters

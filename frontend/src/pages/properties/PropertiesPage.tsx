@@ -159,7 +159,7 @@ function PropertiesPage() {
             />
           </div>
           <button
-            className="relative flex items-center gap-2 px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
+            className="relative cursor-pointer flex items-center gap-2 px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
             type="button"
             onClick={() => setIsFilterOpen(true)}
           >
