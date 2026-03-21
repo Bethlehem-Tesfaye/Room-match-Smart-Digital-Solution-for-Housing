@@ -42,6 +42,22 @@ const DEFAULT_FILTERS: PropertyFilters = {
 };
 
 function PropertiesPage() {
+  const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
+
+  // Count active filters
+  const activeFilterCount = (() => {
+    let count = 0;
+    if (
+      filters.minPrice > DEFAULT_MIN_PRICE ||
+      filters.maxPrice < DEFAULT_MAX_PRICE
+    )
+      count++;
+    if (filters.propertyType !== "All Types") count++;
+    if (filters.bedrooms !== "Any") count++;
+    if (filters.bathrooms !== "Any") count++;
+    if (filters.amenities.length > 0) count++;
+    return count;
+  })();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -49,8 +65,6 @@ function PropertiesPage() {
   // Search
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useBrowserProperties({
     page,
@@ -145,12 +159,17 @@ function PropertiesPage() {
             />
           </div>
           <button
-            className="flex items-center gap-2 px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
+            className="relative flex items-center gap-2 px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
             type="button"
             onClick={() => setIsFilterOpen(true)}
           >
             <ListFilter size={17} />
             Filters
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
