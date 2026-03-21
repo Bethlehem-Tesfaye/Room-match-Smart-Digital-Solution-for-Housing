@@ -52,8 +52,8 @@ function LandingAudienceCards() {
             {" "}
             <button
               type="button"
-              className="mt-6 cursor-pointer inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: palette.purple }}
+              className="mt-6 cursor-pointer inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
+              style={{ backgroundColor: palette.purple, color: palette.pageBg }}
             >
               Start Searching <ArrowRight size={16} />
             </button>{" "}
@@ -100,16 +100,18 @@ function LandingAudienceCards() {
               <CheckCircle2 size={16} /> Easy property management
             </li>
           </ul>
-          <button
-            type="button"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
-            style={{
-              backgroundColor: palette.lightPurple,
-              color: palette.deep,
-            }}
-          >
-            List Your Property <ArrowRight size={16} />
-          </button>
+          <Link to="/dashboard">
+            <button
+              type="button"
+              className="mt-6 inline-flex items-center gap-2 r cursor-pointer ounded-lg px-4 py-2 text-sm font-semibold"
+              style={{
+                backgroundColor: palette.lightPurple,
+                color: palette.deep,
+              }}
+            >
+              List Your Property <ArrowRight size={16} />
+            </button>
+          </Link>
         </article>
       </div>
     </section>

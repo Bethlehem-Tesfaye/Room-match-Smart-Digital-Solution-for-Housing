@@ -2,14 +2,16 @@ import {
   Building2,
   ChevronDown,
   Heart,
+  LayoutDashboard,
   LogIn,
   LogOut,
   MessageCircle,
-  PlusSquare,
   Settings,
   User,
+  Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import useIsDark from "../../../lib/useTheme";
 import { Link, NavLink } from "react-router-dom";
 import Logo from "../../../components/logo";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
@@ -20,8 +22,9 @@ import { palette } from "../../../theme/palette";
 const navItems = [
   { to: "/properties", label: "Browse Property", icon: Building2 },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
+  { to: "/find-roommate", label: "Find Roommate", icon: Users },
   { to: "/message", label: "Message", icon: MessageCircle },
-  { to: "/dashboard", label: "Add Property", icon: PlusSquare },
+  { to: "/dashboard", label: "My Listings", icon: LayoutDashboard },
 ];
 
 function LandingNavbar() {
@@ -34,6 +37,7 @@ function LandingNavbar() {
   const logoutMutation = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const isDark = useIsDark();
 
   const profileName = profile?.fullName?.trim() || "My Profile";
   const profilePictureUrl = profile?.profilePictureUrl || null;
@@ -59,7 +63,7 @@ function LandingNavbar() {
   return (
     <header
       className="fixed left-0 right-0 top-0 z-50 border-b bg-white/95 px-4 backdrop-blur "
-      style={{ backgroundColor: palette.sectionBg }}
+      style={{ backgroundColor: palette.skeleton }}
     >
       <div className="mx-auto flex max-w-6xl items-center gap-6 py-4">
         <Link to="/" aria-label="Go to home" className="cursor-pointer">
@@ -75,14 +79,14 @@ function LandingNavbar() {
                 key={item.to}
                 to={item.to}
                 end={item.to === "/properties"}
-                className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
+                className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors"
                 style={({ isActive }) => ({
                   color: isActive ? palette.purple : palette.deep,
                 })}
               >
                 {({ isActive }) => (
                   <>
-                    <Icon size={16} style={{ color: palette.softPurple }} />
+                    <Icon size={13} style={{ color: palette.softPurple }} />
                     {item.label}
                     <span
                       className={`absolute -bottom-0.5 left-0 h-0.5 w-full origin-left bg-current transition-transform duration-300 ${
@@ -142,7 +146,7 @@ function LandingNavbar() {
                   >
                     <p
                       className="truncate text-md leading-none"
-                      style={{ color: palette.lightPurple }}
+                      style={{ color: palette.deep }}
                     >
                       {profileName}
                     </p>
@@ -157,8 +161,10 @@ function LandingNavbar() {
                   <Link
                     to="/profile"
                     role="menuitem"
-                    className="flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md hover:bg-gray-50"
-                    style={{ color: "#64748B" }}
+                    className={`flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md ${
+                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                    }`}
+                    style={{ color: palette.deep }}
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <User size={16} />
@@ -168,8 +174,10 @@ function LandingNavbar() {
                   <Link
                     to="/setting"
                     role="menuitem"
-                    className="flex w-full items-center gap-3  px-2 py-2 cursor-pointer  text-left text-md hover:bg-gray-50"
-                    style={{ color: "#64748B", borderColor: "#E4E4E7" }}
+                    className={`flex w-full items-center gap-3  px-2 py-2 cursor-pointer  text-left text-md ${
+                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                    }`}
+                    style={{ color: palette.deep, borderColor: "#E4E4E7" }}
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <Settings size={16} />
@@ -179,7 +187,7 @@ function LandingNavbar() {
                   <button
                     type="button"
                     role="menuitem"
-                    className="flex w-full items-center gap-3 border-t px-3 py-3 cursor-pointer text-left text-md hover:bg-red-50"
+                    className="flex w-full items-center gap-3 border-t px-3 py-3 cursor-pointer text-left text-md hover:bg-red-200"
                     style={{ color: "#E11D48", borderColor: "#E4E4E7" }}
                     onClick={() => {
                       setIsDropdownOpen(false);

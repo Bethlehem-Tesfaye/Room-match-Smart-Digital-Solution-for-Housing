@@ -74,7 +74,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
         <Link
           to="/properties/create"
           className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white"
-          style={{ backgroundColor: palette.purple }}
+          style={{ backgroundColor: palette.purple, color: palette.pageBg }}
         >
           <Plus size={16} />
           Add Property

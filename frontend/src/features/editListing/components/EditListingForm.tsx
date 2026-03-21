@@ -916,7 +916,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
             }}
             disabled={updateMutation.isPending}
             className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            style={{ backgroundColor: palette.purple }}
+            style={{ backgroundColor: palette.purple, color: palette.pageBg }}
           >
             <CheckCircle2 size={16} />
             {updateMutation.isPending ? "Saving..." : "Save Changes"}

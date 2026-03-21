@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import useIsDark from "../../../lib/useTheme";
 import Logo from "../../../components/logo";
 import { palette } from "../../../theme/palette";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
@@ -37,6 +38,8 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
   const logoutMutation = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const isDark = useIsDark();
 
   const profileName = profile?.fullName?.trim() || "My Profile";
   const profileEmail = user?.email || "";
@@ -171,7 +174,9 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               <Link
                 to="/profile"
                 role="menuitem"
-                className="flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md hover:bg-gray-50"
+                className={`flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md hover:bg-gray-50 ${
+                  isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                }`}
                 style={{ color: "#64748B" }}
                 onClick={() => setIsDropdownOpen(false)}
               >
@@ -182,7 +187,9 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               <Link
                 to="/setting"
                 role="menuitem"
-                className="flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md hover:bg-gray-50"
+                className={`flex w-full items-center gap-3 px-2 py-2 cursor-pointer text-left text-md ${
+                  isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                }`}
                 style={{ color: "#64748B", borderColor: "#E4E4E7" }}
                 onClick={() => setIsDropdownOpen(false)}
               >
@@ -193,7 +200,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full items-center gap-3 border-t px-3 py-3 cursor-pointer text-left text-md hover:bg-red-50"
+                className="flex w-full items-center gap-3 border-t px-3 py-3 cursor-pointer text-left text-md hover:bg-red-200"
                 style={{ color: "#E11D48", borderColor: "#E4E4E7" }}
                 onClick={() => {
                   setIsDropdownOpen(false);

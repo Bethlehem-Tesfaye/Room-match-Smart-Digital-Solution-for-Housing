@@ -1,5 +1,6 @@
 import { MessageCircle, Search, ShieldCheck, Users } from "lucide-react";
 import { palette } from "../../../theme/palette";
+import { motion } from "framer-motion";
 
 const features = [
   {
@@ -34,7 +35,13 @@ function LandingWhyChoose() {
       className="px-4 py-16 md:py-20"
       style={{ backgroundColor: palette.sectionBg }}
     >
-      <div className="mx-auto max-w-6xl">
+      <motion.div
+        className="mx-auto max-w-6xl"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        viewport={{ once: true, amount: 0.3 }}
+      >
         <div className="text-center">
           <h2
             className="text-3xl font-extrabold"
@@ -52,12 +59,16 @@ function LandingWhyChoose() {
         </div>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => {
+          {features.map((feature, idx) => {
             const Icon = feature.icon;
 
             return (
-              <article
+              <motion.article
                 key={feature.title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
                 className="rounded-2xl border p-5 shadow-sm"
                 style={{
                   backgroundColor: palette.cardBg,
@@ -82,11 +93,11 @@ function LandingWhyChoose() {
                 <p className="mt-2 text-sm" style={{ color: palette.purple }}>
                   {feature.description}
                 </p>
-              </article>
+              </motion.article>
             );
           })}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
