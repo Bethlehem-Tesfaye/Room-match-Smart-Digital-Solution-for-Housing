@@ -5,10 +5,11 @@ export type DashboardTabKey =
   | "dashboard"
   | "my-properties"
   | "messages"
-  | "add-listing";
+  | "add-listing"
+  | null;
 
 export interface DashboardTabItem {
-  key: DashboardTabKey;
+  key: DashboardTabKey | null;
   label: string;
   icon: LucideIcon;
 }

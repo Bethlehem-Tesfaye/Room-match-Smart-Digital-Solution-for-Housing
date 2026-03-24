@@ -86,7 +86,7 @@ function PropertyPreviewPage() {
       <DashboardNavbar activeTab={"dashboard"} />
 
       <section
-        className="px-4 py-8"
+        className="flex-1 px-4 py-10 pt-24"
         style={{ backgroundColor: palette.sectionBg }}
       >
         <div className="mx-auto max-w-6xl">

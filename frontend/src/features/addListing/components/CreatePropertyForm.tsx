@@ -19,10 +19,12 @@ import type {
   CreateListingPayload,
   SetAddListingField,
 } from "../types/types";
+import { useNavigate } from "react-router-dom";
 
 function CreatePropertyForm() {
   const [step, setStep] = useState<AddListingStep>(1);
   const [draft, setDraft] = useState<AddListingDraft>(initialAddListingDraft);
+  const navigate = useNavigate();
   const [attemptedSteps, setAttemptedSteps] = useState<
     Record<AddListingStep, boolean>
   >({
@@ -230,6 +232,7 @@ function CreatePropertyForm() {
     try {
       await createProperty.mutateAsync(payload);
       toast.success("Property created successfully.");
+      navigate("/dashboard/my-properties");
       draft.images.forEach((image) => {
         URL.revokeObjectURL(image.previewUrl);
       });
@@ -289,7 +292,7 @@ function CreatePropertyForm() {
   return (
     <section className="mx-auto min-h-screen max-w-4xl px-4 py-10">
       <div className="mb-6">
-        <h1 className="text-5xl font-extrabold" style={{ color: palette.deep }}>
+        <h1 className="text-3xl font-extrabold" style={{ color: palette.deep }}>
           List Your Property
         </h1>
         <p className="mt-2 text-lg" style={{ color: palette.softPurple }}>

@@ -13,7 +13,7 @@ function MyPropertiesPage() {
     >
       <DashboardNavbar activeTab="my-properties" />
 
-      <main className="flex-1 px-4 py-10">
+      <main className="flex-1 px-4 py-10 pt-24">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="flex items-start justify-between">
             <div>
