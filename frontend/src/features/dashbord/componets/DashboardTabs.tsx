@@ -13,7 +13,9 @@ interface DashboardTabsProps {
   activeTab: DashboardTabKey;
 }
 
-const tabLabels: Record<DashboardTabKey, string> = {
+type NonNullDashboardTabKey = Exclude<DashboardTabKey, null>;
+
+const tabLabels: Record<NonNullDashboardTabKey, string> = {
   dashboard: "Dashboard",
   "my-properties": "My Properties",
   messages: "Messages",
@@ -27,7 +29,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
     useMyPropertiesOverview({ page: 1, limit: 4 });
 
   const activeLabel = useMemo(
-    () => tabLabels[activeTab] ?? "Dashboard",
+    () => tabLabels[activeTab as NonNullDashboardTabKey] ?? "Dashboard",
     [activeTab],
   );
 
