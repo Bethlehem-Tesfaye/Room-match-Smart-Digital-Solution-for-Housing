@@ -6,7 +6,9 @@ function AddListingsPage() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: palette.pageBg }}>
       <DashboardNavbar activeTab="add-listing" />
-      <CreatePropertyForm />
+      <section className="flex-1 px-4 py-10 pt-16">
+        <CreatePropertyForm />
+      </section>
     </main>
   );
 }

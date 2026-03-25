@@ -19,6 +19,8 @@ import SettingPage from "../pages/setting/SettingPage";
 import AddListingsPage from "../pages/addListing/AddListingsPage";
 import EditListingPage from "../pages/editListing/EditListingPage";
 import PropertyPreviewPage from "../pages/properties/PropertyPreviewPage";
+import ProfilePageDashboard from "../pages/profile/ProfilePageDashboard";
+import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
 
 export const router = createBrowserRouter([
   {
@@ -95,8 +97,16 @@ export const router = createBrowserRouter([
         element: <ProfilePage />,
       },
       {
+        path: "/dashboard/profile",
+        element: <ProfilePageDashboard />,
+      },
+      {
         path: "/setting",
         element: <SettingPage />,
+      },
+      {
+        path: "/dashboard/setting",
+        element: <SettingPageDashboard />,
       },
       {
         path: "/properties/preview/:id",

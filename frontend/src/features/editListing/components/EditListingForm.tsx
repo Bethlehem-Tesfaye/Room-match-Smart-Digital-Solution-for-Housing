@@ -306,7 +306,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     try {
       await updateMutation.mutateAsync({ propertyId, payload });
       toast.success("Listing updated successfully.");
-      navigate("/dashboard/my-properties");
+      // navigate("/dashboard/my-properties");
     } catch (submitError) {
       const message =
         submitError instanceof Error
@@ -318,7 +318,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
 
   if (isLoading || !draft) {
     return (
-      <section className="mx-auto max-w-5xl px-4 py-10">
+      <section className="mx-auto max-w-5xl py-10 pt-24 ">
         <div className="mb-6 space-y-2">
           <div className="skeleton h-10 w-64 rounded" />
           <div className="skeleton h-6 w-96 rounded" />
@@ -401,7 +401,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   }
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10">
+    <section className="mx-auto max-w-5xl px-4 py-24">
       <Link
         to="/dashboard/my-properties"
         className="mb-4 inline-flex items-center gap-2 text-sm font-semibold"
@@ -411,7 +411,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
         Back to Listings
       </Link>
       <div className="mb-6">
-        <h1 className="text-4xl font-extrabold" style={{ color: palette.deep }}>
+        <h1 className="text-2xl font-extrabold" style={{ color: palette.deep }}>
           Edit Listing
         </h1>
         <p className="mt-2 text-lg" style={{ color: palette.softPurple }}>

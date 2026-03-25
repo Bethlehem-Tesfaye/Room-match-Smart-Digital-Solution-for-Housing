@@ -73,3 +73,27 @@ html.dark select {
 .skeleton {
   background-color: var(--palette-skeleton) !important;
 }
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--palette-light-purple);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--palette-deep); /* darker purple */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--palette-purple) transparent;
+}
