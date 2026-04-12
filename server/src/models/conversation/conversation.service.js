@@ -13,6 +13,10 @@ const toObjectId = (value, fieldName) => {
   return new Types.ObjectId(value);
 };
 
+const buildParticipantsKey = (userAId, userBId) => {
+  return [userAId.toString(), userBId.toString()].sort().join(":");
+};
+
 export const getOrCreateConversation = async ({
   userA,
   userB,
@@ -35,7 +39,17 @@ export const getOrCreateConversation = async ({
     ? toObjectId(propertyId, "property id")
     : null;
 
-  const existingConversation = await ConversationParticipant.aggregate([
+  const participantsKey = buildParticipantsKey(userAId, userBId);
+
+  const byParticipantsKey = await Conversation.findOne({
+    participantsKey
+  }).lean();
+
+  if (byParticipantsKey) {
+    return byParticipantsKey;
+  }
+
+  const legacyConversation = await ConversationParticipant.aggregate([
     {
       $match: {
         userId: { $in: [userAId, userBId] }
@@ -64,18 +78,20 @@ export const getOrCreateConversation = async ({
       $unwind: "$conversation"
     },
     {
-      $match: {
-        "conversation.propertyId": normalizedPropertyId,
-        "conversation.isRoommateChat": isRoommateChat
-      }
-    },
-    {
       $limit: 1
     }
   ]);
 
-  if (existingConversation.length > 0) {
-    return existingConversation[0].conversation;
+  if (legacyConversation.length > 0) {
+    await Conversation.updateOne(
+      { _id: legacyConversation[0].conversation._id },
+      { $set: { participantsKey } }
+    );
+
+    return {
+      ...legacyConversation[0].conversation,
+      participantsKey
+    };
   }
 
   const session = await mongoose.startSession();
@@ -86,6 +102,7 @@ export const getOrCreateConversation = async ({
     const [conversation] = await Conversation.create(
       [
         {
+          participantsKey,
           propertyId: normalizedPropertyId,
           isRoommateChat
         }
@@ -106,6 +123,22 @@ export const getOrCreateConversation = async ({
     return conversation;
   } catch (error) {
     await session.abortTransaction();
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      const existingConversation = await Conversation.findOne({
+        participantsKey
+      }).lean();
+
+      if (existingConversation) {
+        return existingConversation;
+      }
+    }
+
     throw error;
   } finally {
     session.endSession();
@@ -170,4 +203,46 @@ export const getConversationParticipants = async ({
     path: "userId",
     select: "_id name email image"
   });
+};
+
+export const getConversationReceiver = async ({ conversationId, senderId }) => {
+  const normalizedConversationId = toObjectId(
+    conversationId,
+    "conversation id"
+  );
+  const normalizedSenderId = toObjectId(senderId, "sender id");
+
+  const participants = await ConversationParticipant.find({
+    conversationId: normalizedConversationId
+  })
+    .select({ userId: 1 })
+    .lean();
+
+  if (!participants.length) {
+    throw new CustomError("Conversation not found", 404);
+  }
+
+  const senderIsParticipant = participants.some((participant) =>
+    participant.userId.equals(normalizedSenderId)
+  );
+
+  if (!senderIsParticipant) {
+    throw new CustomError(
+      "You are not allowed to access this conversation",
+      403
+    );
+  }
+
+  const receiverParticipant = participants.find(
+    (participant) => !participant.userId.equals(normalizedSenderId)
+  );
+
+  if (!receiverParticipant) {
+    throw new CustomError("Conversation participant not found", 404);
+  }
+
+  return {
+    conversationId: normalizedConversationId.toString(),
+    receiverId: receiverParticipant.userId.toString()
+  };
 };

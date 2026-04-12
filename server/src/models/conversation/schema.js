@@ -5,6 +5,12 @@ const { Schema, model } = mongoose;
 // CONVERSATION
 const conversationSchema = new Schema(
   {
+    participantsKey: {
+      type: String,
+      required: true,
+      index: true
+    },
+
     propertyId: {
       type: Schema.Types.ObjectId,
       ref: "Property",
@@ -60,6 +66,11 @@ const conversationParticipantSchema = new Schema(
 conversationParticipantSchema.index(
   { conversationId: 1, userId: 1 },
   { unique: true }
+);
+
+conversationSchema.index(
+  { participantsKey: 1 },
+  { unique: true, sparse: true }
 );
 
 export const Conversation = model("Conversation", conversationSchema);
