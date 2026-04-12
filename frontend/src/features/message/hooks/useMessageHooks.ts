@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -87,16 +88,21 @@ const normalizeConversationSummaries = (
   });
 };
 
-export const useConversations = (): UseQueryResult<ConversationSummary[], Error> => {
+export const useConversations = (): UseQueryResult<
+  ConversationSummary[],
+  Error
+> => {
   return useQuery<ConversationSummary[], Error>({
     queryKey: messageQueryKeys.conversationList,
     queryFn: async () => {
       try {
-        const response = await api.get<{ conversations: ConversationSummaryApiItem[] }>(
-          "/api/conversations",
-        );
+        const response = await api.get<{
+          conversations: ConversationSummaryApiItem[];
+        }>("/api/conversations");
 
-        return normalizeConversationSummaries(response.data.conversations || []);
+        return normalizeConversationSummaries(
+          response.data.conversations || [],
+        );
       } catch (error) {
         throw new Error(getErrorMessage(error));
       }
@@ -112,9 +118,9 @@ export const useConversationParticipants = (
     enabled: !!conversationId,
     queryFn: async () => {
       try {
-        const response = await api.get<{ participants: ConversationParticipant[] }>(
-          `/api/conversations/${conversationId}/participants`,
-        );
+        const response = await api.get<{
+          participants: ConversationParticipant[];
+        }>(`/api/conversations/${conversationId}/participants`);
 
         return response.data.participants || [];
       } catch (error) {
@@ -163,7 +169,18 @@ export const useConversationMessages = (conversationId?: string) => {
     if (!fetchedMessages) return;
 
     if (!cursor) {
-      setMessages(fetchedMessages);
+      setMessages((prev) => {
+        const byId = new Map<string, Message>();
+
+        [...fetchedMessages, ...prev].forEach((message) => {
+          byId.set(message._id, message);
+        });
+
+        return [...byId.values()].sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+      });
       setHasMore(fetchedMessages.length >= 20);
       return;
     }
@@ -240,7 +257,11 @@ export const useInitiateConversation = (): UseMutationResult<
   });
 };
 
-export const useSendHttpMessage = (): UseMutationResult<Message, Error, MessageSendInput> => {
+export const useSendHttpMessage = (): UseMutationResult<
+  Message,
+  Error,
+  MessageSendInput
+> => {
   return useMutation<Message, Error, MessageSendInput>({
     mutationFn: async ({ conversationId, content, messageType = "Text" }) => {
       if (!conversationId) {
@@ -270,7 +291,11 @@ export const useSendPropertyMessage = (): UseMutationResult<
   const initiateConversation = useInitiateConversation();
   const sendHttpMessage = useSendHttpMessage();
 
-  return useMutation<SendPropertyMessageResult, Error, SendPropertyMessageInput>({
+  return useMutation<
+    SendPropertyMessageResult,
+    Error,
+    SendPropertyMessageInput
+  >({
     mutationFn: async ({ ownerId, propertyId, content }) => {
       const conversation = await initiateConversation.mutateAsync({
         userId: ownerId,
@@ -384,11 +409,58 @@ export const useConversationPartner = (
   const participantsQuery = useConversationParticipants(conversationId);
   const participants = participantsQuery.data || [];
   const partner =
-    participants.find((participant) => participant.userId?._id !== currentUserId)
-      ?.userId || null;
+    participants.find(
+      (participant) => participant.userId?._id !== currentUserId,
+    )?.userId || null;
 
   return {
     ...participantsQuery,
     partner,
+  };
+};
+
+export const useConversationPartnersMap = (
+  conversationIds: string[],
+  currentUserId: string | undefined,
+) => {
+  const uniqueConversationIds = [...new Set(conversationIds)].filter(Boolean);
+
+  const participantQueries = useQueries({
+    queries: uniqueConversationIds.map((conversationId) => ({
+      queryKey: messageQueryKeys.participants(conversationId),
+      queryFn: async () => {
+        const response = await api.get<{
+          participants: ConversationParticipant[];
+        }>(`/api/conversations/${conversationId}/participants`);
+
+        return response.data.participants || [];
+      },
+      staleTime: 60_000,
+    })),
+  });
+
+  const partnerByConversationId: Record<
+    string,
+    ConversationParticipant["userId"]
+  > = {};
+
+  uniqueConversationIds.forEach((conversationId, index) => {
+    const query = participantQueries[index];
+    const participants = query.data || [];
+
+    const partner = participants.find(
+      (participant) => participant.userId?._id !== currentUserId,
+    )?.userId;
+
+    if (partner) {
+      partnerByConversationId[conversationId] = partner;
+    }
+  });
+
+  const isLoading = participantQueries.some((query) => query.isLoading);
+
+  return {
+    partnerByConversationId,
+    isLoading,
   };
 };

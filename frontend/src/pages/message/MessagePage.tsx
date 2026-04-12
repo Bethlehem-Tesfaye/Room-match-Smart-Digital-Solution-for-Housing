@@ -1,19 +1,37 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import ConversationList from "../../features/message/components/ConversationList";
 import MessageInbox from "../../features/message/components/MessageInbox";
 import {
   useConversationMessages,
-  useConversationPartner,
+  useConversationPartnersMap,
   useConversations,
   useMessageSocket,
   useSendHttpMessage,
 } from "../../features/message/hooks/useMessageHooks";
 import type { Message } from "../../features/message/types/type";
+import type { ConversationSummary } from "../../features/message/types/type";
+
+const normalizeConversationId = (value: unknown): string => {
+  if (typeof value === "string") return value;
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "_id" in value &&
+    typeof (value as { _id?: unknown })._id === "string"
+  ) {
+    return (value as { _id: string })._id;
+  }
+
+  return String(value ?? "");
+};
 
 function MessagePage() {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useCurrentUser();
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -23,7 +41,20 @@ function MessagePage() {
   const conversationsQuery = useConversations();
   const messagesState = useConversationMessages(selectedConversationId);
   const sendHttpMessage = useSendHttpMessage();
-  const { partner } = useConversationPartner(selectedConversationId, user?.id);
+
+  const conversations = useMemo(() => {
+    return conversationsQuery.data || [];
+  }, [conversationsQuery.data]);
+
+  const { partnerByConversationId, isLoading: isPartnersLoading } =
+    useConversationPartnersMap(
+      conversations.map((conversation) => conversation.conversationId),
+      user?.id,
+    );
+
+  const selectedPartner = selectedConversationId
+    ? partnerByConversationId[selectedConversationId]
+    : null;
 
   const setConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
@@ -31,18 +62,81 @@ function MessagePage() {
   };
 
   const getConversationLabel = (conversationId: string) => {
-    if (selectedConversationId === conversationId && partner) {
-      return partner.name || partner.email || partner._id;
+    const partner = partnerByConversationId[conversationId];
+    if (!partner) return undefined;
+    return partner.name || partner.email || undefined;
+  };
+
+  const resolveSenderName = (sender: Message["senderId"]) => {
+    if (typeof sender !== "string") {
+      return sender.name || sender.email || sender._id;
     }
 
-    return `Conversation ${conversationId.slice(-6)}`;
+    if (sender === user?.id) {
+      return "You";
+    }
+
+    if (selectedPartner && sender === selectedPartner._id) {
+      return selectedPartner.name || selectedPartner.email || undefined;
+    }
+
+    return undefined;
   };
 
   const upsertIncomingMessage = (incomingMessage: Message) => {
-    const incomingConversationId = incomingMessage.conversationId;
+    const incomingConversationId = normalizeConversationId(
+      incomingMessage.conversationId,
+    );
+    const currentConversationId = normalizeConversationId(
+      selectedConversationId,
+    );
 
-    if (incomingConversationId === selectedConversationId) {
+    if (
+      incomingConversationId &&
+      incomingConversationId === currentConversationId
+    ) {
       messagesState.appendMessage(incomingMessage);
+      messagesState.refetch();
+    } else if (!selectedConversationId && incomingConversationId) {
+      setConversation(incomingConversationId);
+    }
+
+    if (incomingConversationId) {
+      queryClient.setQueryData<ConversationSummary[]>(
+        ["messages", "conversations"],
+        (previous) => {
+          const previousList = previous || [];
+          const now = new Date().toISOString();
+
+          const existing = previousList.find(
+            (item) => item.conversationId === incomingConversationId,
+          );
+
+          const updatedList = existing
+            ? previousList.map((item) =>
+                item.conversationId === incomingConversationId
+                  ? { ...item, lastMessageAt: now }
+                  : item,
+              )
+            : [
+                {
+                  conversationId: incomingConversationId,
+                  lastMessageAt: now,
+                },
+                ...previousList,
+              ];
+
+          return [...updatedList].sort((a, b) => {
+            const aTime = a.lastMessageAt
+              ? new Date(a.lastMessageAt).getTime()
+              : 0;
+            const bTime = b.lastMessageAt
+              ? new Date(b.lastMessageAt).getTime()
+              : 0;
+            return bTime - aTime;
+          });
+        },
+      );
     }
 
     conversationsQuery.refetch();
@@ -86,35 +180,29 @@ function MessagePage() {
     }
   };
 
-  const conversations = useMemo(() => {
-    return conversationsQuery.data || [];
-  }, [conversationsQuery.data]);
-
   return (
-    <div>
-      <h1>Messages</h1>
-      <p>Realtime: {socketState.isConnected ? "connected" : "disconnected"}</p>
-
-      <div>
-        <div>
+    <div className="mx-auto h-[calc(100vh-120px)] max-w-7xl border border-gray-200 bg-white">
+      <div className="grid h-full grid-cols-1 md:grid-cols-[320px_1fr]">
+        <aside className="h-full">
           <ConversationList
             conversations={conversations}
             selectedConversationId={selectedConversationId}
+            isLoading={conversationsQuery.isLoading}
+            isPartnerLoading={isPartnersLoading}
             getConversationLabel={getConversationLabel}
             onSelectConversation={setConversation}
           />
-        </div>
+        </aside>
 
-        <div>
+        <section className="h-full">
           <MessageInbox
             conversationId={selectedConversationId}
             conversationLabel={
-              partner?.name ||
-              partner?.email ||
-              (selectedConversationId
-                ? `Conversation ${selectedConversationId.slice(-6)}`
-                : "Inbox")
+              selectedPartner?.name || selectedPartner?.email || "Inbox"
             }
+            currentUserId={user?.id}
+            resolveSenderName={resolveSenderName}
+            isPartnerLoading={isPartnersLoading}
             messages={messagesState.messages}
             isLoading={messagesState.isLoading || messagesState.isFetching}
             isSending={sendHttpMessage.isPending}
@@ -122,7 +210,11 @@ function MessagePage() {
             onLoadOlder={messagesState.loadOlder}
             onSendMessage={handleSendMessage}
           />
-        </div>
+        </section>
+      </div>
+
+      <div className="border-t border-gray-200 px-3 py-1 text-xs text-gray-500">
+        Realtime: {socketState.isConnected ? "connected" : "disconnected"}
       </div>
     </div>
   );
