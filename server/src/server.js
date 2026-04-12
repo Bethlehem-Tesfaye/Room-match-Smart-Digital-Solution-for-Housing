@@ -4,6 +4,8 @@ import app from "./config/app.js";
 import { logger } from "./config/logger.js";
 import connectDB from "./config/db.js";
 import { env } from "./config/evnironments.js";
+import { createServer } from "http";
+import { initSocket } from "./config/socket.js";
 
 const PORT = Number(env.PORT) || 8000;
 
@@ -12,7 +14,11 @@ const startServer = async () => {
     await connectDB();
     logger.info("Database connected");
 
-    app.listen(PORT, () => {
+    const httpServer = createServer(app);
+
+    initSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       logger.info(`Server running on port: ${PORT}`);
     });
   } catch (error) {
