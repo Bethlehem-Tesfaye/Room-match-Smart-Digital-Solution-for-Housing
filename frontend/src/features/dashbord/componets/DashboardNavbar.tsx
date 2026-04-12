@@ -92,6 +92,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
       return;
     }
 
+    if (tab === "messages") {
+      navigate("/message");
+      return;
+    }
+
     if (tab === "add-listing") {
       navigate("/properties/create");
     }

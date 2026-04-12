@@ -1,8 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
+import { useSendPropertyMessage } from "../../features/message/hooks/useMessageHooks";
 import FavoriteAuthModal from "../../features/property/components/FavoriteAuthModal";
 import PropertyDetailsView from "../../features/property/components/PropertyDetailsView";
 import {
@@ -52,13 +54,15 @@ function PropertyDetailsSkeleton() {
 
 function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { data: property, isLoading, isError } = useBrowserPropertyDetails(id);
-  const { isPending, isAuthenticated } = useCurrentUser();
+  const { isPending, isAuthenticated, user } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
+  const sendPropertyMessage = useSendPropertyMessage();
 
   const handleToggleFavorite = async (targetProperty: Property) => {
     if (isPending) return;
@@ -78,6 +82,43 @@ function PropertyDetailsPage() {
       }
     } finally {
       setIsFavoriteLoading(false);
+    }
+  };
+
+  const handleSendMessage = async ({ content }: { content: string }) => {
+    if (!property) return;
+
+    if (isPending) return;
+
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    const ownerId = property.owner?._id || property.ownerId;
+
+    if (!ownerId) {
+      toast.error("Property owner not found");
+      return;
+    }
+
+    if (user?.id === ownerId) {
+      toast.error("You cannot message yourself");
+      return;
+    }
+
+    try {
+      const result = await sendPropertyMessage.mutateAsync({
+        ownerId,
+        propertyId: property._id,
+        content,
+      });
+
+      navigate(`/message?conversationId=${result.conversationId}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to send message";
+      toast.error(message);
     }
   };
 
@@ -113,6 +154,8 @@ function PropertyDetailsPage() {
               property={property}
               onToggleFavorite={handleToggleFavorite}
               isFavoriteLoading={isFavoriteLoading}
+              onSendMessage={handleSendMessage}
+              isSendMessageLoading={sendPropertyMessage.isPending}
             />
           )}
         </div>

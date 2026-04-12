@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { palette } from "../../../theme/palette";
 import type { Property } from "../types/type";
 
@@ -21,6 +22,8 @@ interface PropertyDetailsViewProps {
   property: Property;
   onToggleFavorite?: (property: Property) => void;
   isFavoriteLoading?: boolean;
+  onSendMessage?: (payload: { content: string }) => Promise<void>;
+  isSendMessageLoading?: boolean;
 }
 
 const formatCurrency = (price: number, currency: string) => {
@@ -48,6 +51,8 @@ function PropertyDetailsView({
   property,
   onToggleFavorite,
   isFavoriteLoading = false,
+  onSendMessage,
+  isSendMessageLoading = false,
 }: PropertyDetailsViewProps) {
   const orderedImages = useMemo(() => {
     if (!property.images.length) return [];
@@ -63,6 +68,7 @@ function PropertyDetailsView({
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [messageDraft, setMessageDraft] = useState("");
 
   const totalImages = orderedImages.length;
 
@@ -101,6 +107,29 @@ function PropertyDetailsView({
   }, [isLightboxOpen, totalImages]);
 
   const currentImage = orderedImages[activeImageIndex];
+
+  const handleSendMessage = async () => {
+    const trimmedMessage = messageDraft.trim();
+
+    if (!trimmedMessage) {
+      toast.error("Message cannot be empty");
+      return;
+    }
+
+    if (!onSendMessage) {
+      toast.error("Messaging is not available");
+      return;
+    }
+
+    try {
+      await onSendMessage({ content: trimmedMessage });
+      setMessageDraft("");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to send message";
+      toast.error(message);
+    }
+  };
 
   const detailItems = [
     {
@@ -452,14 +481,18 @@ function PropertyDetailsView({
               backgroundColor: palette.inputBg,
             }}
             placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
+            value={messageDraft}
+            onChange={(event) => setMessageDraft(event.target.value)}
           />
 
           <button
             type="button"
             className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
             style={{ backgroundColor: palette.softPurple }}
+            onClick={handleSendMessage}
+            disabled={isSendMessageLoading}
           >
-            Send Message
+            {isSendMessageLoading ? "Sending..." : "Send Message"}
           </button>
         </div>
       </aside>

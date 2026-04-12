@@ -36,21 +36,25 @@ export const initSocket = (httpServer) => {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
+      const cookieHeader = socket.handshake.headers?.cookie;
 
-      if (!token || typeof token !== "string") {
-        return next(new Error("Unauthorized: missing token"));
-      }
+      const headers = {
+        ...(typeof token === "string" && token.trim().length > 0
+          ? { authorization: `Bearer ${token}` }
+          : {}),
+        ...(typeof cookieHeader === "string" && cookieHeader.length > 0
+          ? { cookie: cookieHeader }
+          : {})
+      };
 
       const session = await auth.api.getSession({
-        headers: fromNodeHeaders({
-          authorization: `Bearer ${token}`
-        })
+        headers: fromNodeHeaders(headers)
       });
 
       const userId = session?.user?.id;
 
       if (!userId) {
-        return next(new Error("Unauthorized: invalid token"));
+        return next(new Error("Unauthorized"));
       }
 
       socket.userId = userId;
