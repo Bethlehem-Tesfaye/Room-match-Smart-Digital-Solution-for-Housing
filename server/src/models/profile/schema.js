@@ -24,7 +24,63 @@ const userProfileSchema = new Schema(
       default: "user",
       required: true
     },
-    deletedAt: { type: Date, default: null }
+    deletedAt: { type: Date, default: null },
+
+    // ========================================
+    // ROOMMATE PREFERENCE FIELDS (ADDED)
+    // ========================================
+    cleanliness: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    sleepSchedule: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    noiseTolerance: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    guests: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    studyHabits: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    temperature: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    personality: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+    smoking: {
+      type: String,
+      enum: ["yes", "no"],
+      default: "no"
+    },
+    pets: {
+      type: String,
+      enum: ["yes", "no"],
+      default: "no"
+    }
   },
   {
     collection: "userProfile",
