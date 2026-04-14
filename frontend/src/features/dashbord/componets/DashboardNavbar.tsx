@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   User,
   X,
+  Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -72,6 +73,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
   }, [isDropdownOpen, isMobileMenuOpen]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
@@ -168,6 +170,15 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
             >
               <Compass size={16} style={{ color: palette.softPurple }} />
               Discover Properties
+              <span className="absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100" />
+            </Link>
+            <Link
+              to="/roommate"
+              className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
+              style={{ color: palette.deep }}
+            >
+              <Users size={16} style={{ color: palette.softPurple }} />
+              Find Roommate
               <span className="absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
           </nav>
@@ -329,6 +340,17 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                     <span className={`${isDark ? "text-white" : "text-black"}`}>
                       Discover Properties
                     </span>
+                  </Link>
+                  <Link
+                    to="/roommate"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${isDark ? "text-white hover:bg-gray-600" : "text-zinc-900 hover:bg-purple-100"}`}
+                  >
+                    <Users
+                      size={18}
+                      className={isDark ? "text-white" : "text-black"}
+                    />
+                    <span>Find Roommate</span>
                   </Link>
                 </nav>
               </div>
