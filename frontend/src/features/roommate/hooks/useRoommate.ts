@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { roommateApi } from '../api/roommateApi';
 import type { RoommatePreferences, RoommateMatch } from '../types/roommate.types';
 
-
 export const useRoommate = () => {
   const [preferences, setPreferences] = useState<RoommatePreferences | null>(null);
   const [matches, setMatches] = useState<RoommateMatch[]>([]);

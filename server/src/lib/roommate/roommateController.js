@@ -52,7 +52,17 @@ export const getRoommateSuggestions = async (req, res) => {
           email: userInfo.email,
           fullName: profile.fullName,
           profilePictureUrl: profile.profilePictureUrl,
-          matchScore: calculateRoommateMatch(currentProfile, profile)
+          matchScore: calculateRoommateMatch(currentProfile, profile),
+          // New fields from documentation
+          budgetMin: profile.budgetMin,
+          budgetMax: profile.budgetMax,
+          preferredLocations: profile.preferredLocations,
+          moveInDate: profile.moveInDate,
+          stayDurationMonths: profile.stayDurationMonths,
+          drinking: profile.drinking,
+          occupation: profile.occupation,
+          interests: profile.interests,
+          aboutMe: profile.aboutMe
         };
       })
       .filter((match) => match.matchScore > 50)
@@ -64,6 +74,7 @@ export const getRoommateSuggestions = async (req, res) => {
         userId: currentUserId,
         fullName: currentProfile.fullName || "You",
         preferences: {
+          // Existing fields
           cleanliness: currentProfile.cleanliness,
           sleepSchedule: currentProfile.sleepSchedule,
           noiseTolerance: currentProfile.noiseTolerance,
@@ -72,10 +83,20 @@ export const getRoommateSuggestions = async (req, res) => {
           temperature: currentProfile.temperature,
           personality: currentProfile.personality,
           smoking: currentProfile.smoking,
-          pets: currentProfile.pets
+          pets: currentProfile.pets,
+          // New fields
+          budgetMin: currentProfile.budgetMin,
+          budgetMax: currentProfile.budgetMax,
+          preferredLocations: currentProfile.preferredLocations,
+          moveInDate: currentProfile.moveInDate,
+          stayDurationMonths: currentProfile.stayDurationMonths,
+          drinking: currentProfile.drinking,
+          occupation: currentProfile.occupation,
+          interests: currentProfile.interests,
+          aboutMe: currentProfile.aboutMe
         }
       },
-      matches, // ← FIXED: object shorthand (was matches: matches)
+      matches,
       totalMatches: matches.length
     });
   } catch (error) {
@@ -93,6 +114,7 @@ export const updatePreferences = async (req, res) => {
     const preferences = req.body;
 
     const allowedFields = [
+      // Existing fields
       "cleanliness",
       "sleepSchedule",
       "noiseTolerance",
@@ -101,12 +123,24 @@ export const updatePreferences = async (req, res) => {
       "temperature",
       "personality",
       "smoking",
-      "pets"
+      "pets",
+      // New fields
+      "budgetMin",
+      "budgetMax",
+      "preferredLocations",
+      "moveInDate",
+      "stayDurationMonths",
+      "drinking",
+      "occupation",
+      "interests",
+      "aboutMe"
     ];
 
     const updateData = {};
+
     for (const field of allowedFields) {
       if (preferences[field] !== undefined) {
+        // Number fields (1-5 range)
         if (
           [
             "cleanliness",
@@ -129,13 +163,124 @@ export const updatePreferences = async (req, res) => {
             });
           }
         }
-        if (["smoking", "pets"].includes(field)) {
+        // Budget fields
+        else if (field === "budgetMin" || field === "budgetMax") {
+          // eslint-disable-next-line radix
+          const value = parseInt(preferences[field]);
+          if (value >= 0 && value <= 10000) {
+            updateData[field] = value;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: `${field} must be between 0 and 10000`
+            });
+          }
+        }
+        // Stay duration (1-60 months)
+        else if (field === "stayDurationMonths") {
+          // eslint-disable-next-line radix
+          const value = parseInt(preferences[field]);
+          if (value >= 1 && value <= 60) {
+            updateData[field] = value;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: "Stay duration must be between 1 and 60 months"
+            });
+          }
+        }
+        // Location array
+        else if (field === "preferredLocations") {
+          if (Array.isArray(preferences[field])) {
+            updateData[field] = preferences[field];
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: "Preferred locations must be an array"
+            });
+          }
+        }
+        // Interests array
+        else if (field === "interests") {
+          if (Array.isArray(preferences[field])) {
+            updateData[field] = preferences[field];
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: "Interests must be an array"
+            });
+          }
+        }
+        // Move-in date
+        else if (field === "moveInDate") {
+          if (preferences[field] === null || preferences[field] === "") {
+            updateData[field] = null;
+          } else {
+            const date = new Date(preferences[field]);
+            // eslint-disable-next-line no-restricted-globals
+            if (!isNaN(date.getTime())) {
+              updateData[field] = date;
+            } else {
+              return res.status(400).json({
+                success: false,
+                message: "Invalid move-in date"
+              });
+            }
+          }
+        }
+        // Smoking, Pets (yes/no)
+        else if (["smoking", "pets"].includes(field)) {
           if (preferences[field] === "yes" || preferences[field] === "no") {
             updateData[field] = preferences[field];
           } else {
             return res.status(400).json({
               success: false,
               message: `${field} must be "yes" or "no"`
+            });
+          }
+        }
+        // Drinking (yes/no/sometimes)
+        else if (field === "drinking") {
+          if (
+            preferences[field] === "yes" ||
+            preferences[field] === "no" ||
+            preferences[field] === "sometimes"
+          ) {
+            updateData[field] = preferences[field];
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'Drinking must be "yes", "no", or "sometimes"'
+            });
+          }
+        }
+        // Occupation (student, working, remote, hybrid, unemployed)
+        else if (field === "occupation") {
+          const validOccupations = [
+            "student",
+            "working",
+            "remote",
+            "hybrid",
+            "unemployed"
+          ];
+          if (validOccupations.includes(preferences[field])) {
+            updateData[field] = preferences[field];
+          } else {
+            return res.status(400).json({
+              success: false,
+              message:
+                'Occupation must be "student", "working", "remote", "hybrid", or "unemployed"'
+            });
+          }
+        }
+        // About Me (text, max 500 chars)
+        else if (field === "aboutMe") {
+          if (preferences[field].length <= 500) {
+            updateData[field] = preferences[field];
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: "About Me must be 500 characters or less"
             });
           }
         }
@@ -159,6 +304,7 @@ export const updatePreferences = async (req, res) => {
       success: true,
       message: "Preferences updated successfully",
       preferences: {
+        // Existing
         cleanliness: updatedProfile.cleanliness,
         sleepSchedule: updatedProfile.sleepSchedule,
         noiseTolerance: updatedProfile.noiseTolerance,
@@ -167,7 +313,17 @@ export const updatePreferences = async (req, res) => {
         temperature: updatedProfile.temperature,
         personality: updatedProfile.personality,
         smoking: updatedProfile.smoking,
-        pets: updatedProfile.pets
+        pets: updatedProfile.pets,
+        // New
+        budgetMin: updatedProfile.budgetMin,
+        budgetMax: updatedProfile.budgetMax,
+        preferredLocations: updatedProfile.preferredLocations,
+        moveInDate: updatedProfile.moveInDate,
+        stayDurationMonths: updatedProfile.stayDurationMonths,
+        drinking: updatedProfile.drinking,
+        occupation: updatedProfile.occupation,
+        interests: updatedProfile.interests,
+        aboutMe: updatedProfile.aboutMe
       }
     });
   } catch (error) {
@@ -195,6 +351,7 @@ export const getMyPreferences = async (req, res) => {
     return res.json({
       success: true,
       preferences: {
+        // Existing
         cleanliness: profile.cleanliness,
         sleepSchedule: profile.sleepSchedule,
         noiseTolerance: profile.noiseTolerance,
@@ -203,7 +360,17 @@ export const getMyPreferences = async (req, res) => {
         temperature: profile.temperature,
         personality: profile.personality,
         smoking: profile.smoking,
-        pets: profile.pets
+        pets: profile.pets,
+        // New
+        budgetMin: profile.budgetMin,
+        budgetMax: profile.budgetMax,
+        preferredLocations: profile.preferredLocations,
+        moveInDate: profile.moveInDate,
+        stayDurationMonths: profile.stayDurationMonths,
+        drinking: profile.drinking,
+        occupation: profile.occupation,
+        interests: profile.interests,
+        aboutMe: profile.aboutMe
       }
     });
   } catch (error) {

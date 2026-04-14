@@ -1,39 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRoommate } from '../../features/roommate/hooks/useRoommate';
 import { RoommatePreferences } from '../../features/roommate/components/RoommatePreferences';
 import { RoommateMatches } from '../../features/roommate/components/RoommateMatches';
 import type { RoommatePreferences as PreferencesType } from '../../features/roommate/types/roommate.types';
 
 const RoommatePage: React.FC = () => {
-  const { preferences, matches, loading, error, updatePreferences, refresh } = useRoommate();
-  const [saving, setSaving] = useState(false);
+  const { preferences: serverPreferences, matches, loading, error, updatePreferences, refresh } = useRoommate();
+  
+  const [localPreferences, setLocalPreferences] = useState<PreferencesType | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handlePreferenceUpdate = async (field: keyof PreferencesType, value: string | number) => {
-    setSaving(true);
-    try {
-      await updatePreferences({ [field]: value });
-      refresh(); // Refresh matches after preference change
-    } catch (err) {
-      console.error('Failed to update:', err);
-    } finally {
-      setSaving(false);
+  // Load server preferences into local state (only once when data arrives)
+  useEffect(() => {
+    if (serverPreferences && !localPreferences) {
+      setLocalPreferences(serverPreferences);
     }
-  };
+  }, [serverPreferences, localPreferences]);
+
+  // Debounced save - waits 1 second after user stops typing/moving
+  const debouncedSave = useCallback((updatedPrefs: PreferencesType) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        await updatePreferences(updatedPrefs);
+        console.log('Saved successfully');
+      } catch (err) {
+        console.error('Save failed:', err);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1000);
+  }, [updatePreferences]);
+
+  // Handle preference update - NO flicker, NO immediate save
+  const handlePreferenceUpdate = useCallback((
+    field: keyof PreferencesType, 
+    value: string | number | string[] | null
+  ) => {
+    setLocalPreferences(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      debouncedSave(updated);
+      return updated;
+    });
+  }, [debouncedSave]);
+
+  // Manual refresh - only when user clicks button
+  const handleRefresh = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    if (localPreferences) {
+      setIsSaving(true);
+      await updatePreferences(localPreferences);
+      setIsSaving(false);
+    }
+    refresh();
+  }, [localPreferences, updatePreferences, refresh]);
 
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 text-lg">Error: {error}</p>
-          <button
-            onClick={refresh}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
+          <button onClick={refresh} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
             Try Again
           </button>
         </div>
       </div>
     );
+  }
+
+  if (!localPreferences) {
+    return <div className="min-h-screen flex items-center justify-center">Loading preferences...</div>;
   }
 
   return (
@@ -43,29 +87,30 @@ const RoommatePage: React.FC = () => {
         
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left Column: Preferences */}
-          <div>
+          <div className="space-y-4">
             <RoommatePreferences
-              preferences={preferences}
+              preferences={localPreferences}
               onUpdate={handlePreferenceUpdate}
-              loading={loading || saving}
+              loading={false}
             />
+            {isSaving && (
+              <div className="text-sm text-gray-500 text-center animate-pulse">
+                Saving changes...
+              </div>
+            )}
           </div>
           
           {/* Right Column: Matches */}
-          <div>
+          <div className="space-y-4">
             <RoommateMatches matches={matches} loading={loading} />
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 font-semibold"
+            >
+              {loading ? 'Finding Matches...' : '🔍 Find New Matches'}
+            </button>
           </div>
-        </div>
-        
-        {/* Refresh button */}
-        <div className="text-center mt-8">
-          <button
-            onClick={refresh}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh Matches'}
-          </button>
         </div>
       </div>
     </div>

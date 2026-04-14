@@ -80,7 +80,22 @@ const userProfileSchema = new Schema(
       type: String,
       enum: ["yes", "no"],
       default: "no"
-    }
+    },
+    // NEW HARD FILTER FIELDS
+    budgetMin: { type: Number, default: 0, min: 0 },
+    budgetMax: { type: Number, default: 2000, min: 0 },
+    preferredLocations: { type: [String], default: [] },
+    moveInDate: { type: Date, default: null },
+    stayDurationMonths: { type: Number, min: 1, max: 60, default: 12 },
+    drinking: { type: String, enum: ["yes", "no", "sometimes"], default: "no" },
+    // NEW SOFT FILTER FIELDS
+    occupation: {
+      type: String,
+      enum: ["student", "working", "remote", "hybrid", "unemployed"],
+      default: "student"
+    },
+    interests: { type: [String], default: [] },
+    aboutMe: { type: String, default: "", maxlength: 500 }
   },
   {
     collection: "userProfile",
