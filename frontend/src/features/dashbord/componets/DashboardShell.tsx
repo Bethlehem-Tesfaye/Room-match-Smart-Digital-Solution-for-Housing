@@ -16,6 +16,11 @@ function DashboardShell() {
       return;
     }
 
+    if (tab === "messages") {
+      navigate("/dashboard/message");
+      return;
+    }
+
     setActiveTab(tab);
   };
 

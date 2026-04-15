@@ -32,9 +32,11 @@ function ConversationList({
 
   if (isLoading) {
     return (
-      <div className="h-full border-r border-gray-200 bg-white">
-        <div className="border-b border-gray-200 p-4">
-          <h2 className="text-2xl font-semibold">Messages</h2>
+      <div className="h-full border-r border-(--palette-border) bg-(--palette-card-bg)">
+        <div className="border-b border-(--palette-border) p-5">
+          <h2 className="text-3xl font-semibold text-(--palette-deep)">
+            Messages
+          </h2>
           <div className="skeleton mt-3 h-10 w-full" />
         </div>
         <ul className="space-y-3 p-4">
@@ -54,64 +56,108 @@ function ConversationList({
 
   if (!conversations.length) {
     return (
-      <div className="p-4">
-        <h2 className="mb-3 text-xl font-semibold">Messages</h2>
-        <p className="text-sm text-gray-500">No conversations yet.</p>
+      <div className="h-full border-r border-(--palette-border) bg-(--palette-card-bg) p-5">
+        <h2 className="mb-3 text-2xl font-semibold text-(--palette-deep)">
+          Messages
+        </h2>
+        <p className="text-sm text-(--palette-soft-purple)">
+          No conversations yet.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="h-full border-r border-gray-200 bg-white">
-      <div className="border-b border-gray-200 p-4">
-        <h2 className="text-2xl font-semibold">Messages</h2>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search conversations..."
-          className="mt-3 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none"
-        />
+    <div className="h-full border-r border-(--palette-border) bg-(--palette-card-bg)">
+      <div className="border-b border-(--palette-border) p-5">
+        <h2 className="text-3xl font-semibold text-(--palette-deep)">
+          Messages
+        </h2>
+        <label className="mt-4 flex items-center gap-2 rounded-lg border border-(--palette-border) bg-(--palette-input-bg) px-3 py-2 text-(--app-text)">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.8"
+            stroke="currentColor"
+            className="h-4 w-4 text-(--palette-soft-purple)"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m21 21-4.35-4.35m1.6-5.15a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z"
+            />
+          </svg>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search conversations..."
+            className="w-full border-none bg-transparent text-sm outline-none placeholder:text-(--palette-soft-purple)"
+          />
+        </label>
       </div>
 
-      <ul className="max-h-[calc(100vh-220px)] overflow-y-auto">
+      <ul className="max-h-[calc(100vh-240px)] overflow-y-auto">
         {filteredConversations.map((conversation) => {
           const isSelected =
             selectedConversationId === conversation.conversationId;
           const title = getConversationLabel(conversation.conversationId);
+          const avatarLabel = (title || "?").charAt(0).toUpperCase();
 
           return (
             <li
               key={conversation.conversationId}
-              className="border-b border-gray-100"
+              className="border-b border-(--palette-border)"
             >
               <button
                 type="button"
                 onClick={() =>
                   onSelectConversation(conversation.conversationId)
                 }
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left ${
-                  isSelected ? "bg-gray-100" : "bg-white"
+                className={`flex w-full items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-(--palette-card-muted-alt-bg) ${
+                  isSelected
+                    ? "bg-(--palette-card-muted-bg)"
+                    : "bg-(--palette-card-bg)"
                 }`}
               >
-                <div className="h-10 w-10 rounded-full bg-violet-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--palette-soft-purple) text-sm font-semibold text-white">
+                  {avatarLabel}
+                </div>
                 <div className="min-w-0 flex-1">
-                  {title ? (
-                    <p className="truncate text-sm font-semibold text-gray-900">
-                      {title}
+                  <div className="flex items-start justify-between gap-2">
+                    {title ? (
+                      <p className="truncate text-[1.05rem] font-semibold text-(--palette-deep)">
+                        {title}
+                      </p>
+                    ) : isPartnerLoading ? (
+                      <div className="skeleton h-4 w-28" />
+                    ) : (
+                      <p className="truncate text-[1.05rem] font-semibold text-(--palette-deep)">
+                        Unknown user
+                      </p>
+                    )}
+                    <span className="shrink-0 text-xs text-(--palette-soft-purple)">
+                      {conversation.lastMessageAt
+                        ? new Date(
+                            conversation.lastMessageAt,
+                          ).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="truncate text-sm text-(--palette-soft-purple)">
+                      {conversation.lastMessageAt
+                        ? "Tap to open conversation"
+                        : "No messages yet"}
                     </p>
-                  ) : isPartnerLoading ? (
-                    <div className="skeleton h-4 w-28" />
-                  ) : (
-                    <p className="truncate text-sm font-semibold text-gray-900">
-                      Unknown user
-                    </p>
-                  )}
-                  <p className="truncate text-xs text-gray-500">
-                    {conversation.lastMessageAt
-                      ? new Date(conversation.lastMessageAt).toLocaleString()
-                      : "No messages yet"}
-                  </p>
+                    {isSelected ? (
+                      <span className="h-2.5 w-2.5 rounded-full bg-(--palette-soft-purple)" />
+                    ) : null}
+                  </div>
                 </div>
               </button>
             </li>
@@ -119,7 +165,7 @@ function ConversationList({
         })}
 
         {!filteredConversations.length ? (
-          <li className="px-4 py-4 text-sm text-gray-500">
+          <li className="px-4 py-4 text-sm text-(--palette-soft-purple)">
             No matching chats.
           </li>
         ) : null}

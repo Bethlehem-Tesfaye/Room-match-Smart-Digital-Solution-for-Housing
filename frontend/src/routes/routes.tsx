@@ -21,6 +21,7 @@ import EditListingPage from "../pages/editListing/EditListingPage";
 import PropertyPreviewPage from "../pages/properties/PropertyPreviewPage";
 import ProfilePageDashboard from "../pages/profile/ProfilePageDashboard";
 import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
+import MessagePageDashboard from "../pages/message/MessagePageDashboard";
 
 export const router = createBrowserRouter([
   {
@@ -63,10 +64,7 @@ export const router = createBrowserRouter([
     path: "*",
     element: <NotFound />,
   },
-  {
-    path: "/message",
-    element: <MessagePage />,
-  },
+
   // protected routes
   {
     path: "/",
@@ -115,6 +113,14 @@ export const router = createBrowserRouter([
       {
         path: "/properties/preview/:id",
         element: <PropertyPreviewPage />,
+      },
+      {
+        path: "/message",
+        element: <MessagePage />,
+      },
+      {
+        path: "/dashboard/message",
+        element: <MessagePageDashboard />,
       },
     ],
   },
