@@ -135,12 +135,12 @@ const RoommatePage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4">
         <div className="text-center">
-          <p className="text-red-500 text-lg">Error: {error}</p>
+          <p className="text-lg text-red-500">Error: {error}</p>
           <button
             onClick={refresh}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            className="mt-4 rounded-lg bg-(--palette-purple) px-4 py-2 text-white transition hover:opacity-90"
           >
             Try Again
           </button>
@@ -151,18 +151,18 @@ const RoommatePage: React.FC = () => {
 
   if (!localPreferences) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4 text-(--palette-soft-purple)">
         Loading preferences...
       </div>
     );
   }
 
   return (
-    <main className="pt-15">
+    <main className="min-h-screen pt-15">
       <LandingNavbar />
-      <div className="min-h-screen bg-gray-100 py-8">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h1 className="text-3xl font-bold text-center mb-8">
+      <div className="bg-(--palette-page-bg) py-8">
+        <div className="mx-auto max-w-6xl px-4">
+          <h1 className="mb-8 text-center text-3xl font-bold text-(--palette-deep)">
             Find Your Perfect Roommate
           </h1>
 
@@ -175,7 +175,7 @@ const RoommatePage: React.FC = () => {
                 loading={false}
               />
               {isSaving && (
-                <div className="text-sm text-gray-500 text-center animate-pulse">
+                <div className="animate-pulse text-center text-sm text-(--palette-soft-purple)">
                   Saving changes...
                 </div>
               )}
@@ -192,7 +192,7 @@ const RoommatePage: React.FC = () => {
               <button
                 onClick={handleRefresh}
                 disabled={loading || isSaving}
-                className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 font-semibold"
+                className="w-full rounded-lg bg-(--palette-purple) px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {loading || isSaving
                   ? "Finding Matches..."

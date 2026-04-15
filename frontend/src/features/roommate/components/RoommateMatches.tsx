@@ -20,21 +20,25 @@ export const RoommateMatches: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-6">Finding Matches...</h2>
-        <div className="text-center py-8">Loading potential roommates...</div>
+      <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 shadow-sm">
+        <h2 className="mb-6 text-2xl font-bold text-(--palette-deep)">
+          Finding Matches...
+        </h2>
+        <div className="py-8 text-center text-(--palette-soft-purple)">
+          Loading potential roommates...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6">
+    <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 shadow-sm">
+      <h2 className="mb-6 text-2xl font-bold text-(--palette-deep)">
         Roommate Matches ({matches.length})
       </h2>
 
       {matches.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="py-8 text-center text-(--palette-soft-purple)">
           <p>No matches found above 50%.</p>
           <p className="text-sm mt-2">
             Try adjusting your preferences to find more matches.
@@ -45,7 +49,7 @@ export const RoommateMatches: React.FC<Props> = ({
           {matches.map((match) => (
             <div
               key={match.userId}
-              className="border rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
+              className="cursor-pointer rounded-xl border border-(--palette-border) bg-(--palette-card-bg) p-4 transition-shadow hover:shadow-lg"
               onClick={() =>
                 setSelectedMatch(
                   selectedMatch?.userId === match.userId ? null : match,
@@ -62,30 +66,34 @@ export const RoommateMatches: React.FC<Props> = ({
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-(--palette-purple) text-xl font-bold text-white">
                         {(match.fullName || match.name).charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold text-lg">
+                      <h3 className="text-lg font-semibold text-(--palette-deep)">
                         {match.fullName || match.name}
                       </h3>
-                      <p className="text-gray-500 text-sm">{match.email}</p>
+                      <p className="text-sm text-(--palette-soft-purple)">
+                        {match.email}
+                      </p>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-(--palette-purple)">
                     {match.matchScore}%
                   </div>
-                  <div className="text-xs text-gray-500">Match Score</div>
+                  <div className="text-xs text-(--palette-soft-purple)">
+                    Match Score
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t">
-                <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="mt-3 border-t border-(--palette-border) pt-3">
+                <div className="h-2 w-full rounded-full bg-(--palette-card-muted-bg)">
                   <div
-                    className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                    className="h-2 rounded-full bg-(--palette-purple) transition-all duration-500"
                     style={{ width: `${match.matchScore}%` }}
                   />
                 </div>
@@ -93,16 +101,15 @@ export const RoommateMatches: React.FC<Props> = ({
 
               {/* Expanded details */}
               {selectedMatch?.userId === match.userId && (
-                <div className="mt-4 pt-4 border-t space-y-3">
+                <div className="mt-4 space-y-3 border-t border-(--palette-border) pt-4">
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-semibold">Budget:</span> $
-                      {match.budgetMin} - ${match.budgetMax}
+                      <span className="font-semibold text-(--palette-deep)">
+                        Budget:
+                      </span>{" "}
+                      ${match.budgetMin} - ${match.budgetMax}
                     </div>
-                    <div>
-                      <span className="font-semibold">Stay Duration:</span>{" "}
-                      {match.stayDurationMonths} months
-                    </div>
+                    <div>{match.stayDurationMonths} months</div>
                     <div>
                       <span className="font-semibold">Drinking:</span>{" "}
                       {match.drinking}
@@ -115,14 +122,14 @@ export const RoommateMatches: React.FC<Props> = ({
 
                   {match.preferredLocations.length > 0 && (
                     <div>
-                      <span className="font-semibold text-sm">
+                      <span className="text-sm font-semibold text-(--palette-deep)">
                         Preferred Locations:
                       </span>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {match.preferredLocations.map((loc) => (
                           <span
                             key={loc}
-                            className="bg-gray-200 text-xs px-2 py-1 rounded"
+                            className="rounded bg-(--palette-chip-bg) px-2 py-1 text-xs text-(--palette-deep)"
                           >
                             {loc}
                           </span>
@@ -133,12 +140,14 @@ export const RoommateMatches: React.FC<Props> = ({
 
                   {match.interests.length > 0 && (
                     <div>
-                      <span className="font-semibold text-sm">Interests:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <span className="text-sm font-semibold text-(--palette-deep)">
+                        Interests:
+                      </span>
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {match.interests.map((interest) => (
                           <span
                             key={interest}
-                            className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded"
+                            className="rounded bg-(--palette-card-muted-bg) px-2 py-1 text-xs text-(--palette-purple)"
                           >
                             {interest}
                           </span>
@@ -149,8 +158,10 @@ export const RoommateMatches: React.FC<Props> = ({
 
                   {match.aboutMe && (
                     <div>
-                      <span className="font-semibold text-sm">About:</span>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <span className="text-sm font-semibold text-(--palette-deep)">
+                        About:
+                      </span>
+                      <p className="mt-1 text-sm text-(--palette-soft-purple)">
                         {match.aboutMe}
                       </p>
                     </div>
@@ -167,7 +178,7 @@ export const RoommateMatches: React.FC<Props> = ({
                       !onStartConversation ||
                       startingConversationForUserId === match.userId
                     }
-                    className="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-60"
+                    className="mt-2 w-full rounded-lg bg-(--palette-purple) py-2 text-white transition hover:opacity-90 disabled:opacity-60"
                   >
                     {startingConversationForUserId === match.userId
                       ? "Opening chat..."
