@@ -41,6 +41,9 @@ function MessageInbox({
   const [content, setContent] = useState("");
   const messagesContainerRef = useRef<HTMLUListElement | null>(null);
   const pendingScrollToBottomRef = useRef(false);
+  const previousConversationIdRef = useRef<string | undefined>(undefined);
+  const previousLastMessageIdRef = useRef<string | undefined>(undefined);
+  const isLoadingOlderRef = useRef(false);
 
   const canSend = useMemo(() => {
     return !!conversationId && content.trim().length > 0 && !isSending;
@@ -67,6 +70,35 @@ function MessageInbox({
     });
   }, [conversationId, isLoading, messages.length, scrollToBottom]);
 
+  useEffect(() => {
+    if (!isLoading && isLoadingOlderRef.current) {
+      isLoadingOlderRef.current = false;
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    const lastMessageId = messages[messages.length - 1]?._id;
+    const isSameConversation =
+      previousConversationIdRef.current === conversationId;
+    const hasNewTailMessage =
+      !!conversationId &&
+      !!lastMessageId &&
+      lastMessageId !== previousLastMessageIdRef.current;
+
+    if (isSameConversation && hasNewTailMessage && !isLoadingOlderRef.current) {
+      if (isLoading) {
+        pendingScrollToBottomRef.current = true;
+      } else {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      }
+    }
+
+    previousConversationIdRef.current = conversationId;
+    previousLastMessageIdRef.current = lastMessageId;
+  }, [conversationId, isLoading, messages, scrollToBottom]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -76,6 +108,11 @@ function MessageInbox({
     pendingScrollToBottomRef.current = true;
     await onSendMessage(trimmed);
     setContent("");
+  };
+
+  const handleLoadOlder = () => {
+    isLoadingOlderRef.current = true;
+    onLoadOlder();
   };
 
   if (!conversationId) {
@@ -123,14 +160,13 @@ function MessageInbox({
       <div className="px-5 py-2">
         <button
           type="button"
-          onClick={onLoadOlder}
+          onClick={handleLoadOlder}
           disabled={!hasMore || isLoading}
           className="text-xs text-(--palette-soft-purple) disabled:opacity-50"
         >
           {isLoading ? "Loading..." : "Load older messages"}
         </button>
       </div>
-
 
       <ul
         ref={messagesContainerRef}
