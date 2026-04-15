@@ -4,9 +4,16 @@ import type { RoommateMatch } from '../types/roommate.types';
 interface Props {
   matches: RoommateMatch[];
   loading?: boolean;
+  onStartConversation?: (match: RoommateMatch) => Promise<void> | void;
+  startingConversationForUserId?: string | null;
 }
 
-export const RoommateMatches: React.FC<Props> = ({ matches, loading }) => {
+export const RoommateMatches: React.FC<Props> = ({
+  matches,
+  loading,
+  onStartConversation,
+  startingConversationForUserId,
+}) => {
   const [selectedMatch, setSelectedMatch] = useState<RoommateMatch | null>(null);
 
   if (loading) {
@@ -127,8 +134,22 @@ export const RoommateMatches: React.FC<Props> = ({ matches, loading }) => {
                     </div>
                   )}
                   
-                  <button className="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
-                    Send Message
+                  <button
+                    type="button"
+                    onClick={async (event) => {
+                      event.stopPropagation();
+                      if (!onStartConversation) return;
+                      await onStartConversation(match);
+                    }}
+                    disabled={
+                      !onStartConversation ||
+                      startingConversationForUserId === match.userId
+                    }
+                    className="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-60"
+                  >
+                    {startingConversationForUserId === match.userId
+                      ? "Opening chat..."
+                      : "Send Message"}
                   </button>
                 </div>
               )}

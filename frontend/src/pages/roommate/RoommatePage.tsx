@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useRoommate } from "../../features/roommate/hooks/useRoommate";
 import { RoommatePreferences } from "../../features/roommate/components/RoommatePreferences";
 import { RoommateMatches } from "../../features/roommate/components/RoommateMatches";
 import type { RoommatePreferences as PreferencesType } from "../../features/roommate/types/roommate.types";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
+import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
+import { useInitiateConversation } from "../../features/message/hooks/useMessageHooks";
+import type { RoommateMatch } from "../../features/roommate/types/roommate.types";
 
 const RoommatePage: React.FC = () => {
+  const navigate = useNavigate();
   const {
     preferences: serverPreferences,
     matches,
@@ -14,10 +20,14 @@ const RoommatePage: React.FC = () => {
     updatePreferences,
     refresh,
   } = useRoommate();
+  const { user, isPending } = useCurrentUser();
+  const initiateConversation = useInitiateConversation();
 
   const [localPreferences, setLocalPreferences] =
     useState<PreferencesType | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [startingConversationForUserId, setStartingConversationForUserId] =
+    useState<string | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load server preferences into local state (only once when data arrives)
@@ -78,6 +88,42 @@ const RoommatePage: React.FC = () => {
     refresh();
   }, [localPreferences, updatePreferences, refresh]);
 
+  const handleStartConversation = useCallback(
+    async (match: RoommateMatch) => {
+      if (isPending) return;
+
+      if (!match.userId) {
+        toast.error("Roommate user not found");
+        return;
+      }
+
+      if (user?.id === match.userId) {
+        toast.error("You cannot message yourself");
+        return;
+      }
+
+      setStartingConversationForUserId(match.userId);
+
+      try {
+        const conversation = await initiateConversation.mutateAsync({
+          userId: match.userId,
+          isRoommateChat: true,
+        });
+
+        navigate(`/message?conversationId=${conversation._id}`);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to open conversation";
+        toast.error(message);
+      } finally {
+        setStartingConversationForUserId(null);
+      }
+    },
+    [initiateConversation, isPending, navigate, user?.id],
+  );
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -128,7 +174,12 @@ const RoommatePage: React.FC = () => {
 
             {/* Right Column: Matches */}
             <div className="space-y-4">
-              <RoommateMatches matches={matches} loading={loading} />
+              <RoommateMatches
+                matches={matches}
+                loading={loading}
+                onStartConversation={handleStartConversation}
+                startingConversationForUserId={startingConversationForUserId}
+              />
               <button
                 onClick={handleRefresh}
                 disabled={loading}
