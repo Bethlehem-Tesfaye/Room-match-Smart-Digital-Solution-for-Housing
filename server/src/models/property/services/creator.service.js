@@ -1,5 +1,11 @@
+import mongoose from "mongoose";
 import CustomError from "../../../lib/errors.js";
-import { Property, PropertyAmenity, PropertyImage } from "../schema.js";
+import {
+  Amenity,
+  Property,
+  PropertyAmenity,
+  PropertyImage
+} from "../schema.js";
 import {
   buildPropertyResponse,
   ensureOwnership,
@@ -49,8 +55,36 @@ export const updatePropertyById = async ({ propertyId, userId, payload }) => {
 
   const { images, amenityIds, ...propertyUpdates } = payload;
 
+  let amenityIdsToSync = amenityIds;
+
   if (amenityIds !== undefined) {
-    await validateAmenityIdsExist(amenityIds);
+    const incomingAmenityIds = Array.isArray(amenityIds) ? amenityIds : [];
+
+    const normalizedAmenityIds = incomingAmenityIds.filter((amenityId) =>
+      mongoose.Types.ObjectId.isValid(amenityId)
+    );
+
+    if (normalizedAmenityIds.length !== incomingAmenityIds.length) {
+      throw new CustomError("One or more amenities do not exist", 400);
+    }
+
+    const existingAmenities = await Amenity.find({
+      _id: { $in: normalizedAmenityIds }
+    })
+      .select({ _id: 1 })
+      .lean();
+
+    const existingAmenityIdSet = new Set(
+      existingAmenities.map((amenity) => amenity._id.toString())
+    );
+
+    amenityIdsToSync = normalizedAmenityIds.filter((amenityId) =>
+      existingAmenityIdSet.has(amenityId.toString())
+    );
+
+    if (amenityIdsToSync.length === 0) {
+      amenityIdsToSync = undefined;
+    }
   }
 
   if (Object.keys(propertyUpdates).length > 0) {
@@ -61,8 +95,11 @@ export const updatePropertyById = async ({ propertyId, userId, payload }) => {
     await syncPropertyImages({ propertyId: _id, images });
   }
 
-  if (amenityIds !== undefined) {
-    await syncPropertyAmenities({ propertyId: _id, amenityIds });
+  if (amenityIdsToSync !== undefined) {
+    await syncPropertyAmenities({
+      propertyId: _id,
+      amenityIds: amenityIdsToSync
+    });
   }
 
   const updated = await Property.findOne({ _id, deletedAt: null }).lean();
