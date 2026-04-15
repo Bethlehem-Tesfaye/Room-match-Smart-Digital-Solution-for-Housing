@@ -165,16 +165,40 @@ export const updatePreferences = async (req, res) => {
         }
         // Budget fields
         else if (field === "budgetMin" || field === "budgetMax") {
-          // eslint-disable-next-line radix
-          const value = parseInt(preferences[field]);
-          if (value >= 0 && value <= 10000) {
-            updateData[field] = value;
-          } else {
+          const rawValue = preferences[field];
+          if (rawValue === "" || rawValue === null) {
             return res.status(400).json({
               success: false,
-              message: `${field} must be between 0 and 10000`
+              message:
+                field === "budgetMin"
+                  ? "Minimum budget field can't be empty"
+                  : "Maximum budget field can't be empty"
             });
           }
+
+          const value = Number(rawValue);
+
+          if (!Number.isFinite(value)) {
+            return res.status(400).json({
+              success: false,
+              message:
+                field === "budgetMin"
+                  ? "Minimum budget must be a valid number"
+                  : "Maximum budget must be a valid number"
+            });
+          }
+
+          if (value < 0) {
+            return res.status(400).json({
+              success: false,
+              message:
+                field === "budgetMin"
+                  ? "Minimum budget must be zero or greater"
+                  : "Maximum budget must be zero or greater"
+            });
+          }
+
+          updateData[field] = value;
         }
         // Stay duration (1-60 months)
         else if (field === "stayDurationMonths") {
@@ -292,6 +316,34 @@ export const updatePreferences = async (req, res) => {
         success: false,
         message: "No valid preference fields provided"
       });
+    }
+
+    if (
+      updateData.budgetMin !== undefined ||
+      updateData.budgetMax !== undefined
+    ) {
+      const existingProfile = await UserProfile.findOne({
+        userId: currentUserId
+      });
+      const budgetMin =
+        updateData.budgetMin !== undefined
+          ? updateData.budgetMin
+          : existingProfile?.budgetMin;
+      const budgetMax =
+        updateData.budgetMax !== undefined
+          ? updateData.budgetMax
+          : existingProfile?.budgetMax;
+
+      if (
+        Number.isFinite(budgetMin) &&
+        Number.isFinite(budgetMax) &&
+        budgetMin > budgetMax
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Minimum budget cannot be greater than maximum budget"
+        });
+      }
     }
 
     const updatedProfile = await UserProfile.findOneAndUpdate(

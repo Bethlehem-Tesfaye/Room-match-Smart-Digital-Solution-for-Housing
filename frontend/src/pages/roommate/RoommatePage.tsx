@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useRoommate } from "../../features/roommate/hooks/useRoommate";
@@ -28,7 +28,6 @@ const RoommatePage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [startingConversationForUserId, setStartingConversationForUserId] =
     useState<string | null>(null);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load server preferences into local state (only once when data arrives)
   useEffect(() => {
@@ -37,29 +36,7 @@ const RoommatePage: React.FC = () => {
     }
   }, [serverPreferences, localPreferences]);
 
-  // Debounced save - waits 1 second after user stops typing/moving
-  const debouncedSave = useCallback(
-    (updatedPrefs: PreferencesType) => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        setIsSaving(true);
-        try {
-          await updatePreferences(updatedPrefs);
-          console.log("Saved successfully");
-        } catch (err) {
-          console.error("Save failed:", err);
-        } finally {
-          setIsSaving(false);
-        }
-      }, 1000);
-    },
-    [updatePreferences],
-  );
-
-  // Handle preference update - NO flicker, NO immediate save
+  // Update local state only; API request runs when Find New Matches is clicked.
   const handlePreferenceUpdate = useCallback(
     (
       field: keyof PreferencesType,
@@ -67,25 +44,57 @@ const RoommatePage: React.FC = () => {
     ) => {
       setLocalPreferences((prev) => {
         if (!prev) return prev;
-        const updated = { ...prev, [field]: value };
-        debouncedSave(updated);
-        return updated;
+        return { ...prev, [field]: value };
       });
     },
-    [debouncedSave],
+    [],
   );
 
-  // Manual refresh - only when user clicks button
+  // Send preferences and refresh matches only when user clicks the button.
   const handleRefresh = useCallback(async () => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    if (localPreferences) {
+      const budgetMin = Number(localPreferences.budgetMin);
+      const budgetMax = Number(localPreferences.budgetMax);
+
+      if (!Number.isFinite(budgetMin)) {
+        toast.error("Minimum budget field can't be empty");
+        return;
+      }
+
+      if (!Number.isFinite(budgetMax)) {
+        toast.error("Maximum budget field can't be empty");
+        return;
+      }
+
+      if (budgetMin < 0 || budgetMax < 0) {
+        toast.error("Budget values must be zero or greater");
+        return;
+      }
+
+      if (budgetMin > budgetMax) {
+        toast.error("Minimum budget cannot be greater than maximum budget");
+        return;
+      }
     }
+
     if (localPreferences) {
       setIsSaving(true);
-      await updatePreferences(localPreferences);
-      setIsSaving(false);
+      try {
+        await updatePreferences(localPreferences);
+        await refresh();
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to update roommate preferences";
+        toast.error(message);
+      } finally {
+        setIsSaving(false);
+      }
+      return;
     }
-    refresh();
+
+    await refresh();
   }, [localPreferences, updatePreferences, refresh]);
 
   const handleStartConversation = useCallback(
@@ -182,10 +191,12 @@ const RoommatePage: React.FC = () => {
               />
               <button
                 onClick={handleRefresh}
-                disabled={loading}
+                disabled={loading || isSaving}
                 className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 font-semibold"
               >
-                {loading ? "Finding Matches..." : "🔍 Find New Matches"}
+                {loading || isSaving
+                  ? "Finding Matches..."
+                  : "🔍 Find New Matches"}
               </button>
             </div>
           </div>

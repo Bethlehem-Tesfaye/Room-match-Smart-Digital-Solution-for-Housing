@@ -1,11 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
-import { roommateApi } from '../api/roommateApi';
-import type { RoommatePreferences, RoommateMatch } from '../types/roommate.types';
+import { useState, useEffect, useCallback } from "react";
+import { roommateApi } from "../api/roommateApi";
+import type {
+  RoommatePreferences,
+  RoommateMatch,
+} from "../types/roommate.types";
 
 export const useRoommate = () => {
-  const [preferences, setPreferences] = useState<RoommatePreferences | null>(null);
+  const [preferences, setPreferences] = useState<RoommatePreferences | null>(
+    null,
+  );
   const [matches, setMatches] = useState<RoommateMatch[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ userId: string; fullName: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    userId: string;
+    fullName: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +23,7 @@ export const useRoommate = () => {
     try {
       const [suggestions, prefs] = await Promise.all([
         roommateApi.getSuggestions(),
-        roommateApi.getPreferences()
+        roommateApi.getPreferences(),
       ]);
 
       if (suggestions.success) {
@@ -26,14 +34,17 @@ export const useRoommate = () => {
         setPreferences(prefs.preferences);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load roommate data';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load roommate data";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updatePreferences = async (newPreferences: Partial<RoommatePreferences>) => {
+  const updatePreferences = async (
+    newPreferences: Partial<RoommatePreferences>,
+  ) => {
     try {
       const response = await roommateApi.updatePreferences(newPreferences);
       if (response.success && response.preferences) {
@@ -41,8 +52,6 @@ export const useRoommate = () => {
       }
       return response;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update preferences';
-      setError(errorMessage);
       throw err;
     }
   };
@@ -58,6 +67,6 @@ export const useRoommate = () => {
     loading,
     error,
     updatePreferences,
-    refresh: loadData
+    refresh: loadData,
   };
 };

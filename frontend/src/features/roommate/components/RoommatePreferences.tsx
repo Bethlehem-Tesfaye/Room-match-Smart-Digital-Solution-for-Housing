@@ -114,7 +114,7 @@ export const RoommatePreferences: React.FC<Props> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-h-[80vh] overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-6">Your Roommate Preferences</h2>
+      <h2 className="text-2xl font-bold mb-6">Your Profile</h2>
       <div className="space-y-6">
         {/* ===== EXISTING FIELDS ===== */}
         <div className="border-b pb-4">
@@ -211,11 +211,18 @@ export const RoommatePreferences: React.FC<Props> = ({
               <input
                 type="number"
                 min="0"
-                max="10000"
-                value={preferences.budgetMin}
-                onChange={(e) =>
-                  onUpdate("budgetMin", parseInt(e.target.value))
+                value={
+                  Number.isFinite(preferences.budgetMin)
+                    ? preferences.budgetMin
+                    : ""
                 }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onUpdate(
+                    "budgetMin",
+                    value === "" ? Number.NaN : Number(value),
+                  );
+                }}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
@@ -226,11 +233,18 @@ export const RoommatePreferences: React.FC<Props> = ({
               <input
                 type="number"
                 min="0"
-                max="10000"
-                value={preferences.budgetMax}
-                onChange={(e) =>
-                  onUpdate("budgetMax", parseInt(e.target.value))
+                value={
+                  Number.isFinite(preferences.budgetMax)
+                    ? preferences.budgetMax
+                    : ""
                 }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onUpdate(
+                    "budgetMax",
+                    value === "" ? Number.NaN : Number(value),
+                  );
+                }}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
