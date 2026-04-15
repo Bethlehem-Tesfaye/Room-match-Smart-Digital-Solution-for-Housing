@@ -21,6 +21,7 @@ import EditListingPage from "../pages/editListing/EditListingPage";
 import PropertyPreviewPage from "../pages/properties/PropertyPreviewPage";
 import ProfilePageDashboard from "../pages/profile/ProfilePageDashboard";
 import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
+import RoommatePage from "../pages/roommate/RoommatePage";
 import MessagePageDashboard from "../pages/message/MessagePageDashboard";
 
 export const router = createBrowserRouter([
@@ -113,6 +114,10 @@ export const router = createBrowserRouter([
       {
         path: "/properties/preview/:id",
         element: <PropertyPreviewPage />,
+      },
+      {
+        path: "roommate",
+        element: <RoommatePage />,
       },
       {
         path: "/message",
