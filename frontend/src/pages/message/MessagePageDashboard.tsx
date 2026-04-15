@@ -15,6 +15,7 @@ import {
 import type { Message } from "../../features/message/types/type";
 import type { ConversationSummary } from "../../features/message/types/type";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
+import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 
 const normalizeConversationId = (value: unknown): string => {
   if (typeof value === "string") return value;
@@ -31,7 +32,7 @@ const normalizeConversationId = (value: unknown): string => {
   return String(value ?? "");
 };
 
-function MessagePage() {
+function MessagePageDashboard() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useCurrentUser();
@@ -183,8 +184,8 @@ function MessagePage() {
   };
 
   return (
-    <main className="min-h-screen pt-17">
-      <LandingNavbar />
+    <main className="min-h-screen pt-18 ">
+      <DashboardNavbar activeTab={null} />
       <div className="mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-(--palette-border) bg-(--palette-card-bg)">
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
           <aside className="h-full min-h-0">
@@ -221,4 +222,4 @@ function MessagePage() {
   );
 }
 
-export default MessagePage;
+export default MessagePageDashboard;

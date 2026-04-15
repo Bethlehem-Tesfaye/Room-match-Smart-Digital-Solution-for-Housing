@@ -93,7 +93,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
     }
 
     if (tab === "messages") {
-      navigate("/message");
+      navigate("/dashboard/message");
       return;
     }
 

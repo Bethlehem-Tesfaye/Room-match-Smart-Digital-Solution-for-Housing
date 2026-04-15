@@ -15,6 +15,10 @@ function DashboardShell() {
       navigate("/dashboard/my-properties");
       return;
     }
+      if (tab === "messages") {
+      navigate("/dashboard/message");
+      return;
+    }
 
     setActiveTab(tab);
   };
