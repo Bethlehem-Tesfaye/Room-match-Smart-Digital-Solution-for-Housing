@@ -24,7 +24,7 @@ import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 const navItems = [
   { to: "/properties", label: "Find Place", icon: Search },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
-  { to: "/find-roommate", label: "Find Roommate", icon: Users },
+  { to: "/roommate", label: "Find Roommate", icon: Users },
   { to: "/message", label: "Message", icon: MessageCircle },
   { to: "/dashboard", label: "My Listings", icon: LayoutDashboard },
 ];

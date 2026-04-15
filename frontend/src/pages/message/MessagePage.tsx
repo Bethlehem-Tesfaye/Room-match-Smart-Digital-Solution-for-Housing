@@ -113,7 +113,6 @@ function MessagePage() {
             (item) => item.conversationId === incomingConversationId,
           );
 
-
           const updatedList = existing
             ? previousList.map((item) =>
                 item.conversationId === incomingConversationId
@@ -185,7 +184,7 @@ function MessagePage() {
   return (
     <main className="min-h-screen pt-17">
       <LandingNavbar />
-      <div className="mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-(--palette-border) bg-(--palette-card-bg)">
+      <div className="mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-black bg-(--palette-card-bg)">
         <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
           <aside className="h-full min-h-0">
             <ConversationList

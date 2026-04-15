@@ -177,7 +177,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               Discover Properties
               <span className="absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
-            <Link
+            {/* <Link
               to="/roommate"
               className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
               style={{ color: palette.deep }}
@@ -185,7 +185,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               <Users size={16} style={{ color: palette.softPurple }} />
               Find Roommate
               <span className="absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100" />
-            </Link>
+            </Link> */}
           </nav>
 
           <div ref={profileMenuRef} className="relative">
