@@ -14,7 +14,6 @@ import {
 } from "../../features/message/hooks/useMessageHooks";
 import type { Message } from "../../features/message/types/type";
 import type { ConversationSummary } from "../../features/message/types/type";
-import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 
 const normalizeConversationId = (value: unknown): string => {
