@@ -95,6 +95,10 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   } = useEditListingProperty(propertyId);
   const { data: amenities = [] } = useAmenities();
   const updateMutation = useUpdateEditListingProperty();
+  const validAmenityIdSet = useMemo(
+    () => new Set(amenities.map((amenity) => amenity._id)),
+    [amenities],
+  );
 
   const [activeSection, setActiveSection] =
     useState<EditListingSectionKey>("details");
@@ -105,6 +109,20 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     if (!property) return;
     setDraft(createDraftFromProperty(property));
   }, [property]);
+
+  useEffect(() => {
+    if (!draft) return;
+
+    const filteredAmenityIds = draft.amenityIds.filter((amenityId) =>
+      validAmenityIdSet.has(amenityId),
+    );
+
+    if (filteredAmenityIds.length !== draft.amenityIds.length) {
+      setDraft((prev) =>
+        prev ? { ...prev, amenityIds: filteredAmenityIds } : prev,
+      );
+    }
+  }, [draft, validAmenityIdSet]);
 
   useEffect(() => {
     return () => {
@@ -281,7 +299,11 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     );
     payload.append("availableFrom", draft.availableFrom || "");
     payload.append("isFurnished", String(draft.isFurnished));
-    payload.append("amenityIds", JSON.stringify(draft.amenityIds));
+    const sanitizedAmenityIds = draft.amenityIds.filter((amenityId) =>
+      validAmenityIdSet.has(amenityId),
+    );
+
+    payload.append("amenityIds", JSON.stringify(sanitizedAmenityIds));
 
     const existingImageUrls = draft.images
       .filter((image) => !image.file && image.imageUrl)

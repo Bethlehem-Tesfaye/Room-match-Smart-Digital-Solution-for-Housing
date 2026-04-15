@@ -499,7 +499,7 @@ function PropertyDetailsView({
 
       {isLightboxOpen && currentImage ? (
         <div
-          className="fixed inset-0 z-50 bg-black/75 px-4 py-6"
+          className="fixed inset-0 z-501 bg-black/75 px-4 py-6"
           onClick={closeLightbox}
         >
           <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-center">
