@@ -12,6 +12,7 @@ import { api } from "../../../lib/axios";
 import type {
   Conversation,
   ConversationParticipant,
+  ContractStatus,
   ConversationSummary,
   ConversationSummaryApiItem,
   InitiateConversationInput,
@@ -19,6 +20,7 @@ import type {
   MessageSendAck,
   MessageSendInput,
   Notification,
+  RentRequest,
   SendPropertyMessageInput,
   SendPropertyMessageResult,
 } from "../types/type";
@@ -29,6 +31,9 @@ const messageQueryKeys = {
     ["messages", "participants", conversationId] as const,
   messages: (conversationId: string, cursor: string | null) =>
     ["messages", "thread", conversationId, cursor] as const,
+  rentRequestByConversation: (conversationId: string) =>
+    ["contracts", "conversation", conversationId] as const,
+  ownerPendingRentRequests: ["contracts", "owner", "pending"] as const,
 };
 
 const getErrorMessage = (error: unknown): string => {
@@ -64,10 +69,18 @@ const normalizeConversationSummaries = (
     if (!conversationId) return;
 
     const lastMessageAt = row.conversation?.lastMessageAt || null;
+    const listingId =
+      row.conversation?.listingId || row.conversation?.propertyId || null;
+    const listing = row.conversation?.listing || null;
     const existing = byConversation.get(conversationId);
 
     if (!existing) {
-      byConversation.set(conversationId, { conversationId, lastMessageAt });
+      byConversation.set(conversationId, {
+        conversationId,
+        lastMessageAt,
+        listingId,
+        listing,
+      });
       return;
     }
 
@@ -77,7 +90,21 @@ const normalizeConversationSummaries = (
         new Date(lastMessageAt).getTime() >
           new Date(existing.lastMessageAt).getTime())
     ) {
-      byConversation.set(conversationId, { conversationId, lastMessageAt });
+      byConversation.set(conversationId, {
+        conversationId,
+        lastMessageAt,
+        listingId: existing.listingId || listingId,
+        listing: existing.listing || listing,
+      });
+      return;
+    }
+
+    if (!existing.listing && listing) {
+      byConversation.set(conversationId, {
+        ...existing,
+        listing,
+        listingId: existing.listingId || listingId,
+      });
     }
   });
 
@@ -296,10 +323,10 @@ export const useSendPropertyMessage = (): UseMutationResult<
     Error,
     SendPropertyMessageInput
   >({
-    mutationFn: async ({ ownerId, propertyId, content }) => {
+    mutationFn: async ({ ownerId, listingId, content }) => {
       const conversation = await initiateConversation.mutateAsync({
         userId: ownerId,
-        propertyId,
+        listingId,
       });
 
       const message = await sendHttpMessage.mutateAsync({
@@ -463,4 +490,143 @@ export const useConversationPartnersMap = (
     partnerByConversationId,
     isLoading,
   };
+};
+
+export const useConversationRentRequest = (
+  conversationId?: string,
+): UseQueryResult<RentRequest | null, Error> => {
+  return useQuery<RentRequest | null, Error>({
+    queryKey: messageQueryKeys.rentRequestByConversation(conversationId ?? ""),
+    enabled: !!conversationId,
+    queryFn: async () => {
+      try {
+        const response = await api.get<{ contract: RentRequest | null }>(
+          `/api/contracts/conversation/${conversationId}`,
+        );
+
+        return response.data.contract ?? null;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+  });
+};
+
+export const useCreateRentRequest = (): UseMutationResult<
+  RentRequest,
+  Error,
+  { conversationId: string }
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation<RentRequest, Error, { conversationId: string }>({
+    mutationFn: async ({ conversationId }) => {
+      try {
+        const response = await api.post<{ contract: RentRequest }>(
+          "/api/contracts/request",
+          { conversationId },
+        );
+
+        return response.data.contract;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    onSuccess: (contract) => {
+      queryClient.setQueryData(
+        messageQueryKeys.rentRequestByConversation(contract.conversationId),
+        contract,
+      );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+    },
+  });
+};
+
+const useUpdateRentRequestStatus = (
+  status: Extract<ContractStatus, "APPROVED" | "ENDED">,
+) => {
+  const queryClient = useQueryClient();
+  const endpoint = status === "APPROVED" ? "accept" : "reject";
+
+  return useMutation<RentRequest, Error, { contractId: string }>({
+    mutationFn: async ({ contractId }) => {
+      try {
+        const response = await api.patch<{ contract: RentRequest }>(
+          `/api/contracts/${contractId}/${endpoint}`,
+        );
+
+        return response.data.contract;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    onSuccess: (contract) => {
+      queryClient.setQueryData(
+        messageQueryKeys.rentRequestByConversation(contract.conversationId),
+        contract,
+      );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+    },
+  });
+};
+
+export const useAcceptRentRequest = () =>
+  useUpdateRentRequestStatus("APPROVED");
+
+export const useRejectRentRequest = () =>
+  useUpdateRentRequestStatus("ENDED");
+
+export const useCompleteRentPayment = (): UseMutationResult<
+  RentRequest,
+  Error,
+  { contractId: string }
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation<RentRequest, Error, { contractId: string }>({
+    mutationFn: async ({ contractId }) => {
+      try {
+        const response = await api.patch<{ contract: RentRequest }>(
+          `/api/contracts/${contractId}/pay`,
+        );
+
+        return response.data.contract;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    onSuccess: (contract) => {
+      queryClient.setQueryData(
+        messageQueryKeys.rentRequestByConversation(contract.conversationId),
+        contract,
+      );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+    },
+  });
+};
+
+export const useOwnerPendingRentRequests = (): UseQueryResult<
+  RentRequest[],
+  Error
+> => {
+  return useQuery<RentRequest[], Error>({
+    queryKey: messageQueryKeys.ownerPendingRentRequests,
+    queryFn: async () => {
+      try {
+        const response = await api.get<{ contracts: RentRequest[] }>(
+          "/api/contracts/owner/pending",
+        );
+
+        return response.data.contracts ?? [];
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+  });
 };

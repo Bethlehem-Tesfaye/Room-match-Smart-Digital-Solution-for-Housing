@@ -6,11 +6,12 @@ import * as conversationService from "./conversation.service.js";
 export const initiateConversation = async (req, res, next) => {
   try {
     const userA = req.userId;
-    const { userId: userB, propertyId } = req.body;
+    const { userId: userB, listingId, propertyId } = req.body;
 
     const conversation = await conversationService.getOrCreateConversation({
       userA,
       userB,
+      listingId: listingId || propertyId,
       propertyId
     });
 

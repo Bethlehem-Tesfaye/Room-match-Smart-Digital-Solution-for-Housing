@@ -6,10 +6,15 @@ import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import ConversationList from "../../features/message/components/ConversationList";
 import MessageInbox from "../../features/message/components/MessageInbox";
 import {
+  useAcceptRentRequest,
+  useCompleteRentPayment,
+  useConversationRentRequest,
+  useCreateRentRequest,
   useConversationMessages,
   useConversationPartnersMap,
   useConversations,
   useMessageSocket,
+  useRejectRentRequest,
   useSendHttpMessage,
 } from "../../features/message/hooks/useMessageHooks";
 import type { Message } from "../../features/message/types/type";
@@ -41,6 +46,11 @@ function MessagePageDashboard() {
 
   const conversationsQuery = useConversations();
   const messagesState = useConversationMessages(selectedConversationId);
+  const rentRequestQuery = useConversationRentRequest(selectedConversationId);
+  const createRentRequest = useCreateRentRequest();
+  const acceptRentRequest = useAcceptRentRequest();
+  const completeRentPayment = useCompleteRentPayment();
+  const rejectRentRequest = useRejectRentRequest();
   const sendHttpMessage = useSendHttpMessage();
 
   const conversations = useMemo(() => {
@@ -56,6 +66,17 @@ function MessagePageDashboard() {
   const selectedPartner = selectedConversationId
     ? partnerByConversationId[selectedConversationId]
     : null;
+
+  const selectedConversation = selectedConversationId
+    ? conversations.find(
+        (conversation) =>
+          conversation.conversationId === selectedConversationId,
+      )
+    : undefined;
+
+  const isOwnerView =
+    !!selectedConversation?.listing?.ownerId &&
+    selectedConversation.listing.ownerId === user?.id;
 
   const setConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
@@ -112,7 +133,6 @@ function MessagePageDashboard() {
           const existing = previousList.find(
             (item) => item.conversationId === incomingConversationId,
           );
-
 
           const updatedList = existing
             ? previousList.map((item) =>
@@ -182,6 +202,68 @@ function MessagePageDashboard() {
     }
   };
 
+  const handleRequestToRent = async () => {
+    if (!selectedConversationId) return;
+
+    try {
+      await createRentRequest.mutateAsync({
+        conversationId: selectedConversationId,
+      });
+      toast.success("Rent request sent");
+      rentRequestQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create request";
+      toast.error(message);
+    }
+  };
+
+  const handleAcceptRentRequest = async () => {
+    const contractId = rentRequestQuery.data?._id;
+    if (!contractId) return;
+
+    try {
+      await acceptRentRequest.mutateAsync({ contractId });
+      toast.success("Rent request accepted");
+      rentRequestQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to accept request";
+      toast.error(message);
+    }
+  };
+
+  const handleRejectRentRequest = async () => {
+    const contractId = rentRequestQuery.data?._id;
+    if (!contractId) return;
+
+    try {
+      await rejectRentRequest.mutateAsync({ contractId });
+      toast.success("Rent request rejected");
+      rentRequestQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reject request";
+      toast.error(message);
+    }
+  };
+
+  const handleCompletePayment = async () => {
+    const contractId = rentRequestQuery.data?._id;
+    if (!contractId) return;
+
+    try {
+      await completeRentPayment.mutateAsync({ contractId });
+      toast.success("Payment completed");
+      rentRequestQuery.refetch();
+      conversationsQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to complete payment";
+      toast.error(message);
+    }
+  };
+
   return (
     <main className="min-h-screen pt-18 ">
       <DashboardNavbar activeTab={null} />
@@ -204,7 +286,21 @@ function MessagePageDashboard() {
               conversationLabel={
                 selectedPartner?.name || selectedPartner?.email || "Inbox"
               }
+              conversationListing={selectedConversation?.listing}
               currentUserId={user?.id}
+              isOwnerView={isOwnerView}
+              rentRequest={rentRequestQuery.data}
+              isRentRequestLoading={rentRequestQuery.isLoading}
+              isRentActionPending={
+                createRentRequest.isPending ||
+                acceptRentRequest.isPending ||
+                completeRentPayment.isPending ||
+                rejectRentRequest.isPending
+              }
+              onRequestToRent={handleRequestToRent}
+              onCompletePayment={handleCompletePayment}
+              onAcceptRentRequest={handleAcceptRentRequest}
+              onRejectRentRequest={handleRejectRentRequest}
               resolveSenderName={resolveSenderName}
               isPartnerLoading={isPartnersLoading}
               messages={messagesState.messages}

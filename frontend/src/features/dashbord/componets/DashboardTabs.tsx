@@ -19,6 +19,7 @@ const tabLabels: Record<NonNullDashboardTabKey, string> = {
   dashboard: "Dashboard",
   "my-properties": "My Properties",
   messages: "Messages",
+  "rental-requests": "Rental Requests",
   "add-listing": "Add Listing",
 };
 

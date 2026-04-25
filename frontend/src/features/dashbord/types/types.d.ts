@@ -5,6 +5,7 @@ export type DashboardTabKey =
   | "dashboard"
   | "my-properties"
   | "messages"
+  | "rental-requests"
   | "add-listing"
   | null;
 

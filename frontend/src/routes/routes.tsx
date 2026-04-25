@@ -23,6 +23,7 @@ import ProfilePageDashboard from "../pages/profile/ProfilePageDashboard";
 import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
 import RoommatePage from "../pages/roommate/RoommatePage";
 import MessagePageDashboard from "../pages/message/MessagePageDashboard";
+import RentalRequestsPage from "../pages/dashboard/RentalRequestsPage";
 
 export const router = createBrowserRouter([
   {
@@ -126,6 +127,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard/message",
         element: <MessagePageDashboard />,
+      },
+      {
+        path: "/dashboard/rental-requests",
+        element: <RentalRequestsPage />,
       },
     ],
   },

@@ -104,7 +104,9 @@ function ConversationList({
             selectedConversationId === conversation.conversationId;
           const title = getConversationLabel(conversation.conversationId);
           const avatarLabel = (title || "?").charAt(0).toUpperCase();
-
+          const listingTitle = conversation.listing?.title;
+          const listingLocation =
+            conversation.listing?.city || conversation.listing?.address;
 
           return (
             <li
@@ -151,9 +153,11 @@ function ConversationList({
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="truncate text-sm text-(--palette-soft-purple)">
-                      {conversation.lastMessageAt
-                        ? "Tap to open conversation"
-                        : "No messages yet"}
+                      {listingTitle
+                        ? `${listingTitle}${listingLocation ? ` • ${listingLocation}` : ""}`
+                        : conversation.lastMessageAt
+                          ? "Tap to open conversation"
+                          : "No messages yet"}
                     </p>
                     {isSelected ? (
                       <span className="h-2.5 w-2.5 rounded-full bg-(--palette-soft-purple)" />
