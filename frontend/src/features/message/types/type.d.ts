@@ -1,8 +1,40 @@
 export type MessageType = "Text" | "Image" | "Document";
 
+export interface ConversationListing {
+  _id: string;
+  ownerId?: string;
+  title: string;
+  city?: string;
+  address?: string;
+  price?: number;
+  currency?: string;
+}
+
+export type ContractStatus = "PENDING" | "APPROVED" | "ACTIVE" | "ENDED";
+
+export interface RentRequestParty {
+  _id: string;
+  name?: string;
+  email?: string;
+  image?: string;
+}
+
+export interface RentRequest {
+  _id: string;
+  tenantId: string | RentRequestParty;
+  ownerId: string | RentRequestParty;
+  listingId: string | ConversationListing;
+  conversationId: string;
+  status: ContractStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Conversation {
   _id: string;
   participantsKey?: string;
+  listingId?: string | null;
+  listing?: ConversationListing | null;
   propertyId?: string | null;
   isRoommateChat?: boolean;
   lastMessageAt?: string | null;
@@ -20,6 +52,8 @@ export interface ConversationSummaryApiItem {
 export interface ConversationSummary {
   conversationId: string;
   lastMessageAt: string | null;
+  listingId?: string | null;
+  listing?: ConversationListing | null;
 }
 
 export interface ConversationParticipantUser {
@@ -57,6 +91,7 @@ export interface Message {
 export interface MessageSendInput {
   conversationId?: string;
   receiverId?: string;
+  listingId?: string;
   propertyId?: string;
   content: string;
   messageType?: MessageType;
@@ -64,6 +99,7 @@ export interface MessageSendInput {
 
 export interface InitiateConversationInput {
   userId: string;
+  listingId?: string;
   propertyId?: string;
   isRoommateChat?: boolean;
 }
@@ -90,7 +126,7 @@ export interface MessageSendAck {
 
 export interface SendPropertyMessageInput {
   ownerId: string;
-  propertyId: string;
+  listingId: string;
   content: string;
 }
 

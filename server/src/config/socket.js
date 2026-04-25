@@ -91,12 +91,19 @@ export const initSocket = (httpServer) => {
           return;
         }
 
-        const { conversationId, receiverId, propertyId, content, messageType } =
-          data ?? {};
+        const {
+          conversationId,
+          receiverId,
+          listingId,
+          propertyId,
+          content,
+          messageType
+        } = data ?? {};
 
         const result = await realtimeMessageService.sendRealtimeMessage({
           senderId,
           receiverId,
+          listingId,
           propertyId,
           conversationId,
           content,

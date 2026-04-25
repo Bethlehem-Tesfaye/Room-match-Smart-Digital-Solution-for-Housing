@@ -6,12 +6,23 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import type { Message } from "../types/type";
+import { Link } from "react-router-dom";
+import type { ConversationListing, Message, RentRequest } from "../types/type";
+import { Building2 } from "lucide-react";
 
 interface MessageInboxProps {
   conversationId?: string;
   conversationLabel: string;
+  conversationListing?: ConversationListing | null;
   currentUserId?: string;
+  isOwnerView?: boolean;
+  rentRequest?: RentRequest | null;
+  isRentRequestLoading?: boolean;
+  isRentActionPending?: boolean;
+  onRequestToRent?: () => Promise<void>;
+  onCompletePayment?: () => Promise<void>;
+  onAcceptRentRequest?: () => Promise<void>;
+  onRejectRentRequest?: () => Promise<void>;
   resolveSenderName?: (sender: Message["senderId"]) => string | undefined;
   isPartnerLoading?: boolean;
   messages: Message[];
@@ -28,7 +39,16 @@ const getSenderId = (sender: Message["senderId"]) =>
 function MessageInbox({
   conversationId,
   conversationLabel,
+  conversationListing,
   currentUserId,
+  isOwnerView = false,
+  rentRequest,
+  isRentRequestLoading = false,
+  isRentActionPending = false,
+  onRequestToRent,
+  onCompletePayment,
+  onAcceptRentRequest,
+  onRejectRentRequest,
   resolveSenderName,
   isPartnerLoading = false,
   messages,
@@ -155,6 +175,93 @@ function MessageInbox({
         <h2 className="text-sm font-semibold text-(--palette-deep)">
           {conversationLabel}
         </h2>
+        {conversationListing ? (
+          <p className="mt-1 truncate text-xs text-(--palette-soft-purple) underline flex gap-2">
+            <Building2 size={19} />{" "}
+            <div className="flex item-center justify-center text-blue-500">
+              <Link
+                to={`/properties/${conversationListing._id}`}
+                className="font-semibold hover:underline flex  items-center text-sm"
+              >
+                {conversationListing.title}
+                {conversationListing.city
+                  ? ` • ${conversationListing.city}`
+                  : ""}
+              </Link>
+            </div>
+          </p>
+        ) : null}
+
+        {conversationListing && !isOwnerView ? (
+          <div className="mt-2">
+            {rentRequest?.status === "APPROVED" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void onCompletePayment?.();
+                }}
+                disabled={isRentActionPending}
+                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Complete Payment
+              </button>
+            ) : rentRequest?.status === "ACTIVE" ? (
+              <span className="inline-flex rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">
+                Rented
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  void onRequestToRent?.();
+                }}
+                disabled={
+                  isRentRequestLoading ||
+                  isRentActionPending ||
+                  rentRequest?.status === "PENDING" ||
+                  rentRequest?.status === "ENDED"
+                }
+                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {rentRequest?.status === "PENDING"
+                  ? "Request Pending"
+                  : rentRequest?.status === "ENDED"
+                    ? "Request Ended"
+                    : "Request to Rent"}
+              </button>
+            )}
+          </div>
+        ) : null}
+
+        {conversationListing &&
+        isOwnerView &&
+        rentRequest?.status === "PENDING" ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-(--palette-soft-purple)">
+              User requested to rent this property
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void onAcceptRentRequest?.();
+              }}
+              disabled={isRentActionPending}
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void onRejectRentRequest?.();
+              }}
+              disabled={isRentActionPending}
+              className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Reject
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="px-5 py-2">

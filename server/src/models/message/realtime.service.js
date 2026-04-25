@@ -26,16 +26,23 @@ const normalizeMessageType = (messageType) => {
   return normalized;
 };
 
-const resolveReceiverId = async ({ senderId, receiverId, propertyId }) => {
+const resolveReceiverId = async ({
+  senderId,
+  receiverId,
+  listingId,
+  propertyId
+}) => {
   if (receiverId) {
     return receiverId;
   }
 
-  if (!propertyId) {
-    throw new CustomError("receiverId or propertyId is required", 400);
+  const listingOrPropertyId = listingId || propertyId;
+
+  if (!listingOrPropertyId) {
+    throw new CustomError("receiverId or listingId is required", 400);
   }
 
-  const normalizedPropertyId = toObjectId(propertyId, "property id");
+  const normalizedPropertyId = toObjectId(listingOrPropertyId, "listing id");
 
   const property = await Property.findOne({
     _id: normalizedPropertyId,
@@ -58,6 +65,7 @@ const resolveReceiverId = async ({ senderId, receiverId, propertyId }) => {
 export const sendRealtimeMessage = async ({
   senderId,
   receiverId,
+  listingId,
   propertyId,
   conversationId,
   content,
@@ -90,12 +98,14 @@ export const sendRealtimeMessage = async ({
     resolvedReceiverId = await resolveReceiverId({
       senderId,
       receiverId,
+      listingId,
       propertyId
     });
 
     const conversation = await conversationService.getOrCreateConversation({
       userA: senderId,
       userB: resolvedReceiverId,
+      listingId: listingId || propertyId,
       propertyId
     });
 

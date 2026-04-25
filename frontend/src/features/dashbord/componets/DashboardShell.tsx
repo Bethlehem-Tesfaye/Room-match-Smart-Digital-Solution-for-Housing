@@ -15,8 +15,13 @@ function DashboardShell() {
       navigate("/dashboard/my-properties");
       return;
     }
-      if (tab === "messages") {
+    if (tab === "messages") {
       navigate("/dashboard/message");
+      return;
+    }
+
+    if (tab === "rental-requests") {
+      navigate("/dashboard/rental-requests");
       return;
     }
 

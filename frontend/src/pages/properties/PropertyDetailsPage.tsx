@@ -110,7 +110,7 @@ function PropertyDetailsPage() {
     try {
       const result = await sendPropertyMessage.mutateAsync({
         ownerId,
-        propertyId: property._id,
+        listingId: property._id,
         content,
       });
 

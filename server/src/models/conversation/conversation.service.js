@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import CustomError from "../../lib/errors.js";
 import { User } from "../auth/schema.js";
+import { Property } from "../property/schema.js";
 import { Conversation, ConversationParticipant } from "./schema.js";
 
 const { Types } = mongoose;
@@ -13,13 +14,17 @@ const toObjectId = (value, fieldName) => {
   return new Types.ObjectId(value);
 };
 
-const buildParticipantsKey = (userAId, userBId) => {
-  return [userAId.toString(), userBId.toString()].sort().join(":");
+const buildParticipantsKey = (userAId, userBId, listingId = null) => {
+  const usersPart = [userAId.toString(), userBId.toString()].sort().join(":");
+  const listingPart = listingId ? listingId.toString() : "no-listing";
+
+  return `${usersPart}:${listingPart}`;
 };
 
 export const getOrCreateConversation = async ({
   userA,
   userB,
+  listingId = null,
   propertyId = null,
   isRoommateChat = false
 }) => {
@@ -35,11 +40,30 @@ export const getOrCreateConversation = async ({
     throw new CustomError("Recipient user not found", 404);
   }
 
-  const normalizedPropertyId = propertyId
-    ? toObjectId(propertyId, "property id")
+  const listingOrPropertyId = listingId || propertyId;
+  const normalizedListingId = listingOrPropertyId
+    ? toObjectId(listingOrPropertyId, "listing id")
     : null;
 
-  const participantsKey = buildParticipantsKey(userAId, userBId);
+  if (normalizedListingId) {
+    const listing = await Property.findOne({
+      _id: normalizedListingId,
+      ownerId: userBId.toString(),
+      deletedAt: null
+    })
+      .select({ _id: 1 })
+      .lean();
+
+    if (!listing) {
+      throw new CustomError("Listing not found for the provided owner", 404);
+    }
+  }
+
+  const participantsKey = buildParticipantsKey(
+    userAId,
+    userBId,
+    normalizedListingId
+  );
 
   const byParticipantsKey = await Conversation.findOne({
     participantsKey
@@ -77,6 +101,25 @@ export const getOrCreateConversation = async ({
     {
       $unwind: "$conversation"
     },
+    ...(normalizedListingId
+      ? [
+          {
+            $match: {
+              $expr: {
+                $eq: [
+                  {
+                    $ifNull: [
+                      "$conversation.listingId",
+                      "$conversation.propertyId"
+                    ]
+                  },
+                  normalizedListingId
+                ]
+              }
+            }
+          }
+        ]
+      : []),
     {
       $limit: 1
     }
@@ -85,12 +128,28 @@ export const getOrCreateConversation = async ({
   if (legacyConversation.length > 0) {
     await Conversation.updateOne(
       { _id: legacyConversation[0].conversation._id },
-      { $set: { participantsKey } }
+      {
+        $set: {
+          participantsKey,
+          ...(normalizedListingId
+            ? {
+                listingId: normalizedListingId,
+                propertyId: normalizedListingId
+              }
+            : {})
+        }
+      }
     );
 
     return {
       ...legacyConversation[0].conversation,
-      participantsKey
+      participantsKey,
+      ...(normalizedListingId
+        ? {
+            listingId: normalizedListingId,
+            propertyId: normalizedListingId
+          }
+        : {})
     };
   }
 
@@ -103,7 +162,8 @@ export const getOrCreateConversation = async ({
       [
         {
           participantsKey,
-          propertyId: normalizedPropertyId,
+          listingId: normalizedListingId,
+          propertyId: normalizedListingId,
           isRoommateChat
         }
       ],
@@ -164,6 +224,53 @@ export const getUserConversations = async (userId) => {
     },
     {
       $unwind: "$conversation"
+    },
+    {
+      $lookup: {
+        from: "property",
+        let: {
+          listingId: {
+            $ifNull: ["$conversation.listingId", "$conversation.propertyId"]
+          }
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$_id", "$$listingId"] },
+                  { $eq: ["$deletedAt", null] }
+                ]
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              ownerId: 1,
+              title: 1,
+              city: 1,
+              address: 1,
+              price: 1,
+              currency: 1
+            }
+          }
+        ],
+        as: "listing"
+      }
+    },
+    {
+      $addFields: {
+        "conversation.listingId": {
+          $ifNull: ["$conversation.listingId", "$conversation.propertyId"]
+        },
+        "conversation.listing": { $first: "$listing" }
+      }
+    },
+    {
+      $project: {
+        listing: 0
+      }
     },
     {
       $sort: { "conversation.lastMessageAt": -1 }

@@ -6,6 +6,7 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  ClipboardCheck,
   Settings,
   ShieldCheck,
   User,
@@ -26,6 +27,7 @@ const dashboardTabs: DashboardTabItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "my-properties", label: "My Properties", icon: Building2 },
   { key: "messages", label: "Messages", icon: MessageCircle },
+  { key: "rental-requests", label: "Rental Requests", icon: ClipboardCheck },
   //   { key: "add-listing", label: "Add Listing", icon: PlusSquare },
 ];
 
@@ -99,6 +101,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
       return;
     }
 
+    if (tab === "rental-requests") {
+      navigate("/dashboard/rental-requests");
+      return;
+    }
+
     if (tab === "add-listing") {
       navigate("/properties/create");
     }
@@ -136,7 +143,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
         backgroundColor: palette.sectionBg,
       }}
     >
-      <div className="mx-auto flex max-w-6xl items-center gap-3 py-4 lg:gap-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 py-4 lg:gap-6">
         <Link to="/" aria-label="Go to home" className="cursor-pointer">
           <Logo className="mr-3 flex-row gap-2" />
         </Link>

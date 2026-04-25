@@ -6,6 +6,7 @@ import settingRouter from "../models/setting/setting.routes.js";
 import conversationRouter from "../models/conversation/conversation.routes.js";
 import messageRouter from "../models/message/message.routes.js";
 import notificationRouter from "../models/notification/notification.routes.js";
+import contractRouter from "../models/contract/contract.routes.js";
 
 export const router = express.Router();
 
@@ -16,3 +17,4 @@ router.use("/settings", settingRouter);
 router.use("/conversations", conversationRouter);
 router.use("/messages", messageRouter);
 router.use("/notifications", notificationRouter);
+router.use("/contracts", contractRouter);

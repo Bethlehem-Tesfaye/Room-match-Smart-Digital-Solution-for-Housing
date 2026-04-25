@@ -7,7 +7,14 @@ const conversationSchema = new Schema(
   {
     participantsKey: {
       type: String,
-      required: true,
+      required: true
+      // index: true
+    },
+
+    listingId: {
+      type: Schema.Types.ObjectId,
+      ref: "Property",
+      default: null,
       index: true
     },
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const initiateConversationSchema = z.object({
   userId: z.string().trim().min(1, "Recipient user id is required"),
+  listingId: z.string().trim().min(1, "Listing id cannot be empty").optional(),
   propertyId: z
     .string()
     .trim()
