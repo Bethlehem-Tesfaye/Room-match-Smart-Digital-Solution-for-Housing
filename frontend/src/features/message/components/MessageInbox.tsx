@@ -194,40 +194,51 @@ function MessageInbox({
 
         {conversationListing && !isOwnerView ? (
           <div className="mt-2">
-            {rentRequest?.status === "APPROVED" ? (
+            {!rentRequest ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void onRequestToRent?.();
+                }}
+                disabled={isRentRequestLoading || isRentActionPending}
+                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Request to Rent
+              </button>
+            ) : rentRequest.status === "PENDING" ? (
+              <button
+                type="button"
+                disabled
+                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Request Pending
+              </button>
+            ) : rentRequest.status === "APPROVED" ? (
               <button
                 type="button"
                 onClick={() => {
                   void onCompletePayment?.();
                 }}
                 disabled={isRentActionPending}
-                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Complete Payment
               </button>
-            ) : rentRequest?.status === "ACTIVE" ? (
-              <span className="inline-flex rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">
+            ) : rentRequest.status === "ACTIVE" ? (
+              <button
+                type="button"
+                disabled
+                className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 Rented
-              </span>
+              </button>
             ) : (
               <button
                 type="button"
-                onClick={() => {
-                  void onRequestToRent?.();
-                }}
-                disabled={
-                  isRentRequestLoading ||
-                  isRentActionPending ||
-                  rentRequest?.status === "PENDING" ||
-                  rentRequest?.status === "ENDED"
-                }
-                className="rounded-md bg-(--palette-purple) px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled
+                className="rounded-md bg-zinc-500 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {rentRequest?.status === "PENDING"
-                  ? "Request Pending"
-                  : rentRequest?.status === "ENDED"
-                    ? "Request Ended"
-                    : "Request to Rent"}
+                Request Ended
               </button>
             )}
           </div>
@@ -261,6 +272,20 @@ function MessageInbox({
               Reject
             </button>
           </div>
+        ) : null}
+
+        {conversationListing &&
+        isOwnerView &&
+        rentRequest?.status === "APPROVED" ? (
+          <p className="mt-2 text-xs text-(--palette-soft-purple)">
+            Awaiting tenant payment
+          </p>
+        ) : null}
+
+        {conversationListing &&
+        isOwnerView &&
+        rentRequest?.status === "ACTIVE" ? (
+          <p className="mt-2 text-xs font-semibold text-emerald-700">Rented</p>
         ) : null}
       </div>
 
