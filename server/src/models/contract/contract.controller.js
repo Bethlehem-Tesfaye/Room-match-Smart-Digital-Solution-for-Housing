@@ -4,6 +4,7 @@ import {
   createRentRequest,
   getConversationRentRequest,
   getOwnerPendingRentRequests,
+  getTenantRentalContracts,
   rejectRentRequest
 } from "./contract.service.js";
 
@@ -92,6 +93,19 @@ export const fetchOwnerPendingRequests = async (req, res, next) => {
   try {
     const contracts = await getOwnerPendingRentRequests({
       ownerUserId: req.userId
+    });
+
+    return res.status(200).json({ contracts });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// GET /contracts/tenant/my-rentals
+export const fetchTenantRentals = async (req, res, next) => {
+  try {
+    const contracts = await getTenantRentalContracts({
+      tenantUserId: req.userId
     });
 
     return res.status(200).json({ contracts });

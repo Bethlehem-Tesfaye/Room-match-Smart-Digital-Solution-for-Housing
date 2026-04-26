@@ -6,6 +6,7 @@ import {
   completePayment,
   fetchConversationRentRequest,
   fetchOwnerPendingRequests,
+  fetchTenantRentals,
   rejectRequest,
   requestToRent
 } from "./contract.controller.js";
@@ -32,6 +33,8 @@ contractRouter.get(
 );
 
 contractRouter.get("/owner/pending", authMiddleware, fetchOwnerPendingRequests);
+
+contractRouter.get("/tenant/my-rentals", authMiddleware, fetchTenantRentals);
 
 contractRouter.patch(
   "/:id/accept",

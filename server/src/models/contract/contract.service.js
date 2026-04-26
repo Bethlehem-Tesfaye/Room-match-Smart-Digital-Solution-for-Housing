@@ -306,3 +306,42 @@ export const getOwnerPendingRentRequests = async ({ ownerUserId }) => {
       contract.tenantId && contract.listingId && !contract.listingId.deletedAt
   );
 };
+
+export const getTenantRentalContracts = async ({ tenantUserId }) => {
+  const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
+
+  const contracts = await Contract.find({
+    tenantId: normalizedTenantId,
+    status: { $in: ["PENDING", "RESERVED", "ACTIVE"] }
+  })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .populate({
+      path: "ownerId",
+      model: User,
+      select: "_id name email image"
+    })
+    .populate({
+      path: "listingId",
+      model: Property,
+      select: "_id title city address price currency ownerId status deletedAt"
+    })
+    .lean();
+
+  return contracts.filter((contract) => {
+    const listing = contract.listingId;
+    const owner = contract.ownerId;
+
+    if (!listing || !owner || listing.deletedAt) {
+      return false;
+    }
+
+    const listingOwnerId =
+      typeof listing.ownerId === "string"
+        ? listing.ownerId
+        : listing.ownerId?.toString();
+    const contractOwnerId =
+      typeof owner._id === "string" ? owner._id : owner._id?.toString();
+
+    return !!listingOwnerId && listingOwnerId === contractOwnerId;
+  });
+};

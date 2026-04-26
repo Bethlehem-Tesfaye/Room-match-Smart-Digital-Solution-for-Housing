@@ -1,6 +1,7 @@
 import {
   ChevronDown,
   Heart,
+  KeyRound,
   LayoutDashboard,
   LogIn,
   LogOut,
@@ -12,7 +13,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import Logo from "../../../components/logo";
 import useIsDark from "../../../lib/useTheme";
@@ -21,7 +22,7 @@ import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 
-const navItems = [
+const baseNavItems = [
   { to: "/properties", label: "Find Place", icon: Search },
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
   { to: "/roommate", label: "Find Roommate", icon: Users },
@@ -43,6 +44,18 @@ function LandingNavbar() {
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const isDark = useIsDark();
+  const navItems = useMemo(() => {
+    const tenantNavItem =
+      isAuthenticated && profile?.role !== "admin"
+        ? [{ to: "/my-rentals", label: "My Rentals", icon: KeyRound }]
+        : [];
+
+    return [
+      ...baseNavItems.slice(0, 4),
+      ...tenantNavItem,
+      ...baseNavItems.slice(4),
+    ];
+  }, [isAuthenticated, profile?.role]);
 
   const profileName = profile?.fullName?.trim() || "My Profile";
   const profilePictureUrl = profile?.profilePictureUrl || null;
