@@ -34,6 +34,7 @@ const messageQueryKeys = {
   rentRequestByConversation: (conversationId: string) =>
     ["contracts", "conversation", conversationId] as const,
   ownerPendingRentRequests: ["contracts", "owner", "pending"] as const,
+  tenantRentalContracts: ["contracts", "tenant", "my-rentals"] as const,
 };
 
 const getErrorMessage = (error: unknown): string => {
@@ -538,6 +539,9 @@ export const useCreateRentRequest = (): UseMutationResult<
         contract,
       );
       queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.tenantRentalContracts,
+      });
+      queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
       });
     },
@@ -567,6 +571,9 @@ const useUpdateRentRequestStatus = (
         messageQueryKeys.rentRequestByConversation(contract.conversationId),
         contract,
       );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.tenantRentalContracts,
+      });
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
       });
@@ -604,6 +611,9 @@ export const useCompleteRentPayment = (): UseMutationResult<
         contract,
       );
       queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.tenantRentalContracts,
+      });
+      queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
       });
       queryClient.invalidateQueries({
@@ -630,5 +640,27 @@ export const useOwnerPendingRentRequests = (): UseQueryResult<
         throw new Error(getErrorMessage(error));
       }
     },
+  });
+};
+
+export const useTenantRentalContracts = (): UseQueryResult<
+  RentRequest[],
+  Error
+> => {
+  return useQuery<RentRequest[], Error>({
+    queryKey: messageQueryKeys.tenantRentalContracts,
+    queryFn: async () => {
+      try {
+        const response = await api.get<{ contracts: RentRequest[] }>(
+          "/api/contracts/tenant/my-rentals",
+        );
+
+        return response.data.contracts ?? [];
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 };

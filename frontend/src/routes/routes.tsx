@@ -24,6 +24,7 @@ import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
 import RoommatePage from "../pages/roommate/RoommatePage";
 import MessagePageDashboard from "../pages/message/MessagePageDashboard";
 import RentalRequestsPage from "../pages/dashboard/RentalRequestsPage";
+import MyRentalsPage from "../pages/rentals/MyRentalsPage";
 
 export const router = createBrowserRouter([
   {
@@ -95,6 +96,10 @@ export const router = createBrowserRouter([
       {
         path: "/message",
         element: <MessagePage />,
+      },
+      {
+        path: "/my-rentals",
+        element: <MyRentalsPage />,
       },
       {
         path: "/profile",
