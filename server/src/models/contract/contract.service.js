@@ -217,7 +217,7 @@ export const rejectRentRequest = async ({ contractId, ownerUserId }) => {
   });
 };
 
-export const completeRentPayment = async ({ contractId, tenantUserId }) => {
+export const completeContractPayment = async ({ contractId, tenantUserId }) => {
   const normalizedContractId = toObjectId(contractId, "contract id");
   const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
 
@@ -231,19 +231,15 @@ export const completeRentPayment = async ({ contractId, tenantUserId }) => {
   }
 
   if (contract.status !== "APPROVED") {
-    throw new CustomError("Contract is not ready for payment", 400);
+    throw new CustomError(
+      "Payment is only allowed for approved contracts",
+      400
+    );
   }
 
   const listing = await Property.findOneAndUpdate(
-    {
-      _id: contract.listingId,
-      deletedAt: null
-    },
-    {
-      $set: {
-        status: "Rented"
-      }
-    },
+    { _id: contract.listingId, deletedAt: null },
+    { $set: { status: "Rented" } },
     { new: true }
   );
 

@@ -1,6 +1,6 @@
 import {
   acceptRentRequest,
-  completeRentPayment,
+  completeContractPayment,
   createRentRequest,
   getConversationRentRequest,
   getOwnerPendingRentRequests,
@@ -71,12 +71,12 @@ export const rejectRequest = async (req, res, next) => {
   }
 };
 
-// PATCH /contracts/:id/pay
+// PATCH /contracts/:id/complete-payment
 export const completePayment = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const contract = await completeRentPayment({
+    const contract = await completeContractPayment({
       contractId: id,
       tenantUserId: req.userId
     });

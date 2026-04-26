@@ -48,7 +48,7 @@ contractRouter.patch(
 );
 
 contractRouter.patch(
-  "/:id/pay",
+  "/:id/complete-payment",
   authMiddleware,
   validate(contractParamsSchema, "params"),
   completePayment

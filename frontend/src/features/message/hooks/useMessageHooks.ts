@@ -577,8 +577,7 @@ const useUpdateRentRequestStatus = (
 export const useAcceptRentRequest = () =>
   useUpdateRentRequestStatus("APPROVED");
 
-export const useRejectRentRequest = () =>
-  useUpdateRentRequestStatus("ENDED");
+export const useRejectRentRequest = () => useUpdateRentRequestStatus("ENDED");
 
 export const useCompleteRentPayment = (): UseMutationResult<
   RentRequest,
@@ -591,7 +590,7 @@ export const useCompleteRentPayment = (): UseMutationResult<
     mutationFn: async ({ contractId }) => {
       try {
         const response = await api.patch<{ contract: RentRequest }>(
-          `/api/contracts/${contractId}/pay`,
+          `/api/contracts/${contractId}/complete-payment`,
         );
 
         return response.data.contract;
@@ -606,6 +605,9 @@ export const useCompleteRentPayment = (): UseMutationResult<
       );
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.conversationList,
       });
     },
   });

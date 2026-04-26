@@ -254,7 +254,7 @@ function MessagePage() {
 
     try {
       await completeRentPayment.mutateAsync({ contractId });
-      toast.success("Payment completed");
+      toast.success("Mock payment completed");
       rentRequestQuery.refetch();
       conversationsQuery.refetch();
     } catch (error) {
