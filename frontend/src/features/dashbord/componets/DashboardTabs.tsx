@@ -2,6 +2,10 @@ import { useMemo } from "react";
 import { Building2, Eye, MessageCircle, Plus, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { palette } from "../../../theme/palette";
+import {
+  useConversations,
+  useOwnerPendingRentRequests,
+} from "../../message/hooks/useMessageHooks";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import {
   useMyListingCounts,
@@ -28,6 +32,12 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
   const { data: counts, isPending: isCountsPending } = useMyListingCounts();
   const { data: myProperties, isPending: isPropertiesPending } =
     useMyPropertiesOverview({ page: 1, limit: 4 });
+  const { data: conversations, isPending: isConversationsPending } =
+    useConversations();
+  const {
+    data: pendingRentRequests,
+    isPending: isRentRequestsPending,
+  } = useOwnerPendingRentRequests();
 
   const activeLabel = useMemo(
     () => tabLabels[activeTab as NonNullDashboardTabKey] ?? "Dashboard",
@@ -58,8 +68,8 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
   const firstName = profile?.fullName?.trim()?.split(" ")[0] || "Owner";
   const totalProperties = counts?.totalListings ?? 0;
   const activeListings = counts?.activeListings ?? 0;
-  const messagesCount = 5;
-  const inquiriesCount = 5;
+  const messagesCount = conversations?.length ?? 0;
+  const inquiriesCount = pendingRentRequests?.length ?? 0;
   const properties = myProperties?.properties ?? [];
 
   return (
@@ -157,7 +167,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
                 className="mt-2 text-4xl font-bold"
                 style={{ color: palette.deep }}
               >
-                {messagesCount}
+                {isConversationsPending ? "..." : messagesCount}
               </p>
             </div>
             <span
@@ -185,7 +195,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
                 className="mt-2 text-4xl font-bold"
                 style={{ color: palette.deep }}
               >
-                {inquiriesCount}
+                {isRentRequestsPending ? "..." : inquiriesCount}
               </p>
             </div>
             <span
@@ -308,7 +318,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
           </div>
         </div>
 
-        <div
+        {/* <div
           className="rounded-2xl border p-6"
           style={{
             borderColor: palette.border,
@@ -372,7 +382,7 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );
