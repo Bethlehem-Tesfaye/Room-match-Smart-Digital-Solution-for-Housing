@@ -252,7 +252,8 @@ export const getUserConversations = async (userId) => {
               city: 1,
               address: 1,
               price: 1,
-              currency: 1
+              currency: 1,
+              status: 1
             }
           }
         ],

@@ -545,10 +545,10 @@ export const useCreateRentRequest = (): UseMutationResult<
 };
 
 const useUpdateRentRequestStatus = (
-  status: Extract<ContractStatus, "APPROVED" | "ENDED">,
+  status: Extract<ContractStatus, "RESERVED" | "ENDED">,
 ) => {
   const queryClient = useQueryClient();
-  const endpoint = status === "APPROVED" ? "accept" : "reject";
+  const endpoint = status === "RESERVED" ? "accept" : "reject";
 
   return useMutation<RentRequest, Error, { contractId: string }>({
     mutationFn: async ({ contractId }) => {
@@ -575,7 +575,7 @@ const useUpdateRentRequestStatus = (
 };
 
 export const useAcceptRentRequest = () =>
-  useUpdateRentRequestStatus("APPROVED");
+  useUpdateRentRequestStatus("RESERVED");
 
 export const useRejectRentRequest = () => useUpdateRentRequestStatus("ENDED");
 

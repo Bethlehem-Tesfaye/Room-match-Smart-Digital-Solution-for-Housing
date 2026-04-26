@@ -67,7 +67,8 @@ const getConversationContext = async ({ conversationId, userId }) => {
       city: 1,
       address: 1,
       price: 1,
-      currency: 1
+      currency: 1,
+      status: 1
     })
     .lean();
 
@@ -97,7 +98,8 @@ const getConversationContext = async ({ conversationId, userId }) => {
     requesterId: normalizedUserId,
     ownerId: ownerObjectId,
     tenantId: tenantParticipant.userId,
-    listingId: toObjectId(listing._id, "listing id")
+    listingId: toObjectId(listing._id, "listing id"),
+    listingStatus: listing.status
   };
 };
 
@@ -129,6 +131,10 @@ export const createRentRequest = async ({
 
   if (context.requesterId.equals(context.ownerId)) {
     throw new CustomError("Property owner cannot create rent request", 400);
+  }
+
+  if (context.listingStatus === "Rented") {
+    throw new CustomError("This property is no longer available.", 409);
   }
 
   const existing = await Contract.findOne({
@@ -205,7 +211,7 @@ export const acceptRentRequest = async ({ contractId, ownerUserId }) => {
   return updateContractStatus({
     contractId,
     ownerUserId,
-    nextStatus: "APPROVED"
+    nextStatus: "RESERVED"
   });
 };
 
@@ -230,21 +236,42 @@ export const completeContractPayment = async ({ contractId, tenantUserId }) => {
     throw new CustomError("Rent request not found", 404);
   }
 
-  if (contract.status !== "APPROVED") {
+  if (!["RESERVED", "APPROVED"].includes(contract.status)) {
     throw new CustomError(
-      "Payment is only allowed for approved contracts",
+      "Payment is only allowed for reserved contracts",
       400
     );
   }
 
+  const listingSnapshot = await Property.findOne({
+    _id: contract.listingId,
+    deletedAt: null
+  })
+    .select({ _id: 1, status: 1 })
+    .lean();
+
+  if (!listingSnapshot) {
+    throw new CustomError("Listing not found", 404);
+  }
+
+  if (listingSnapshot.status !== "Active") {
+    throw new CustomError(
+      "Property is no longer available (already rented)",
+      409
+    );
+  }
+
   const listing = await Property.findOneAndUpdate(
-    { _id: contract.listingId, deletedAt: null },
+    { _id: contract.listingId, deletedAt: null, status: "Active" },
     { $set: { status: "Rented" } },
     { new: true }
   );
 
   if (!listing) {
-    throw new CustomError("Listing not found", 404);
+    throw new CustomError(
+      "Property is no longer available (already rented)",
+      409
+    );
   }
 
   contract.status = "ACTIVE";
