@@ -30,7 +30,7 @@ const contractSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "ACTIVE", "ENDED"],
+      enum: ["PENDING", "RESERVED", "ACTIVE", "ENDED"],
       default: "PENDING",
       index: true
     }

@@ -14,6 +14,7 @@ interface MessageInboxProps {
   conversationId?: string;
   conversationLabel: string;
   conversationListing?: ConversationListing | null;
+  isListingUnavailable?: boolean;
   currentUserId?: string;
   isOwnerView?: boolean;
   rentRequest?: RentRequest | null;
@@ -40,6 +41,7 @@ function MessageInbox({
   conversationId,
   conversationLabel,
   conversationListing,
+  isListingUnavailable = false,
   currentUserId,
   isOwnerView = false,
   rentRequest,
@@ -189,10 +191,27 @@ function MessageInbox({
                   : ""}
               </Link>
             </div>
+            {isListingUnavailable ? (
+              <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white no-underline">
+                RENTED
+              </span>
+            ) : null}
           </p>
         ) : null}
 
-        {conversationListing && !isOwnerView ? (
+        {conversationListing && !isOwnerView && isListingUnavailable ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              disabled
+              className="rounded-md bg-zinc-500 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Unavailable
+            </button>
+          </div>
+        ) : null}
+
+        {conversationListing && !isOwnerView && !isListingUnavailable ? (
           <div className="mt-2">
             {!rentRequest ? (
               <button
@@ -213,7 +232,7 @@ function MessageInbox({
               >
                 Request Pending
               </button>
-            ) : rentRequest.status === "APPROVED" ? (
+            ) : rentRequest.status === "RESERVED" ? (
               <button
                 type="button"
                 onClick={() => {
@@ -246,6 +265,7 @@ function MessageInbox({
 
         {conversationListing &&
         isOwnerView &&
+        !isListingUnavailable &&
         rentRequest?.status === "PENDING" ? (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="text-xs text-(--palette-soft-purple)">
@@ -276,7 +296,8 @@ function MessageInbox({
 
         {conversationListing &&
         isOwnerView &&
-        rentRequest?.status === "APPROVED" ? (
+        !isListingUnavailable &&
+        rentRequest?.status === "RESERVED" ? (
           <p className="mt-2 text-xs text-(--palette-soft-purple)">
             Awaiting tenant payment
           </p>
@@ -286,6 +307,12 @@ function MessageInbox({
         isOwnerView &&
         rentRequest?.status === "ACTIVE" ? (
           <p className="mt-2 text-xs font-semibold text-emerald-700">Rented</p>
+        ) : null}
+
+        {conversationListing && isOwnerView && isListingUnavailable ? (
+          <p className="mt-2 text-xs font-semibold text-rose-700">
+            This property is no longer available.
+          </p>
         ) : null}
       </div>
 
@@ -356,14 +383,19 @@ function MessageInbox({
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder="Type a message"
+          disabled={isListingUnavailable}
           className="flex-1 rounded-lg border border-(--palette-border) bg-(--palette-input-bg) px-3 py-2 text-sm text-(--app-text) outline-none"
         />
         <button
           type="submit"
-          disabled={!canSend}
+          disabled={!canSend || isListingUnavailable}
           className="rounded-lg bg-(--palette-purple) px-4 py-2 text-sm text-white disabled:opacity-50"
         >
-          {isSending ? "Sending..." : "Send"}
+          {isListingUnavailable
+            ? "Unavailable"
+            : isSending
+              ? "Sending..."
+              : "Send"}
         </button>
       </form>
     </div>

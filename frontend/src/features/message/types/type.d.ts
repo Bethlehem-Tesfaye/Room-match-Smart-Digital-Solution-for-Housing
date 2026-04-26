@@ -8,9 +8,10 @@ export interface ConversationListing {
   address?: string;
   price?: number;
   currency?: string;
+  status?: "Active" | "Rented" | "Inactive";
 }
 
-export type ContractStatus = "PENDING" | "APPROVED" | "ACTIVE" | "ENDED";
+export type ContractStatus = "PENDING" | "RESERVED" | "ACTIVE" | "ENDED";
 
 export interface RentRequestParty {
   _id: string;

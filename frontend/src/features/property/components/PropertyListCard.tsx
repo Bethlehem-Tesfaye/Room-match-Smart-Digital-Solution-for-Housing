@@ -37,6 +37,7 @@ function PropertyListCard({
     property.images.find((image) => image.isPrimary) ?? property.images[0];
 
   const favoriteLoading = isFavoriteLoading || isInternalFavoriteLoading;
+  const isRented = property.status === "Rented";
 
   const handleFavoriteClick = async () => {
     if (favoriteLoading || isPending) return;
@@ -68,7 +69,9 @@ function PropertyListCard({
     <>
       <Link to={`/properties/${property._id}`} className="block">
         <article
-          className="overflow-hidden rounded-2xl border bg-white shadow-sm"
+          className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
+            isRented ? "opacity-70 saturate-0" : ""
+          }`}
           style={{ borderColor: palette.border }}
         >
           <div
@@ -89,6 +92,12 @@ function PropertyListCard({
                 No image
               </div>
             )}
+
+            {isRented ? (
+              <span className="absolute left-3 top-3 rounded-full bg-rose-600 px-3 py-1 text-xs font-bold tracking-wide text-white">
+                RENTED
+              </span>
+            ) : null}
 
             <button
               type="button"

@@ -77,6 +77,8 @@ function MessagePage() {
   const isOwnerView =
     !!selectedConversation?.listing?.ownerId &&
     selectedConversation.listing.ownerId === user?.id;
+  const isSelectedListingRented =
+    selectedConversation?.listing?.status === "Rented";
 
   const setConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
@@ -175,6 +177,11 @@ function MessagePage() {
   const handleSendMessage = async (content: string) => {
     if (!selectedConversationId) return;
 
+    if (isSelectedListingRented) {
+      toast.error("This property is no longer available.");
+      return;
+    }
+
     const socketAck = await socketState.sendRealtimeMessage({
       conversationId: selectedConversationId,
       content,
@@ -204,6 +211,11 @@ function MessagePage() {
 
   const handleRequestToRent = async () => {
     if (!selectedConversationId) return;
+
+    if (isSelectedListingRented) {
+      toast.error("This property is no longer available.");
+      return;
+    }
 
     try {
       await createRentRequest.mutateAsync({
@@ -252,6 +264,11 @@ function MessagePage() {
     const contractId = rentRequestQuery.data?._id;
     if (!contractId) return;
 
+    if (isSelectedListingRented) {
+      toast.error("This property is no longer available.");
+      return;
+    }
+
     try {
       await completeRentPayment.mutateAsync({ contractId });
       toast.success("Mock payment completed");
@@ -287,6 +304,7 @@ function MessagePage() {
                 selectedPartner?.name || selectedPartner?.email || "Inbox"
               }
               conversationListing={selectedConversation?.listing}
+              isListingUnavailable={isSelectedListingRented}
               currentUserId={user?.id}
               isOwnerView={isOwnerView}
               rentRequest={rentRequestQuery.data}

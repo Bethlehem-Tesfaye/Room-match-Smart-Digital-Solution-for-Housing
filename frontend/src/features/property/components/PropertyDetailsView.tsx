@@ -54,6 +54,7 @@ function PropertyDetailsView({
   onSendMessage,
   isSendMessageLoading = false,
 }: PropertyDetailsViewProps) {
+  const isRented = property.status === "Rented";
   const orderedImages = useMemo(() => {
     if (!property.images.length) return [];
 
@@ -109,6 +110,11 @@ function PropertyDetailsView({
   const currentImage = orderedImages[activeImageIndex];
 
   const handleSendMessage = async () => {
+    if (isRented) {
+      toast.error("This property is no longer available.");
+      return;
+    }
+
     const trimmedMessage = messageDraft.trim();
 
     if (!trimmedMessage) {
@@ -231,6 +237,11 @@ function PropertyDetailsView({
             >
               {property.status}
             </span>
+            {isRented ? (
+              <span className="rounded-full bg-rose-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white">
+                RENTED
+              </span>
+            ) : null}
           </div>
 
           <h1
@@ -483,17 +494,30 @@ function PropertyDetailsView({
             placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
             value={messageDraft}
             onChange={(event) => setMessageDraft(event.target.value)}
+            disabled={isRented || isSendMessageLoading}
           />
 
-          <button
-            type="button"
-            className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: palette.softPurple }}
-            onClick={handleSendMessage}
-            disabled={isSendMessageLoading}
-          >
-            {isSendMessageLoading ? "Sending..." : "Send Message"}
-          </button>
+          {isRented ? (
+            <button
+              type="button"
+              className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white opacity-80"
+              style={{ backgroundColor: "#9CA3AF" }}
+              onClick={handleSendMessage}
+              disabled
+            >
+              Unavailable
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+              style={{ backgroundColor: palette.softPurple }}
+              onClick={handleSendMessage}
+              disabled={isSendMessageLoading}
+            >
+              {isSendMessageLoading ? "Sending..." : "Send Message"}
+            </button>
+          )}
         </div>
       </aside>
 
