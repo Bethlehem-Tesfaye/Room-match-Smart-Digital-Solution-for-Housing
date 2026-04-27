@@ -3,8 +3,10 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
 import {
   acceptRequest,
+  cancelRequest,
   completePayment,
   fetchConversationRentRequest,
+  fetchOwnerAcceptedRequests,
   fetchOwnerPendingRequests,
   fetchTenantRentals,
   rejectRequest,
@@ -34,6 +36,12 @@ contractRouter.get(
 
 contractRouter.get("/owner/pending", authMiddleware, fetchOwnerPendingRequests);
 
+contractRouter.get(
+  "/owner/accepted",
+  authMiddleware,
+  fetchOwnerAcceptedRequests
+);
+
 contractRouter.get("/tenant/my-rentals", authMiddleware, fetchTenantRentals);
 
 contractRouter.patch(
@@ -48,6 +56,13 @@ contractRouter.patch(
   authMiddleware,
   validate(contractParamsSchema, "params"),
   rejectRequest
+);
+
+contractRouter.delete(
+  "/:id",
+  authMiddleware,
+  validate(contractParamsSchema, "params"),
+  cancelRequest
 );
 
 contractRouter.patch(

@@ -34,6 +34,7 @@ const messageQueryKeys = {
   rentRequestByConversation: (conversationId: string) =>
     ["contracts", "conversation", conversationId] as const,
   ownerPendingRentRequests: ["contracts", "owner", "pending"] as const,
+  ownerAcceptedRentRequests: ["contracts", "owner", "accepted"] as const,
   tenantRentalContracts: ["contracts", "tenant", "my-rentals"] as const,
 };
 
@@ -544,6 +545,9 @@ export const useCreateRentRequest = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
       });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
+      });
     },
   });
 };
@@ -569,13 +573,16 @@ const useUpdateRentRequestStatus = (
     onSuccess: (contract) => {
       queryClient.setQueryData(
         messageQueryKeys.rentRequestByConversation(contract.conversationId),
-        contract,
+        status === "RESERVED" ? contract : null,
       );
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.tenantRentalContracts,
       });
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
       });
     },
   });
@@ -585,6 +592,43 @@ export const useAcceptRentRequest = () =>
   useUpdateRentRequestStatus("RESERVED");
 
 export const useRejectRentRequest = () => useUpdateRentRequestStatus("ENDED");
+
+export const useCancelRentRequest = (): UseMutationResult<
+  RentRequest,
+  Error,
+  { contractId: string }
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation<RentRequest, Error, { contractId: string }>({
+    mutationFn: async ({ contractId }) => {
+      try {
+        const response = await api.delete<{ contract: RentRequest }>(
+          `/api/contracts/${contractId}`,
+        );
+
+        return response.data.contract;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    onSuccess: (contract) => {
+      queryClient.setQueryData(
+        messageQueryKeys.rentRequestByConversation(contract.conversationId),
+        null,
+      );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.tenantRentalContracts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
+      });
+    },
+  });
+};
 
 export const useCompleteRentPayment = (): UseMutationResult<
   RentRequest,
@@ -617,6 +661,9 @@ export const useCompleteRentPayment = (): UseMutationResult<
         queryKey: messageQueryKeys.ownerPendingRentRequests,
       });
       queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
+      });
+      queryClient.invalidateQueries({
         queryKey: messageQueryKeys.conversationList,
       });
     },
@@ -640,6 +687,28 @@ export const useOwnerPendingRentRequests = (): UseQueryResult<
         throw new Error(getErrorMessage(error));
       }
     },
+  });
+};
+
+export const useOwnerAcceptedRentRequests = (): UseQueryResult<
+  RentRequest[],
+  Error
+> => {
+  return useQuery<RentRequest[], Error>({
+    queryKey: messageQueryKeys.ownerAcceptedRentRequests,
+    queryFn: async () => {
+      try {
+        const response = await api.get<{ contracts: RentRequest[] }>(
+          "/api/contracts/owner/accepted",
+        );
+
+        return response.data.contracts ?? [];
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 };
 

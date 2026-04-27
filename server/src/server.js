@@ -6,6 +6,7 @@ import { logger } from "./config/logger.js";
 import connectDB from "./config/db.js";
 import { env } from "./config/evnironments.js";
 import { initSocket } from "./config/socket.js";
+import { purgeExpiredReservations } from "./models/contract/contract.service.js";
 
 const PORT = Number(env.PORT) || 8000;
 
@@ -17,6 +18,21 @@ const startServer = async () => {
     const httpServer = createServer(app);
 
     initSocket(httpServer);
+
+    void purgeExpiredReservations().catch((error) => {
+      logger.error({ error }, "Expired reservation sweep failed on startup");
+    });
+
+    const reservationSweep = setInterval(
+      () => {
+        void purgeExpiredReservations().catch((error) => {
+          logger.error({ error }, "Expired reservation sweep failed");
+        });
+      },
+      15 * 60 * 1000
+    );
+
+    reservationSweep.unref?.();
 
     httpServer.listen(PORT, () => {
       logger.info(`Server running on port: ${PORT}`);

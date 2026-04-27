@@ -26,7 +26,7 @@ const propertySchema = new Schema(
     availableFrom: { type: Date, default: null },
     status: {
       type: String,
-      enum: ["Active", "Rented", "Inactive"],
+      enum: ["Active", "Reserved", "Rented", "Inactive"],
       default: "Active"
     },
     deletedAt: { type: Date, default: null }

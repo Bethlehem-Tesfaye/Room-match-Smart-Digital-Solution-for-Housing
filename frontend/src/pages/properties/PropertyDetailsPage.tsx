@@ -88,7 +88,7 @@ function PropertyDetailsPage() {
   const handleSendMessage = async ({ content }: { content: string }) => {
     if (!property) return;
 
-    if (property.status === "Rented") {
+    if (property.status !== "Active") {
       toast.error("This property is no longer available.");
       return;
     }

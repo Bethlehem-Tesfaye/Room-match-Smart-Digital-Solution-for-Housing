@@ -55,6 +55,7 @@ function PropertyDetailsView({
   isSendMessageLoading = false,
 }: PropertyDetailsViewProps) {
   const isRented = property.status === "Rented";
+  const isUnavailable = property.status !== "Active";
   const orderedImages = useMemo(() => {
     if (!property.images.length) return [];
 
@@ -110,7 +111,7 @@ function PropertyDetailsView({
   const currentImage = orderedImages[activeImageIndex];
 
   const handleSendMessage = async () => {
-    if (isRented) {
+    if (isUnavailable) {
       toast.error("This property is no longer available.");
       return;
     }
@@ -237,9 +238,9 @@ function PropertyDetailsView({
             >
               {property.status}
             </span>
-            {isRented ? (
+            {isUnavailable ? (
               <span className="rounded-full bg-rose-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white">
-                RENTED
+                {property.status.toUpperCase()}
               </span>
             ) : null}
           </div>
@@ -494,10 +495,10 @@ function PropertyDetailsView({
             placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
             value={messageDraft}
             onChange={(event) => setMessageDraft(event.target.value)}
-            disabled={isRented || isSendMessageLoading}
+            disabled={isUnavailable || isSendMessageLoading}
           />
 
-          {isRented ? (
+          {isUnavailable ? (
             <button
               type="button"
               className="mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white opacity-80"

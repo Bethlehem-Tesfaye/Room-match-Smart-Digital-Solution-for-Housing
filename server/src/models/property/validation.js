@@ -8,7 +8,7 @@ const propertyTypeEnum = z.enum([
   "SharedRoom"
 ]);
 
-const propertyStatusEnum = z.enum(["Active", "Rented", "Inactive"]);
+const propertyStatusEnum = z.enum(["Active", "Reserved", "Rented", "Inactive"]);
 const browserCountFilterEnum = z.enum(["1", "2", "3", "4", "5+"]);
 
 const amenitiesQuerySchema = z

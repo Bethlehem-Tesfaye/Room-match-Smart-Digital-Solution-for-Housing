@@ -1,14 +1,19 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardFooter from "../../features/dashbord/componets/DashboardFooter";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 import {
   useAcceptRentRequest,
+  useCancelRentRequest,
+  useOwnerAcceptedRentRequests,
   useOwnerPendingRentRequests,
   useRejectRentRequest,
 } from "../../features/message/hooks/useMessageHooks";
 import type { RentRequest } from "../../features/message/types/type";
 import { palette } from "../../theme/palette";
+
+type RequestsTab = "incoming" | "accepted";
 
 const getPartyName = (party: RentRequest["tenantId"]) => {
   if (typeof party === "string") return party;
@@ -25,12 +30,48 @@ const getListingId = (listing: RentRequest["listingId"]) => {
   return listing._id;
 };
 
+const formatRemainingTime = (paymentDueAt?: string | null) => {
+  if (!paymentDueAt) return null;
+
+  const remainingMs = new Date(paymentDueAt).getTime() - Date.now();
+  if (Number.isNaN(remainingMs)) return null;
+
+  if (remainingMs <= 0) return "Expired";
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m left`;
+  if (hours > 0) return `${hours}h ${minutes}m left`;
+  return `${minutes}m left`;
+};
+
 function RentalRequestsPage() {
+  const [activeTab, setActiveTab] = useState<RequestsTab>("incoming");
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const requestsQuery = useOwnerPendingRentRequests();
+  const acceptedRequestsQuery = useOwnerAcceptedRentRequests();
   const acceptRequest = useAcceptRentRequest();
   const rejectRequest = useRejectRentRequest();
+  const cancelRequest = useCancelRentRequest();
 
   const requests = requestsQuery.data || [];
+  const acceptedRequests = (acceptedRequestsQuery.data || []).filter(
+    (request) =>
+      request.status === "RESERVED" &&
+      request.paymentDueAt &&
+      new Date(request.paymentDueAt).getTime() > nowTick,
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const handleAccept = async (contractId: string) => {
     try {
@@ -56,6 +97,26 @@ function RentalRequestsPage() {
     }
   };
 
+  const handleCancel = async (contractId: string) => {
+    try {
+      await cancelRequest.mutateAsync({ contractId });
+      toast.success("Rental request deleted");
+      requestsQuery.refetch();
+      acceptedRequestsQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete request";
+      toast.error(message);
+    }
+  };
+
+  const visibleRequests =
+    activeTab === "incoming" ? requests : acceptedRequests;
+  const isLoading =
+    activeTab === "incoming"
+      ? requestsQuery.isLoading
+      : acceptedRequestsQuery.isLoading;
+
   return (
     <div
       className="flex min-h-screen flex-col"
@@ -73,31 +134,66 @@ function RentalRequestsPage() {
               Rental Requests
             </h1>
             <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-              Review and respond to pending rent requests.
+              Review incoming requests and accepted requests waiting for
+              payment.
             </p>
           </div>
 
-          {requestsQuery.isLoading ? (
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("incoming")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "incoming" ? palette.purple : palette.cardBg,
+                color: activeTab === "incoming" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Incoming ({requests.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("accepted")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "accepted" ? palette.purple : palette.cardBg,
+                color: activeTab === "accepted" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Accepted ({acceptedRequests.length})
+            </button>
+          </div>
+
+          {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div key={idx} className="skeleton h-28 rounded-2xl" />
               ))}
             </div>
-          ) : requests.length === 0 ? (
+          ) : visibleRequests.length === 0 ? (
             <div
               className="rounded-2xl border p-6 text-sm"
               style={{ borderColor: palette.border, color: palette.softPurple }}
             >
-              No pending rental requests.
+              {activeTab === "incoming"
+                ? "No pending rental requests."
+                : "No accepted requests waiting for payment."}
             </div>
           ) : (
             <div className="space-y-4">
-              {requests.map((request) => {
+              {visibleRequests.map((request) => {
                 const listingId = getListingId(request.listingId);
                 const listingTitle = getListingTitle(request.listingId);
                 const tenantName = getPartyName(request.tenantId);
                 const isMutating =
-                  acceptRequest.isPending || rejectRequest.isPending;
+                  acceptRequest.isPending ||
+                  rejectRequest.isPending ||
+                  cancelRequest.isPending;
 
                 return (
                   <article
@@ -136,29 +232,59 @@ function RentalRequestsPage() {
                         >
                           {listingTitle}
                         </Link>
+
+                        {request.status === "RESERVED" ? (
+                          <div
+                            className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                            style={{
+                              backgroundColor: palette.chipBg,
+                              color: palette.deep,
+                            }}
+                          >
+                            Payment due
+                            <span>
+                              {formatRemainingTime(request.paymentDueAt)}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void handleAccept(request._id);
-                          }}
-                          disabled={isMutating}
-                          className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void handleReject(request._id);
-                          }}
-                          disabled={isMutating}
-                          className="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                        >
-                          Reject
-                        </button>
+                        {activeTab === "incoming" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleAccept(request._id);
+                              }}
+                              disabled={isMutating}
+                              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleReject(request._id);
+                              }}
+                              disabled={isMutating}
+                              className="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleCancel(request._id);
+                            }}
+                            disabled={isMutating}
+                            className="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>

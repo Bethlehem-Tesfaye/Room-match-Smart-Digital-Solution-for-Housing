@@ -33,6 +33,15 @@ const contractSchema = new Schema(
       enum: ["PENDING", "RESERVED", "ACTIVE", "ENDED"],
       default: "PENDING",
       index: true
+    },
+    acceptedAt: {
+      type: Date,
+      default: null
+    },
+    paymentDueAt: {
+      type: Date,
+      default: null,
+      index: true
     }
   },
   { timestamps: true }
