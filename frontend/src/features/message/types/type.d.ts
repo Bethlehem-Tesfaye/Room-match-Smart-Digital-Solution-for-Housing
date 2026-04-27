@@ -8,7 +8,7 @@ export interface ConversationListing {
   address?: string;
   price?: number;
   currency?: string;
-  status?: "Active" | "Rented" | "Inactive";
+  status?: "Active" | "Reserved" | "Rented" | "Inactive";
 }
 
 export type ContractStatus = "PENDING" | "RESERVED" | "ACTIVE" | "ENDED";
@@ -29,6 +29,8 @@ export interface RentRequest {
   status: ContractStatus;
   createdAt?: string;
   updatedAt?: string;
+  acceptedAt?: string | null;
+  paymentDueAt?: string | null;
 }
 
 export interface Conversation {

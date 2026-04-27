@@ -5,7 +5,7 @@ export type PropertyType =
   | "Studio"
   | "SharedRoom";
 
-export type PropertyStatus = "Active" | "Rented" | "Inactive";
+export type PropertyStatus = "Active" | "Reserved" | "Rented" | "Inactive";
 export type PropertyCountFilter = "Any" | "1" | "2" | "3" | "4" | "5+";
 
 export interface PropertyImageInput {

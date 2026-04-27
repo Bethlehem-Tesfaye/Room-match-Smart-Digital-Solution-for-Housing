@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CircleCheck,
@@ -19,6 +19,8 @@ import { useMyPropertiesOverview } from "../hooks/useDashboardHooks";
 import { palette } from "../../../theme/palette";
 import useIsDark from "../../../lib/useTheme";
 
+type PropertyFilterTab = "all" | "rented";
+
 function MyPropertyList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -34,6 +36,7 @@ function MyPropertyList() {
   const [openMenuPropertyId, setOpenMenuPropertyId] = useState<string | null>(
     null,
   );
+  const [activeTab, setActiveTab] = useState<PropertyFilterTab>("all");
 
   const { data, isLoading, isError } = useMyPropertiesOverview({
     page,
@@ -43,6 +46,14 @@ function MyPropertyList() {
   const properties = data?.properties ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
   const isDark = useIsDark();
+
+  const visibleProperties = useMemo(() => {
+    if (activeTab === "rented") {
+      return properties.filter((property) => property.status === "Rented");
+    }
+
+    return properties;
+  }, [activeTab, properties]);
 
   useEffect(() => {
     if (totalPages > 0 && page > totalPages) {
@@ -153,8 +164,38 @@ function MyPropertyList() {
         </div>
       ) : (
         <>
+          <div className="mb-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("all")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "all" ? palette.purple : palette.cardBg,
+                color: activeTab === "all" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              All
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("rented")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "rented" ? palette.purple : palette.cardBg,
+                color: activeTab === "rented" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Rented
+            </button>
+          </div>
+
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {properties.map((property) => {
+            {visibleProperties.map((property) => {
               const primaryImage =
                 property.images.find((image) => image.isPrimary) ??
                 property.images[0];

@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, KeyRound, MessageCircle, UserRound } from "lucide-react";
+import {
+  Building2,
+  CalendarClock,
+  KeyRound,
+  MessageCircle,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
-import { useTenantRentalContracts } from "../../features/message/hooks/useMessageHooks";
+import {
+  useCancelRentRequest,
+  useTenantRentalContracts,
+} from "../../features/message/hooks/useMessageHooks";
 import type {
   ContractStatus,
   ConversationListing,
@@ -11,7 +22,7 @@ import type {
 } from "../../features/message/types/type";
 import { palette } from "../../theme/palette";
 
-type RentalsTab = "requests" | "rented";
+type RentalsTab = "requested" | "rented";
 
 const getListing = (
   listing: RentRequest["listingId"],
@@ -57,19 +68,88 @@ const formatPrice = (listing: ConversationListing | null) => {
   return `${new Intl.NumberFormat().format(listing.price)} ${currency}/mo`;
 };
 
+const getListingStateMeta = (listing: ConversationListing | null) => {
+  if (!listing?.status || listing.status === "Active") {
+    return null;
+  }
+
+  if (listing.status === "Reserved") {
+    return {
+      label: "Room Reserved",
+      className: "bg-amber-100 text-amber-700",
+    };
+  }
+
+  if (listing.status === "Rented") {
+    return {
+      label: "Room Rented",
+      className: "bg-rose-100 text-rose-700",
+    };
+  }
+
+  return {
+    label: listing.status,
+    className: "bg-zinc-100 text-zinc-700",
+  };
+};
+
+const formatRemainingTime = (paymentDueAt?: string | null) => {
+  if (!paymentDueAt) return null;
+
+  const remainingMs = new Date(paymentDueAt).getTime() - Date.now();
+  if (Number.isNaN(remainingMs)) return null;
+
+  if (remainingMs <= 0) return "Expired";
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m left`;
+  if (hours > 0) return `${hours}h ${minutes}m left`;
+  return `${minutes}m left`;
+};
+
 function MyRentalsPage() {
-  const [activeTab, setActiveTab] = useState<RentalsTab>("requests");
+  const [activeTab, setActiveTab] = useState<RentalsTab>("requested");
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const rentalsQuery = useTenantRentalContracts();
+  const cancelRentRequest = useCancelRentRequest();
 
   const contracts = rentalsQuery.data ?? [];
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   const requestContracts = useMemo(
     () =>
-      contracts.filter(
-        (contract) =>
-          contract.status === "PENDING" || contract.status === "RESERVED",
-      ),
-    [contracts],
+      contracts
+        .filter((contract) => {
+          if (contract.status === "PENDING") return true;
+
+          if (contract.status !== "RESERVED") return false;
+
+          if (!contract.paymentDueAt) return true;
+
+          return new Date(contract.paymentDueAt).getTime() > nowTick;
+        })
+        .sort((a, b) => {
+          if (a.status !== b.status) {
+            return a.status === "RESERVED" ? -1 : 1;
+          }
+
+          return (
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+          );
+        }),
+    [contracts, nowTick],
   );
 
   const rentedContracts = useMemo(
@@ -80,7 +160,7 @@ function MyRentalsPage() {
   useEffect(() => {
     if (
       !rentalsQuery.isLoading &&
-      activeTab === "requests" &&
+      activeTab === "requested" &&
       requestContracts.length === 0 &&
       rentedContracts.length > 0
     ) {
@@ -94,7 +174,19 @@ function MyRentalsPage() {
   ]);
 
   const visibleContracts =
-    activeTab === "requests" ? requestContracts : rentedContracts;
+    activeTab === "requested" ? requestContracts : rentedContracts;
+
+  const handleCancelRequest = async (contractId: string) => {
+    try {
+      await cancelRentRequest.mutateAsync({ contractId });
+      await rentalsQuery.refetch();
+      toast.success("Rental request deleted");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to cancel request";
+      toast.error(message);
+    }
+  };
 
   return (
     <main
@@ -123,10 +215,16 @@ function MyRentalsPage() {
                 backgroundColor: palette.cardBg,
               }}
             >
-              <p className="text-xs font-semibold" style={{ color: palette.softPurple }}>
-                Requests
+              <p
+                className="text-xs font-semibold"
+                style={{ color: palette.softPurple }}
+              >
+                Requested
               </p>
-              <p className="mt-2 text-3xl font-bold" style={{ color: palette.deep }}>
+              <p
+                className="mt-2 text-3xl font-bold"
+                style={{ color: palette.deep }}
+              >
                 {rentalsQuery.isLoading ? "..." : requestContracts.length}
               </p>
             </div>
@@ -138,10 +236,16 @@ function MyRentalsPage() {
                 backgroundColor: palette.cardBg,
               }}
             >
-              <p className="text-xs font-semibold" style={{ color: palette.softPurple }}>
+              <p
+                className="text-xs font-semibold"
+                style={{ color: palette.softPurple }}
+              >
                 Rented
               </p>
-              <p className="mt-2 text-3xl font-bold" style={{ color: palette.deep }}>
+              <p
+                className="mt-2 text-3xl font-bold"
+                style={{ color: palette.deep }}
+              >
                 {rentalsQuery.isLoading ? "..." : rentedContracts.length}
               </p>
             </div>
@@ -151,16 +255,16 @@ function MyRentalsPage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => setActiveTab("requests")}
+            onClick={() => setActiveTab("requested")}
             className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
             style={{
               backgroundColor:
-                activeTab === "requests" ? palette.purple : palette.cardBg,
-              color: activeTab === "requests" ? palette.pageBg : palette.deep,
+                activeTab === "requested" ? palette.purple : palette.cardBg,
+              color: activeTab === "requested" ? palette.pageBg : palette.deep,
               border: `1px solid ${palette.border}`,
             }}
           >
-            Requests ({requestContracts.length})
+            Requested ({requestContracts.length})
           </button>
 
           <button
@@ -195,7 +299,7 @@ function MyRentalsPage() {
                 color: palette.softPurple,
               }}
             >
-              {activeTab === "requests"
+              {activeTab === "requested"
                 ? "You do not have any active rental requests right now."
                 : "You do not have any active rentals yet."}
             </div>
@@ -204,6 +308,7 @@ function MyRentalsPage() {
               const listing = getListing(contract.listingId);
               const owner = getParty(contract.ownerId);
               const statusMeta = getStatusMeta(contract.status);
+              const listingStateMeta = getListingStateMeta(listing);
 
               return (
                 <article
@@ -221,7 +326,10 @@ function MyRentalsPage() {
                           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl"
                           style={{ backgroundColor: palette.cardMutedAltBg }}
                         >
-                          <Building2 size={20} style={{ color: palette.deep }} />
+                          <Building2
+                            size={20}
+                            style={{ color: palette.deep }}
+                          />
                         </div>
 
                         <div className="min-w-0">
@@ -237,6 +345,13 @@ function MyRentalsPage() {
                             >
                               {statusMeta.label}
                             </span>
+                            {listingStateMeta ? (
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${listingStateMeta.className}`}
+                              >
+                                {listingStateMeta.label}
+                              </span>
+                            ) : null}
                           </div>
 
                           <p
@@ -274,12 +389,27 @@ function MyRentalsPage() {
                             className="mt-1 text-sm"
                             style={{ color: palette.softPurple }}
                           >
-                            {activeTab === "requests" && contract.status === "RESERVED"
-                              ? "Payment is pending. Open chat to complete the mock payment."
-                              : activeTab === "requests"
-                                ? "Your request is recorded and waiting for the next status update."
+                            {activeTab === "requested" &&
+                            contract.status === "RESERVED"
+                              ? "Payment is pending. The request will disappear automatically if payment is not completed in time."
+                              : activeTab === "requested"
+                                ? "Your request is recorded and waiting for owner response."
                                 : "Your rental is active and tracked here."}
                           </p>
+
+                          {contract.status === "RESERVED" ? (
+                            <div
+                              className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                              style={{
+                                backgroundColor: palette.chipBg,
+                                color: palette.deep,
+                              }}
+                            >
+                              <CalendarClock size={14} />
+                              {formatRemainingTime(contract.paymentDueAt) ||
+                                "Payment due soon"}
+                            </div>
+                          ) : null}
                         </div>
 
                         <div
@@ -319,7 +449,9 @@ function MyRentalsPage() {
                                 className="truncate text-base font-semibold"
                                 style={{ color: palette.deep }}
                               >
-                                {owner?.name || owner?.email || "Property Owner"}
+                                {owner?.name ||
+                                  owner?.email ||
+                                  "Property Owner"}
                               </p>
                               <p
                                 className="truncate text-sm"
@@ -334,6 +466,21 @@ function MyRentalsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
+                      {activeTab === "requested" ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleCancelRequest(contract._id)}
+                          disabled={cancelRentRequest.isPending}
+                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          style={{ backgroundColor: "#E11D48" }}
+                        >
+                          <Trash2 size={16} />
+                          {contract.status === "RESERVED"
+                            ? "Cancel Request"
+                            : "Delete Request"}
+                        </button>
+                      ) : null}
+
                       {listing?._id ? (
                         <Link
                           to={`/properties/${listing._id}`}

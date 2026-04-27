@@ -1,5 +1,7 @@
 import {
   acceptRentRequest,
+  getOwnerAcceptedRentRequests,
+  cancelRentRequest,
   completeContractPayment,
   createRentRequest,
   getConversationRentRequest,
@@ -72,6 +74,22 @@ export const rejectRequest = async (req, res, next) => {
   }
 };
 
+// DELETE /contracts/:id
+export const cancelRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contract = await cancelRentRequest({
+      contractId: id,
+      requesterUserId: req.userId
+    });
+
+    return res.status(200).json({ contract });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 // PATCH /contracts/:id/complete-payment
 export const completePayment = async (req, res, next) => {
   try {
@@ -92,6 +110,19 @@ export const completePayment = async (req, res, next) => {
 export const fetchOwnerPendingRequests = async (req, res, next) => {
   try {
     const contracts = await getOwnerPendingRentRequests({
+      ownerUserId: req.userId
+    });
+
+    return res.status(200).json({ contracts });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// GET /contracts/owner/accepted
+export const fetchOwnerAcceptedRequests = async (req, res, next) => {
+  try {
+    const contracts = await getOwnerAcceptedRentRequests({
       ownerUserId: req.userId
     });
 
