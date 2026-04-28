@@ -51,6 +51,8 @@ export interface AddListingDraft {
   areaSqFt: string;
   address: string;
   city: string;
+  leasePeriod: string;
+  initialPayment: string;
   images: AddListingImageDraft[];
   amenityIds: string[];
   availableFrom: string;

@@ -45,6 +45,8 @@ export interface Property {
   totalFloors: number | null;
   areaSqFt: number | null;
   isFurnished: boolean;
+  leasePeriod: number;
+  initialPayment: number;
   availableFrom: string | null;
   status: PropertyStatus;
   createdAt: string;
@@ -77,6 +79,8 @@ export interface CreatePropertyInput {
   isFurnished?: boolean;
   availableFrom?: string | null;
   status?: PropertyStatus;
+  leasePeriod: number;
+  initialPayment: number;
   images?: PropertyImageInput[];
   amenityIds?: string[];
 }

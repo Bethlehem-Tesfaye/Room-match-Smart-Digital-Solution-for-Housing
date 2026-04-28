@@ -15,17 +15,83 @@ import {
   useUpdateCreatorProperty,
 } from "../../addListing/hooks/useCreatorPropertyHooks";
 import PropertyPagination from "../../property/components/PropertyPagination";
+import {
+  useCreateTerminationRequest,
+  useOwnerActiveRentRequests,
+  useOwnerTerminationRequests,
+} from "../../message/hooks/useMessageHooks";
 import { useMyPropertiesOverview } from "../hooks/useDashboardHooks";
 import { palette } from "../../../theme/palette";
 import useIsDark from "../../../lib/useTheme";
 
 type PropertyFilterTab = "all" | "rented";
 
+const getListingId = (listing: { _id: string } | string) =>
+  typeof listing === "string" ? listing : listing._id;
+
+function DeleteTerminationModal({
+  isOpen,
+  propertyTitle,
+  isSubmitting,
+  onClose,
+  onSendTerminationRequest,
+}: {
+  isOpen: boolean;
+  propertyTitle: string;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onSendTerminationRequest: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-xl"
+        style={{ borderColor: "#E7E1FA" }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h3 className="text-xl font-bold" style={{ color: palette.deep }}>
+          Send termination request first
+        </h3>
+        <p className="mt-2 text-sm" style={{ color: palette.purple }}>
+          To delete {propertyTitle}, you must send a contract termination
+          request to the rented tenant first.
+        </p>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-semibold"
+            style={{ borderColor: palette.border, color: palette.deep }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSendTerminationRequest}
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ backgroundColor: palette.purple }}
+          >
+            {isSubmitting ? "Sending..." : "Send Termination Request"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MyPropertyList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const updateProperty = useUpdateCreatorProperty();
   const deleteProperty = useDeleteCreatorProperty();
+  const createTerminationRequest = useCreateTerminationRequest();
   const [page, setPage] = useState(1);
   const [markingRentedPropertyId, setMarkingRentedPropertyId] = useState<
     string | null
@@ -33,6 +99,10 @@ function MyPropertyList() {
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(
     null,
   );
+  const [terminationProperty, setTerminationProperty] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [openMenuPropertyId, setOpenMenuPropertyId] = useState<string | null>(
     null,
   );
@@ -46,6 +116,26 @@ function MyPropertyList() {
   const properties = data?.properties ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
   const isDark = useIsDark();
+  const activeRentalsQuery = useOwnerActiveRentRequests();
+  const terminationRequestsQuery = useOwnerTerminationRequests();
+
+  const activeRentalByPropertyId = useMemo(() => {
+    return new Map(
+      (activeRentalsQuery.data ?? []).map((contract) => [
+        getListingId(contract.listingId),
+        contract,
+      ]),
+    );
+  }, [activeRentalsQuery.data]);
+
+  const terminationRequestByPropertyId = useMemo(() => {
+    return new Map(
+      (terminationRequestsQuery.data ?? []).map((contract) => [
+        getListingId(contract.listingId),
+        contract,
+      ]),
+    );
+  }, [terminationRequestsQuery.data]);
 
   const visibleProperties = useMemo(() => {
     if (activeTab === "rented") {
@@ -137,6 +227,51 @@ function MyPropertyList() {
       toast.error(message);
     } finally {
       setDeletingPropertyId(null);
+    }
+  };
+
+  const handleSendTerminationRequest = async (propertyId: string) => {
+    const activeContract = activeRentalByPropertyId.get(propertyId);
+
+    if (!activeContract) {
+      const pendingContract = terminationRequestByPropertyId.get(propertyId);
+
+      if (pendingContract) {
+        toast.info(
+          "A termination request is already pending for this property.",
+        );
+      } else {
+        toast.error("No active rental contract found for this property.");
+      }
+
+      setTerminationProperty(null);
+      setOpenMenuPropertyId(null);
+      return;
+    }
+
+    try {
+      await createTerminationRequest.mutateAsync({
+        contractId: activeContract._id,
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "my-properties-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard", "listing-counts"],
+        }),
+      ]);
+
+      toast.success("Termination request sent.");
+      setTerminationProperty(null);
+      setOpenMenuPropertyId(null);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to send termination request";
+      toast.error(message);
     }
   };
 
@@ -264,31 +399,62 @@ function MyPropertyList() {
                           Edit
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void handleMarkAsRented(
-                              property._id,
-                              property.status,
-                            )
-                          }
-                          disabled={markingRentedPropertyId === property._id}
-                          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                            isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                          }`}
-                          style={{ color: palette.deep }}
-                        >
-                          <CircleCheck size={16} />
-                          {markingRentedPropertyId === property._id
-                            ? "Marking..."
-                            : "Mark as Rented"}
-                        </button>
+                        {property.status === "Rented" ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTerminationProperty({
+                                id: property._id,
+                                title: property.title,
+                              });
+                              setOpenMenuPropertyId(null);
+                            }}
+                            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
+                              isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                            }`}
+                            style={{ color: palette.deep }}
+                          >
+                            <CircleCheck size={16} />
+                            {terminationRequestByPropertyId.has(property._id)
+                              ? "Termination Pending"
+                              : "Send Termination Request"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleMarkAsRented(
+                                property._id,
+                                property.status,
+                              )
+                            }
+                            disabled={markingRentedPropertyId === property._id}
+                            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
+                              isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                            }`}
+                            style={{ color: palette.deep }}
+                          >
+                            <CircleCheck size={16} />
+                            {markingRentedPropertyId === property._id
+                              ? "Marking..."
+                              : "Mark as Rented"}
+                          </button>
+                        )}
 
                         <button
                           type="button"
-                          onClick={() =>
-                            void handleDeleteProperty(property._id)
-                          }
+                          onClick={() => {
+                            if (property.status === "Rented") {
+                              setTerminationProperty({
+                                id: property._id,
+                                title: property.title,
+                              });
+                              setOpenMenuPropertyId(null);
+                              return;
+                            }
+
+                            void handleDeleteProperty(property._id);
+                          }}
                           disabled={deletingPropertyId === property._id}
                           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-200"
                           style={{ color: "#E11D48" }}
@@ -296,7 +462,9 @@ function MyPropertyList() {
                           <Trash2 size={16} />
                           {deletingPropertyId === property._id
                             ? "Deleting..."
-                            : "Delete"}
+                            : property.status === "Rented"
+                              ? "Delete Property"
+                              : "Delete"}
                         </button>
                       </div>
                     ) : null}
@@ -374,6 +542,18 @@ function MyPropertyList() {
           />
         </>
       )}
+
+      <DeleteTerminationModal
+        isOpen={terminationProperty !== null}
+        propertyTitle={terminationProperty?.title ?? "this property"}
+        isSubmitting={createTerminationRequest.isPending}
+        onClose={() => setTerminationProperty(null)}
+        onSendTerminationRequest={() => {
+          if (!terminationProperty) return;
+
+          void handleSendTerminationRequest(terminationProperty.id);
+        }}
+      />
     </>
   );
 }

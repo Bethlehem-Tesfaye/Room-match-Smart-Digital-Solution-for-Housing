@@ -14,6 +14,8 @@ interface PropertyDetailsStepProps {
     price?: string;
     numberOfBedrooms?: string;
     numberOfBathrooms?: string;
+    leasePeriod?: string;
+    initialPayment?: string;
   };
 }
 
@@ -201,6 +203,63 @@ function PropertyDetailsStep({
       </div>
 
       <div className="grid gap-4 md:grid-cols-5">
+        <div className="space-y-2">
+          <label
+            className="text-sm font-semibold"
+            style={{ color: palette.deep }}
+          >
+            Lease Period (months) *
+          </label>
+          <input
+            value={draft.leasePeriod}
+            onChange={(event) =>
+              setField("leasePeriod", event.target.value.replace(/[^\d]/g, ""))
+            }
+            className="w-full rounded-lg border px-4 py-2 outline-none"
+            style={{
+              borderColor: errors.leasePeriod
+                ? "rgb(220 38 38)"
+                : palette.border,
+              backgroundColor: palette.inputBg,
+              color: palette.deep,
+            }}
+            placeholder="12"
+          />
+          {errors.leasePeriod ? (
+            <p className="text-sm text-red-600">{errors.leasePeriod}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="text-sm font-semibold"
+            style={{ color: palette.deep }}
+          >
+            Initial Payment *
+          </label>
+          <input
+            value={draft.initialPayment}
+            onChange={(event) =>
+              setField(
+                "initialPayment",
+                event.target.value.replace(/[^\d]/g, ""),
+              )
+            }
+            className="w-full rounded-lg border px-4 py-2 outline-none"
+            style={{
+              borderColor: errors.initialPayment
+                ? "rgb(220 38 38)"
+                : palette.border,
+              backgroundColor: palette.inputBg,
+              color: palette.deep,
+            }}
+            placeholder="500"
+          />
+          {errors.initialPayment ? (
+            <p className="text-sm text-red-600">{errors.initialPayment}</p>
+          ) : null}
+        </div>
+
         <div className="space-y-2">
           <label
             className="text-sm font-semibold"

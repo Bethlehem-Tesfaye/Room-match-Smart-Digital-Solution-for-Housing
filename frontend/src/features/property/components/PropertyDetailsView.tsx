@@ -145,6 +145,16 @@ function PropertyDetailsView({
       icon: Banknote,
     },
     {
+      label: "Initial Payment",
+      value: formatCurrency(property.initialPayment, property.currency),
+      icon: Banknote,
+    },
+    {
+      label: "Lease Period",
+      value: `${property.leasePeriod} months`,
+      icon: CalendarDays,
+    },
+    {
       label: "Furnished",
       value: property.isFurnished ? "Yes" : "No",
       icon: Sofa,

@@ -51,6 +51,8 @@ function CreatePropertyForm() {
       price?: string;
       numberOfBedrooms?: string;
       numberOfBathrooms?: string;
+      leasePeriod?: string;
+      initialPayment?: string;
     } = {};
 
     const stepTwoErrors: {
@@ -71,6 +73,14 @@ function CreatePropertyForm() {
 
     if (!draft.price || Number(draft.price) <= 0) {
       stepOneErrors.price = "Monthly rent is required.";
+    }
+
+    if (!draft.leasePeriod || Number(draft.leasePeriod) <= 0) {
+      stepOneErrors.leasePeriod = "Lease period (months) is required.";
+    }
+
+    if (draft.initialPayment === "" || Number(draft.initialPayment) < 0) {
+      stepOneErrors.initialPayment = "Initial payment is required.";
     }
 
     if (draft.numberOfBedrooms === "") {
@@ -216,6 +226,8 @@ function CreatePropertyForm() {
     payload.append("isFurnished", String(draft.isFurnished));
     payload.append("status", "Active");
     payload.append("amenityIds", JSON.stringify(draft.amenityIds));
+    payload.append("leasePeriod", String(Number(draft.leasePeriod || 0)));
+    payload.append("initialPayment", String(Number(draft.initialPayment || 0)));
 
     const primaryImageIndex = draft.images.findIndex(
       (image) => image.isPrimary,

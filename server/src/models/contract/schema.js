@@ -30,7 +30,16 @@ const contractSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["PENDING", "RESERVED", "ACTIVE", "ENDED"],
+      enum: [
+        "PENDING",
+        "RESERVED",
+        "ACTIVE",
+        "REJECTED",
+        "CANCELLED",
+        "TERMINATION_PENDING",
+        "TERMINATED",
+        "ENDED"
+      ],
       default: "PENDING",
       index: true
     },
@@ -42,12 +51,36 @@ const contractSchema = new Schema(
       type: Date,
       default: null,
       index: true
+    },
+    terminationRequestedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
+    },
+    terminationRequestedAt: {
+      type: Date,
+      default: null
+    },
+    startDate: { type: Date, default: null, index: true },
+    endDate: { type: Date, default: null, index: true },
+    terminationResolvedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }
 );
 
-contractSchema.index({ tenantId: 1, listingId: 1 }, { unique: true });
+contractSchema.index(
+  { listingId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "ACTIVE" },
+    name: "listingId_active_unique"
+  }
+);
+
 contractSchema.index({ ownerId: 1, status: 1, createdAt: -1 });
 
 export const Contract = model("Contract", contractSchema);
