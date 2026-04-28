@@ -31,6 +31,8 @@ export const initialAddListingDraft: AddListingDraft = {
   areaSqFt: "",
   address: "",
   city: "",
+  leasePeriod: "",
+  initialPayment: "",
   images: [],
   amenityIds: [],
   availableFrom: "",

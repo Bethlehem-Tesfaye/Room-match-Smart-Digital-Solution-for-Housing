@@ -213,7 +213,11 @@ function MessageInbox({
 
         {conversationListing && !isOwnerView && !isListingUnavailable ? (
           <div className="mt-2">
-            {!rentRequest ? (
+            {!rentRequest ||
+            (rentRequest &&
+              ["REJECTED", "CANCELLED", "TERMINATED"].includes(
+                rentRequest.status,
+              )) ? (
               <button
                 type="button"
                 onClick={() => {

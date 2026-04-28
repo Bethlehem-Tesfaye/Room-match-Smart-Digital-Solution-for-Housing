@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import DashboardFooter from "../../features/dashbord/componets/DashboardFooter";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 import {
   useAcceptRentRequest,
+  useAcceptTerminationRequest,
   useCancelRentRequest,
   useOwnerAcceptedRentRequests,
+  useOwnerTerminationRequests,
   useOwnerPendingRentRequests,
+  useRejectTerminationRequest,
   useRejectRentRequest,
 } from "../../features/message/hooks/useMessageHooks";
 import type { RentRequest } from "../../features/message/types/type";
 import { palette } from "../../theme/palette";
 
-type RequestsTab = "incoming" | "accepted";
+type RequestsTab = "incoming" | "accepted" | "termination";
 
 const getPartyName = (party: RentRequest["tenantId"]) => {
   if (typeof party === "string") return party;
@@ -28,6 +32,14 @@ const getListingTitle = (listing: RentRequest["listingId"]) => {
 const getListingId = (listing: RentRequest["listingId"]) => {
   if (typeof listing === "string") return listing;
   return listing._id;
+};
+
+const getRequesterId = (request: RentRequest) => {
+  const requester = request.terminationRequestedBy;
+
+  if (!requester) return null;
+
+  return typeof requester === "string" ? requester : requester._id;
 };
 
 const formatRemainingTime = (paymentDueAt?: string | null) => {
@@ -51,11 +63,15 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
 function RentalRequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestsTab>("incoming");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const { user } = useCurrentUser();
   const requestsQuery = useOwnerPendingRentRequests();
   const acceptedRequestsQuery = useOwnerAcceptedRentRequests();
+  const terminationRequestsQuery = useOwnerTerminationRequests();
   const acceptRequest = useAcceptRentRequest();
   const rejectRequest = useRejectRentRequest();
   const cancelRequest = useCancelRentRequest();
+  const acceptTerminationRequest = useAcceptTerminationRequest();
+  const rejectTerminationRequest = useRejectTerminationRequest();
 
   const requests = requestsQuery.data || [];
   const acceptedRequests = (acceptedRequestsQuery.data || []).filter(
@@ -64,6 +80,8 @@ function RentalRequestsPage() {
       request.paymentDueAt &&
       new Date(request.paymentDueAt).getTime() > nowTick,
   );
+
+  const terminationRequests = terminationRequestsQuery.data || [];
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -110,12 +128,48 @@ function RentalRequestsPage() {
     }
   };
 
+  const handleAcceptTermination = async (contractId: string) => {
+    try {
+      await acceptTerminationRequest.mutateAsync({ contractId });
+      toast.success("Termination accepted");
+      terminationRequestsQuery.refetch();
+      acceptedRequestsQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to accept termination request";
+      toast.error(message);
+    }
+  };
+
+  const handleRejectTermination = async (contractId: string) => {
+    try {
+      await rejectTerminationRequest.mutateAsync({ contractId });
+      toast.success("Termination rejected");
+      terminationRequestsQuery.refetch();
+      acceptedRequestsQuery.refetch();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to reject termination request";
+      toast.error(message);
+    }
+  };
+
   const visibleRequests =
-    activeTab === "incoming" ? requests : acceptedRequests;
+    activeTab === "incoming"
+      ? requests
+      : activeTab === "accepted"
+        ? acceptedRequests
+        : terminationRequests;
   const isLoading =
     activeTab === "incoming"
       ? requestsQuery.isLoading
-      : acceptedRequestsQuery.isLoading;
+      : activeTab === "accepted"
+        ? acceptedRequestsQuery.isLoading
+        : terminationRequestsQuery.isLoading;
 
   return (
     <div
@@ -167,6 +221,21 @@ function RentalRequestsPage() {
             >
               Accepted ({acceptedRequests.length})
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("termination")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "termination" ? palette.purple : palette.cardBg,
+                color:
+                  activeTab === "termination" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Termination Requests ({terminationRequests.length})
+            </button>
           </div>
 
           {isLoading ? (
@@ -182,7 +251,9 @@ function RentalRequestsPage() {
             >
               {activeTab === "incoming"
                 ? "No pending rental requests."
-                : "No accepted requests waiting for payment."}
+                : activeTab === "accepted"
+                  ? "No accepted requests waiting for payment."
+                  : "No termination requests right now."}
             </div>
           ) : (
             <div className="space-y-4">
@@ -190,10 +261,14 @@ function RentalRequestsPage() {
                 const listingId = getListingId(request.listingId);
                 const listingTitle = getListingTitle(request.listingId);
                 const tenantName = getPartyName(request.tenantId);
+                const requesterId = getRequesterId(request);
+                const requesterIsCurrentUser = requesterId === user?.id;
                 const isMutating =
                   acceptRequest.isPending ||
                   rejectRequest.isPending ||
-                  cancelRequest.isPending;
+                  cancelRequest.isPending ||
+                  acceptTerminationRequest.isPending ||
+                  rejectTerminationRequest.isPending;
 
                 return (
                   <article
@@ -247,6 +322,33 @@ function RentalRequestsPage() {
                             </span>
                           </div>
                         ) : null}
+
+                        {activeTab === "termination" ? (
+                          <div
+                            className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                            style={{
+                              backgroundColor: palette.chipBg,
+                              color: palette.deep,
+                            }}
+                          >
+                            {requesterIsCurrentUser
+                              ? "Waiting for the other party"
+                              : "Your response is required"}
+                          </div>
+                        ) : null}
+
+                        {activeTab === "termination" ? (
+                          <p
+                            className="mt-2 text-xs"
+                            style={{ color: palette.softPurple }}
+                          >
+                            Requested by{" "}
+                            {typeof request.terminationRequestedBy === "string"
+                              ? "the other party"
+                              : (request.terminationRequestedBy?.name ??
+                                "the other party")}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -273,7 +375,7 @@ function RentalRequestsPage() {
                               Reject
                             </button>
                           </>
-                        ) : (
+                        ) : activeTab === "accepted" ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -284,6 +386,29 @@ function RentalRequestsPage() {
                           >
                             Delete
                           </button>
+                        ) : requesterIsCurrentUser ? null : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleAcceptTermination(request._id);
+                              }}
+                              disabled={isMutating}
+                              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleRejectTermination(request._id);
+                              }}
+                              disabled={isMutating}
+                              className="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              Reject
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

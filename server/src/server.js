@@ -6,7 +6,10 @@ import connectDB from "./config/db.js";
 import { env } from "./config/evnironments.js";
 import { createServer } from "http";
 import { initSocket } from "./config/socket.js";
-import { purgeExpiredReservations } from "./models/contract/contract.service.js";
+import {
+  purgeExpiredReservations,
+  purgeExpiredLeases
+} from "./models/contract/contract.service.js";
 
 const PORT = Number(env.PORT) || 8000;
 
@@ -23,6 +26,10 @@ const startServer = async () => {
       logger.error({ error }, "Expired reservation sweep failed on startup");
     });
 
+    void purgeExpiredLeases().catch((error) => {
+      logger.error({ error }, "Expired lease sweep failed on startup");
+    });
+
     const reservationSweep = setInterval(
       () => {
         void purgeExpiredReservations().catch((error) => {
@@ -31,6 +38,17 @@ const startServer = async () => {
       },
       15 * 60 * 1000
     );
+
+    const leaseSweep = setInterval(
+      () => {
+        void purgeExpiredLeases().catch((error) => {
+          logger.error({ error }, "Expired lease sweep failed");
+        });
+      },
+      60 * 60 * 1000
+    );
+
+    leaseSweep.unref?.();
 
     reservationSweep.unref?.();
 

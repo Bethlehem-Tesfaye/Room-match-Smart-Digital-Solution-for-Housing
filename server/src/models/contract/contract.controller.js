@@ -1,12 +1,17 @@
 import {
   acceptRentRequest,
+  acceptTerminationRequest,
+  getOwnerActiveRentRequests,
   getOwnerAcceptedRentRequests,
+  getOwnerTerminationRequests,
   cancelRentRequest,
   completeContractPayment,
+  createTerminationRequest,
   createRentRequest,
   getConversationRentRequest,
   getOwnerPendingRentRequests,
   getTenantRentalContracts,
+  rejectTerminationRequest,
   rejectRentRequest
 } from "./contract.service.js";
 
@@ -90,6 +95,54 @@ export const cancelRequest = async (req, res, next) => {
   }
 };
 
+// POST /contracts/:id/termination-request
+export const requestTermination = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contract = await createTerminationRequest({
+      contractId: id,
+      requesterUserId: req.userId
+    });
+
+    return res.status(200).json({ contract });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/:id/termination-request/accept
+export const acceptTerminationRequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contract = await acceptTerminationRequest({
+      contractId: id,
+      requesterUserId: req.userId
+    });
+
+    return res.status(200).json({ contract });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/:id/termination-request/reject
+export const rejectTerminationRequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contract = await rejectTerminationRequest({
+      contractId: id,
+      requesterUserId: req.userId
+    });
+
+    return res.status(200).json({ contract });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 // PATCH /contracts/:id/complete-payment
 export const completePayment = async (req, res, next) => {
   try {
@@ -123,6 +176,32 @@ export const fetchOwnerPendingRequests = async (req, res, next) => {
 export const fetchOwnerAcceptedRequests = async (req, res, next) => {
   try {
     const contracts = await getOwnerAcceptedRentRequests({
+      ownerUserId: req.userId
+    });
+
+    return res.status(200).json({ contracts });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// GET /contracts/owner/active
+export const fetchOwnerActiveRequests = async (req, res, next) => {
+  try {
+    const contracts = await getOwnerActiveRentRequests({
+      ownerUserId: req.userId
+    });
+
+    return res.status(200).json({ contracts });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// GET /contracts/owner/termination-requests
+export const fetchOwnerTerminationRequests = async (req, res, next) => {
+  try {
+    const contracts = await getOwnerTerminationRequests({
       ownerUserId: req.userId
     });
 

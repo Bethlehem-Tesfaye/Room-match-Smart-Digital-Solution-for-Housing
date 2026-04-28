@@ -198,8 +198,12 @@ const hydrateContract = async (contractId) => {
       select: "_id name email image"
     })
     .populate({
+      path: "terminationRequestedBy",
+      select: "_id name email image"
+    })
+    .populate({
       path: "listingId",
-      select: "_id title city address price currency ownerId"
+      select: "_id title city address price currency ownerId status"
     })
     .lean();
 };
@@ -237,7 +241,10 @@ export const createRentRequest = async ({
   const existing = await Contract.findOne({
     tenantId: context.tenantId,
     listingId: context.listingId
-  }).lean();
+  })
+    .where("status")
+    .in(["PENDING", "RESERVED", "ACTIVE", "TERMINATION_PENDING"])
+    .lean();
 
   if (existing) {
     throw new CustomError("Rent request already exists for this listing", 409);
@@ -279,6 +286,174 @@ export const getConversationRentRequest = async ({
   return hydrateContract(contract._id);
 };
 
+export const createTerminationRequest = async ({
+  contractId,
+  requesterUserId
+}) => {
+  const normalizedContractId = toObjectId(contractId, "contract id");
+  const normalizedRequesterId = toObjectId(requesterUserId, "user id");
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const contract =
+      await Contract.findById(normalizedContractId).session(session);
+
+    if (!contract) {
+      throw new CustomError("Rent request not found", 404);
+    }
+
+    if (!contract.status || contract.status !== "ACTIVE") {
+      throw new CustomError(
+        "Termination requests are only allowed after payment",
+        400
+      );
+    }
+
+    const isOwner = contract.ownerId.equals(normalizedRequesterId);
+    const isTenant = contract.tenantId.equals(normalizedRequesterId);
+
+    if (!isOwner && !isTenant) {
+      throw new CustomError(
+        "You are not allowed to request termination for this contract",
+        403
+      );
+    }
+
+    if (
+      contract.terminationRequestedAt ||
+      contract.status === "TERMINATION_PENDING"
+    ) {
+      throw new CustomError("Termination request already exists", 409);
+    }
+
+    contract.status = "TERMINATION_PENDING";
+    contract.terminationRequestedBy = normalizedRequesterId;
+    contract.terminationRequestedAt = new Date();
+    await contract.save({ session });
+
+    await session.commitTransaction();
+
+    return hydrateContract(contract._id);
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const acceptTerminationRequest = async ({
+  contractId,
+  requesterUserId
+}) => {
+  const normalizedContractId = toObjectId(contractId, "contract id");
+  const normalizedRequesterId = toObjectId(requesterUserId, "user id");
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const contract =
+      await Contract.findById(normalizedContractId).session(session);
+
+    if (!contract) {
+      throw new CustomError("Rent request not found", 404);
+    }
+
+    if (contract.status !== "TERMINATION_PENDING") {
+      throw new CustomError("No termination request is pending", 400);
+    }
+
+    if (contract.terminationRequestedBy.equals(normalizedRequesterId)) {
+      throw new CustomError(
+        "You cannot approve your own termination request",
+        403
+      );
+    }
+
+    const listing = await Property.findOneAndUpdate(
+      {
+        _id: contract.listingId,
+        deletedAt: null
+      },
+      {
+        $set: { status: "Active" }
+      },
+      { new: true, session }
+    );
+
+    if (!listing) {
+      throw new CustomError("Listing not found", 404);
+    }
+
+    contract.status = "TERMINATED";
+    contract.terminationResolvedAt = new Date();
+    contract.terminationRequestedBy = null;
+    contract.terminationRequestedAt = null;
+    await contract.save({ session });
+
+    await session.commitTransaction();
+
+    return hydrateContract(contract._id);
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const rejectTerminationRequest = async ({
+  contractId,
+  requesterUserId
+}) => {
+  const normalizedContractId = toObjectId(contractId, "contract id");
+  const normalizedRequesterId = toObjectId(requesterUserId, "user id");
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const contract =
+      await Contract.findById(normalizedContractId).session(session);
+
+    if (!contract) {
+      throw new CustomError("Rent request not found", 404);
+    }
+
+    if (contract.status !== "TERMINATION_PENDING") {
+      throw new CustomError("No termination request is pending", 400);
+    }
+
+    if (contract.terminationRequestedBy.equals(normalizedRequesterId)) {
+      throw new CustomError(
+        "You cannot reject your own termination request",
+        403
+      );
+    }
+
+    contract.status = "ACTIVE";
+    contract.terminationRequestedBy = null;
+    contract.terminationRequestedAt = null;
+    contract.terminationResolvedAt = new Date();
+    await contract.save({ session });
+
+    await session.commitTransaction();
+
+    return hydrateContract(contract._id);
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
 export const acceptRentRequest = async ({ contractId, ownerUserId }) => {
   const normalizedContractId = toObjectId(contractId, "contract id");
   const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
@@ -298,14 +473,14 @@ export const acceptRentRequest = async ({ contractId, ownerUserId }) => {
 
   await releaseExpiredReservations({ listingId: contractPreview.listingId });
 
-  const reservedContract = await Contract.findOne({
+  const existingAccepted = await Contract.findOne({
     listingId: contractPreview.listingId,
-    status: "RESERVED"
+    status: { $in: ["RESERVED", "ACTIVE", "TERMINATION_PENDING"] }
   })
     .select({ _id: 1 })
     .lean();
 
-  if (reservedContract) {
+  if (existingAccepted) {
     throw new CustomError(
       "You have already accepted rent request for this property. Property reserved.",
       409
@@ -383,11 +558,12 @@ export const rejectRentRequest = async ({ contractId, ownerUserId }) => {
       throw new CustomError("Rent request has already been processed", 400);
     }
 
-    await Contract.deleteOne({ _id: contract._id }, { session });
+    contract.status = "REJECTED";
+    await contract.save({ session });
 
     await session.commitTransaction();
 
-    return contract;
+    return hydrateContract(contract._id);
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -422,8 +598,12 @@ export const cancelRentRequest = async ({ contractId, requesterUserId }) => {
       );
     }
 
-    if (contract.status === "ACTIVE") {
-      throw new CustomError("Active contracts cannot be deleted", 400);
+    if (
+      contract.status === "ACTIVE" ||
+      contract.status === "TERMINATION_PENDING" ||
+      contract.status === "TERMINATED"
+    ) {
+      throw new CustomError("Processed contracts cannot be deleted", 400);
     }
 
     if (contract.status === "RESERVED") {
@@ -434,11 +614,12 @@ export const cancelRentRequest = async ({ contractId, requesterUserId }) => {
       );
     }
 
-    await Contract.deleteOne({ _id: contract._id }, { session });
+    contract.status = "CANCELLED";
+    await contract.save({ session });
 
     await session.commitTransaction();
 
-    return contract;
+    return hydrateContract(contract._id);
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -523,7 +704,19 @@ export const completeContractPayment = async ({ contractId, tenantUserId }) => {
       );
     }
 
+    // set active contract with lease dates based on property's leasePeriod
     contract.status = "ACTIVE";
+    const now = new Date();
+    contract.startDate = now;
+    const leaseMonths = Number(listing.leasePeriod || 0);
+    const endDate = new Date(now);
+    if (leaseMonths > 0) {
+      endDate.setMonth(endDate.getMonth() + leaseMonths);
+      contract.endDate = endDate;
+    } else {
+      contract.endDate = null;
+    }
+
     await contract.save({ session });
 
     await session.commitTransaction();
@@ -532,6 +725,54 @@ export const completeContractPayment = async ({ contractId, tenantUserId }) => {
   } catch (error) {
     await session.abortTransaction();
     throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const purgeExpiredLeases = async () => {
+  const now = new Date();
+
+  const expiredContracts = await Contract.find({
+    status: "ACTIVE",
+    endDate: { $lte: now }
+  }).select({ _id: 1, listingId: 1 });
+
+  if (!expiredContracts.length) return 0;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    let processed = 0;
+
+    for (const contractDoc of expiredContracts) {
+      const contract = await Contract.findById(contractDoc._id).session(
+        session
+      );
+
+      if (!contract || contract.status !== "ACTIVE") continue;
+
+      // mark contract terminated and free up property
+      contract.status = "TERMINATED";
+      contract.terminationResolvedAt = new Date();
+      await contract.save({ session });
+
+      await Property.updateOne(
+        { _id: contract.listingId, deletedAt: null },
+        { $set: { status: "Active" } },
+        { session }
+      );
+
+      processed += 1;
+    }
+
+    await session.commitTransaction();
+    return processed;
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
   } finally {
     session.endSession();
   }
@@ -596,6 +837,63 @@ export const getOwnerAcceptedRentRequests = async ({ ownerUserId }) => {
   );
 };
 
+export const getOwnerActiveRentRequests = async ({ ownerUserId }) => {
+  const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
+
+  const activeContracts = await Contract.find({
+    ownerId: normalizedOwnerId,
+    status: "ACTIVE"
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "tenantId",
+      model: User,
+      select: "_id name email image"
+    })
+    .populate({
+      path: "listingId",
+      model: Property,
+      select: "_id title city address price currency ownerId deletedAt status"
+    })
+    .lean();
+
+  return activeContracts.filter(
+    (contract) =>
+      contract.tenantId && contract.listingId && !contract.listingId.deletedAt
+  );
+};
+
+export const getOwnerTerminationRequests = async ({ ownerUserId }) => {
+  const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
+
+  const terminationContracts = await Contract.find({
+    ownerId: normalizedOwnerId,
+    status: "TERMINATION_PENDING"
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "tenantId",
+      model: User,
+      select: "_id name email image"
+    })
+    .populate({
+      path: "listingId",
+      model: Property,
+      select: "_id title city address price currency ownerId deletedAt status"
+    })
+    .populate({
+      path: "terminationRequestedBy",
+      model: User,
+      select: "_id name email image"
+    })
+    .lean();
+
+  return terminationContracts.filter(
+    (contract) =>
+      contract.tenantId && contract.listingId && !contract.listingId.deletedAt
+  );
+};
+
 export const getTenantRentalContracts = async ({ tenantUserId }) => {
   const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
 
@@ -603,7 +901,17 @@ export const getTenantRentalContracts = async ({ tenantUserId }) => {
 
   const contracts = await Contract.find({
     tenantId: normalizedTenantId,
-    status: { $in: ["PENDING", "RESERVED", "ACTIVE"] }
+    status: {
+      $in: [
+        "PENDING",
+        "RESERVED",
+        "ACTIVE",
+        "REJECTED",
+        "CANCELLED",
+        "TERMINATION_PENDING",
+        "TERMINATED"
+      ]
+    }
   })
     .sort({ updatedAt: -1, createdAt: -1 })
     .populate({
@@ -615,6 +923,11 @@ export const getTenantRentalContracts = async ({ tenantUserId }) => {
       path: "listingId",
       model: Property,
       select: "_id title city address price currency ownerId status deletedAt"
+    })
+    .populate({
+      path: "terminationRequestedBy",
+      model: User,
+      select: "_id name email image"
     })
     .lean();
 

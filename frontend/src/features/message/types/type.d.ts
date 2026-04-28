@@ -11,7 +11,15 @@ export interface ConversationListing {
   status?: "Active" | "Reserved" | "Rented" | "Inactive";
 }
 
-export type ContractStatus = "PENDING" | "RESERVED" | "ACTIVE" | "ENDED";
+export type ContractStatus =
+  | "PENDING"
+  | "RESERVED"
+  | "ACTIVE"
+  | "REJECTED"
+  | "CANCELLED"
+  | "TERMINATION_PENDING"
+  | "TERMINATED"
+  | "ENDED";
 
 export interface RentRequestParty {
   _id: string;
@@ -24,6 +32,7 @@ export interface RentRequest {
   _id: string;
   tenantId: string | RentRequestParty;
   ownerId: string | RentRequestParty;
+  terminationRequestedBy?: string | RentRequestParty | null;
   listingId: string | ConversationListing;
   conversationId: string;
   status: ContractStatus;
@@ -31,6 +40,8 @@ export interface RentRequest {
   updatedAt?: string;
   acceptedAt?: string | null;
   paymentDueAt?: string | null;
+  terminationRequestedAt?: string | null;
+  terminationResolvedAt?: string | null;
 }
 
 export interface Conversation {
