@@ -706,10 +706,10 @@ export const completeContractPayment = async ({ contractId, tenantUserId }) => {
 
     // set active contract with lease dates based on property's leasePeriod
     contract.status = "ACTIVE";
-    const now = new Date();
-    contract.startDate = now;
+    const leaseStartAt = new Date();
+    contract.startDate = leaseStartAt;
     const leaseMonths = Number(listing.leasePeriod || 0);
-    const endDate = new Date(now);
+    const endDate = new Date(leaseStartAt);
     if (leaseMonths > 0) {
       endDate.setMonth(endDate.getMonth() + leaseMonths);
       contract.endDate = endDate;

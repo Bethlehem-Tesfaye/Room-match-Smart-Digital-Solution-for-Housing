@@ -54,7 +54,6 @@ function PropertyDetailsView({
   onSendMessage,
   isSendMessageLoading = false,
 }: PropertyDetailsViewProps) {
-  const isRented = property.status === "Rented";
   const isUnavailable = property.status !== "Active";
   const orderedImages = useMemo(() => {
     if (!property.images.length) return [];

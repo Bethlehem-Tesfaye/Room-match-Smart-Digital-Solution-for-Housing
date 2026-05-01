@@ -68,6 +68,7 @@ export interface ConversationSummary {
   lastMessageAt: string | null;
   listingId?: string | null;
   listing?: ConversationListing | null;
+  isRoommateChat?: boolean;
 }
 
 export interface ConversationParticipantUser {

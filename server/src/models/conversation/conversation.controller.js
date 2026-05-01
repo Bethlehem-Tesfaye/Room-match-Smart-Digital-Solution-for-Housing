@@ -1,18 +1,21 @@
 import * as conversationService from "./conversation.service.js";
 
-/**
- * POST /conversations/initiate
- */
 export const initiateConversation = async (req, res, next) => {
   try {
     const userA = req.userId;
-    const { userId: userB, listingId, propertyId } = req.body;
+    const {
+      userId: userB,
+      listingId,
+      propertyId,
+      isRoommateChat = false
+    } = req.body;
 
     const conversation = await conversationService.getOrCreateConversation({
       userA,
       userB,
       listingId: listingId || propertyId,
-      propertyId
+      propertyId,
+      isRoommateChat
     });
 
     return res.status(200).json({ conversation });
@@ -21,9 +24,6 @@ export const initiateConversation = async (req, res, next) => {
   }
 };
 
-/**
- * GET /conversations
- */
 export const getConversations = async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -37,9 +37,6 @@ export const getConversations = async (req, res, next) => {
   }
 };
 
-/**
- * GET /conversations/:id/participants
- */
 export const getParticipants = async (req, res, next) => {
   try {
     const { id } = req.params;

@@ -24,78 +24,7 @@ const userProfileSchema = new Schema(
       default: "user",
       required: true
     },
-    deletedAt: { type: Date, default: null },
-
-    // ========================================
-    // ROOMMATE PREFERENCE FIELDS (ADDED)
-    // ========================================
-    cleanliness: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    sleepSchedule: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    noiseTolerance: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    guests: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    studyHabits: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    temperature: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    personality: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    smoking: {
-      type: String,
-      enum: ["yes", "no"],
-      default: "no"
-    },
-    pets: {
-      type: String,
-      enum: ["yes", "no"],
-      default: "no"
-    },
-    // NEW HARD FILTER FIELDS
-    budgetMin: { type: Number, default: 0, min: 0 },
-    budgetMax: { type: Number, default: 2000, min: 0 },
-    preferredLocations: { type: [String], default: [] },
-    moveInDate: { type: Date, default: null },
-    stayDurationMonths: { type: Number, min: 1, max: 60, default: 12 },
-    drinking: { type: String, enum: ["yes", "no", "sometimes"], default: "no" },
-    // NEW SOFT FILTER FIELDS
-    occupation: {
-      type: String,
-      enum: ["student", "working", "remote", "hybrid", "unemployed"],
-      default: "student"
-    },
-    interests: { type: [String], default: [] },
-    aboutMe: { type: String, default: "", maxlength: 500 }
+    deletedAt: { type: Date, default: null }
   },
   {
     collection: "userProfile",

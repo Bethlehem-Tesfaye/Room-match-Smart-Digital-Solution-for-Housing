@@ -63,6 +63,9 @@ const getErrorMessage = (error: unknown): string => {
   return "Request failed";
 };
 
+// Add isRoommateChat to every byConversation.set call in normalizeConversationSummaries
+
+// REPLACE the entire normalizeConversationSummaries function:
 const normalizeConversationSummaries = (
   rows: ConversationSummaryApiItem[],
 ): ConversationSummary[] => {
@@ -76,6 +79,7 @@ const normalizeConversationSummaries = (
     const listingId =
       row.conversation?.listingId || row.conversation?.propertyId || null;
     const listing = row.conversation?.listing || null;
+    const isRoommateChat = row.conversation?.isRoommateChat ?? false; // NEW
     const existing = byConversation.get(conversationId);
 
     if (!existing) {
@@ -84,6 +88,7 @@ const normalizeConversationSummaries = (
         lastMessageAt,
         listingId,
         listing,
+        isRoommateChat, // NEW
       });
       return;
     }
@@ -99,6 +104,7 @@ const normalizeConversationSummaries = (
         lastMessageAt,
         listingId: existing.listingId || listingId,
         listing: existing.listing || listing,
+        isRoommateChat: existing.isRoommateChat || isRoommateChat, // NEW
       });
       return;
     }
@@ -108,6 +114,7 @@ const normalizeConversationSummaries = (
         ...existing,
         listing,
         listingId: existing.listingId || listingId,
+        // isRoommateChat already on existing via spread
       });
     }
   });
@@ -118,7 +125,6 @@ const normalizeConversationSummaries = (
     return bTime - aTime;
   });
 };
-
 export const useConversations = (): UseQueryResult<
   ConversationSummary[],
   Error

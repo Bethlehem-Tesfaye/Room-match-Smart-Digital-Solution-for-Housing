@@ -32,6 +32,7 @@ interface MessageInboxProps {
   hasMore: boolean;
   onLoadOlder: () => void;
   onSendMessage: (content: string) => Promise<void>;
+  isRoommateChat?: boolean;
 }
 
 const getSenderId = (sender: Message["senderId"]) =>
@@ -39,6 +40,7 @@ const getSenderId = (sender: Message["senderId"]) =>
 
 function MessageInbox({
   conversationId,
+  isRoommateChat = false,
   conversationLabel,
   conversationListing,
   isListingUnavailable = false,
@@ -174,16 +176,26 @@ function MessageInbox({
   return (
     <div className="flex h-full min-h-0 flex-col bg-(--palette-card-bg)">
       <div className="border-b border-(--palette-border) px-5 py-3">
-        <h2 className="text-sm font-semibold text-(--palette-deep)">
-          {conversationLabel}
-        </h2>
-        {conversationListing ? (
+        {/* Name + roommate badge row */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-(--palette-deep)">
+            {conversationLabel}
+          </h2>
+          {isRoommateChat && ( // NEW
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+              🏠 Roommate
+            </span>
+          )}
+        </div>
+
+        {/* Listing link — only for non-roommate chats */}
+        {!isRoommateChat && conversationListing ? ( // CHANGED: added !isRoommateChat
           <p className="mt-1 truncate text-xs text-(--palette-soft-purple) underline flex gap-2">
-            <Building2 size={19} />{" "}
+            <Building2 size={19} />
             <div className="flex item-center justify-center text-blue-500">
               <Link
                 to={`/properties/${conversationListing._id}`}
-                className="font-semibold hover:underline flex  items-center text-sm"
+                className="font-semibold hover:underline flex items-center text-sm"
               >
                 {conversationListing.title}
                 {conversationListing.city
@@ -199,7 +211,11 @@ function MessageInbox({
           </p>
         ) : null}
 
-        {conversationListing && !isOwnerView && isListingUnavailable ? (
+        {/* All rent request UI — entirely hidden for roommate chats */}
+        {!isRoommateChat &&
+        conversationListing &&
+        !isOwnerView &&
+        isListingUnavailable ? (
           <div className="mt-2">
             <button
               type="button"
@@ -211,7 +227,10 @@ function MessageInbox({
           </div>
         ) : null}
 
-        {conversationListing && !isOwnerView && !isListingUnavailable ? (
+        {!isRoommateChat &&
+        conversationListing &&
+        !isOwnerView &&
+        !isListingUnavailable ? (
           <div className="mt-2">
             {!rentRequest ||
             (rentRequest &&
@@ -267,7 +286,8 @@ function MessageInbox({
           </div>
         ) : null}
 
-        {conversationListing &&
+        {!isRoommateChat &&
+        conversationListing &&
         isOwnerView &&
         !isListingUnavailable &&
         rentRequest?.status === "PENDING" ? (
@@ -298,7 +318,8 @@ function MessageInbox({
           </div>
         ) : null}
 
-        {conversationListing &&
+        {!isRoommateChat &&
+        conversationListing &&
         isOwnerView &&
         !isListingUnavailable &&
         rentRequest?.status === "RESERVED" ? (
@@ -307,13 +328,17 @@ function MessageInbox({
           </p>
         ) : null}
 
-        {conversationListing &&
+        {!isRoommateChat &&
+        conversationListing &&
         isOwnerView &&
         rentRequest?.status === "ACTIVE" ? (
           <p className="mt-2 text-xs font-semibold text-emerald-700">Rented</p>
         ) : null}
 
-        {conversationListing && isOwnerView && isListingUnavailable ? (
+        {!isRoommateChat &&
+        conversationListing &&
+        isOwnerView &&
+        isListingUnavailable ? (
           <p className="mt-2 text-xs font-semibold text-rose-700">
             This property is no longer available.
           </p>

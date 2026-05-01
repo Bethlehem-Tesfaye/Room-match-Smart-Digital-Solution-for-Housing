@@ -7,6 +7,9 @@ import conversationRouter from "../models/conversation/conversation.routes.js";
 import messageRouter from "../models/message/message.routes.js";
 import notificationRouter from "../models/notification/notification.routes.js";
 import contractRouter from "../models/contract/contract.routes.js";
+import roommateRouters from "../models/roommate/roommate.routes.js";
+import matchRouter from "../models/roommate/match.routes.js";
+// import roomateRouter from "../models/roommate/roommateRoute.js";
 
 export const router = express.Router();
 
@@ -18,3 +21,6 @@ router.use("/conversations", conversationRouter);
 router.use("/messages", messageRouter);
 router.use("/notifications", notificationRouter);
 router.use("/contracts", contractRouter);
+// router.use("/roommate", roomateRouter);
+router.use("/roommate", roommateRouters);
+router.use("/match", matchRouter);
