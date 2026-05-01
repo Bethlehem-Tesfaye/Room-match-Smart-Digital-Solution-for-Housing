@@ -67,6 +67,7 @@ function MessagePage() {
     ? partnerByConversationId[selectedConversationId]
     : null;
 
+  // REPLACE the selectedConversation block + isOwnerView derivations with:
   const selectedConversation = selectedConversationId
     ? conversations.find(
         (conversation) =>
@@ -74,12 +75,16 @@ function MessagePage() {
       )
     : undefined;
 
+  const isRoommateChat = selectedConversation?.isRoommateChat ?? false; // NEW
+
   const isOwnerView =
+    !isRoommateChat && // NEW — owners don't get rent UI in roommate chats
     !!selectedConversation?.listing?.ownerId &&
     selectedConversation.listing.ownerId === user?.id;
-  const isSelectedListingRented =
-    selectedConversation?.listing?.status === "Rented";
 
+  const isSelectedListingRented =
+    !isRoommateChat && // NEW — irrelevant for roommate chats
+    selectedConversation?.listing?.status === "Rented";
   const setConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
     setSearchParams({ conversationId });
@@ -300,6 +305,7 @@ function MessagePage() {
           <section className="h-full min-h-0">
             <MessageInbox
               conversationId={selectedConversationId}
+              isRoommateChat={isRoommateChat}
               conversationLabel={
                 selectedPartner?.name || selectedPartner?.email || "Inbox"
               }

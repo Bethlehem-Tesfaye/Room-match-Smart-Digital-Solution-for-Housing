@@ -20,6 +20,25 @@ const buildParticipantsKey = (userAId, userBId, listingId = null) => {
 
   return `${usersPart}:${listingPart}`;
 };
+const buildConversationKey = ({
+  userAId,
+  userBId,
+  scope,
+  listingId = null
+}) => {
+  const users = [userAId.toString(), userBId.toString()].sort();
+
+  if (scope === "ROOMMATE") {
+    // IMPORTANT: roommate chats NEVER depend on listing/property
+    return `roommate:${users[0]}:${users[1]}`;
+  }
+
+  if (scope === "LISTING") {
+    return `listing:${listingId}:${users[0]}:${users[1]}`;
+  }
+
+  return `direct:${users[0]}:${users[1]}`;
+};
 
 export const getOrCreateConversation = async ({
   userA,
@@ -45,7 +64,8 @@ export const getOrCreateConversation = async ({
     ? toObjectId(listingOrPropertyId, "listing id")
     : null;
 
-  if (normalizedListingId) {
+  // Only verify listing ownership for non-roommate chats
+  if (!isRoommateChat && normalizedListingId) {
     const listing = await Property.findOne({
       _id: normalizedListingId,
       ownerId: userBId.toString(),
@@ -59,20 +79,29 @@ export const getOrCreateConversation = async ({
     }
   }
 
-  const participantsKey = buildParticipantsKey(
+  const scope = isRoommateChat
+    ? "ROOMMATE"
+    : normalizedListingId
+      ? "LISTING"
+      : "DIRECT";
+
+  const participantsKey = buildConversationKey({
     userAId,
     userBId,
-    normalizedListingId
-  );
+    scope,
+    listingId: scope === "LISTING" ? normalizedListingId : null
+  });
 
-  const byParticipantsKey = await Conversation.findOne({
-    participantsKey
+  // 1. PRIMARY LOOKUP — exact key + flag match
+  const existing = await Conversation.findOne({
+    participantsKey,
+    isRoommateChat
   }).lean();
 
-  if (byParticipantsKey) {
-    return byParticipantsKey;
-  }
+  if (existing) return existing;
 
+  // 2. LEGACY MIGRATION — find old conversations without participantsKey
+  //    Pipeline order: match participants → group → filter both users → lookup conversation → filter by flag
   const legacyConversation = await ConversationParticipant.aggregate([
     {
       $match: {
@@ -98,10 +127,16 @@ export const getOrCreateConversation = async ({
         as: "conversation"
       }
     },
+    { $unwind: "$conversation" },
     {
-      $unwind: "$conversation"
+      // Only migrate conversations that match the isRoommateChat flag
+      // AND don't already have a participantsKey (truly legacy)
+      $match: {
+        "conversation.isRoommateChat": isRoommateChat ? true : { $ne: true },
+        "conversation.participantsKey": { $exists: false }
+      }
     },
-    ...(normalizedListingId
+    ...(scope === "LISTING"
       ? [
           {
             $match: {
@@ -120,39 +155,39 @@ export const getOrCreateConversation = async ({
           }
         ]
       : []),
-    {
-      $limit: 1
-    }
+    { $limit: 1 }
   ]);
 
   if (legacyConversation.length > 0) {
+    const conv = legacyConversation[0].conversation;
+
     await Conversation.updateOne(
-      { _id: legacyConversation[0].conversation._id },
+      { _id: conv._id },
       {
         $set: {
           participantsKey,
-          ...(normalizedListingId
+          isRoommateChat,
+          ...(scope === "LISTING"
             ? {
                 listingId: normalizedListingId,
                 propertyId: normalizedListingId
               }
-            : {})
+            : {
+                listingId: null,
+                propertyId: null
+              })
         }
       }
     );
 
     return {
-      ...legacyConversation[0].conversation,
+      ...conv,
       participantsKey,
-      ...(normalizedListingId
-        ? {
-            listingId: normalizedListingId,
-            propertyId: normalizedListingId
-          }
-        : {})
+      isRoommateChat
     };
   }
 
+  // 3. CREATE NEW
   const session = await mongoose.startSession();
 
   try {
@@ -162,9 +197,9 @@ export const getOrCreateConversation = async ({
       [
         {
           participantsKey,
-          listingId: normalizedListingId,
-          propertyId: normalizedListingId,
-          isRoommateChat
+          listingId: scope === "LISTING" ? normalizedListingId : null,
+          propertyId: scope === "LISTING" ? normalizedListingId : null,
+          isRoommateChat: scope === "ROOMMATE"
         }
       ],
       { session }
@@ -179,24 +214,13 @@ export const getOrCreateConversation = async ({
     );
 
     await session.commitTransaction();
-
     return conversation;
   } catch (error) {
     await session.abortTransaction();
 
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === 11000
-    ) {
-      const existingConversation = await Conversation.findOne({
-        participantsKey
-      }).lean();
-
-      if (existingConversation) {
-        return existingConversation;
-      }
+    if (error?.code === 11000) {
+      const fallback = await Conversation.findOne({ participantsKey }).lean();
+      if (fallback) return fallback;
     }
 
     throw error;

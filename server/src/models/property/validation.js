@@ -59,26 +59,38 @@ export const browsePropertyQuerySchema = z
   );
 
 export const createPropertySchema = z.object({
-  title: z.string().trim().min(3).max(200),
-  description: z.string().trim().max(5000).optional().default(""),
-  propertyType: propertyTypeEnum,
-  price: z.number().nonnegative(),
-  currency: z.string().trim().max(10).optional().default("ETB"),
-  deposit: z.number().nonnegative().optional().default(0),
-  leasePeriod: z.number().int().positive(),
-  initialPayment: z.number().nonnegative(),
-  address: z.string().trim().min(3).max(255),
-  city: z.string().trim().min(2).max(100),
-  numberOfBedrooms: z.number().int().nonnegative().optional().default(0),
-  numberOfBathrooms: z.number().int().nonnegative().optional().default(0),
-  floorNumber: z.number().int().nullable().optional(),
-  totalFloors: z.number().int().nullable().optional(),
-  areaSqFt: z.number().nonnegative().nullable().optional(),
-  isFurnished: z.boolean().optional().default(false),
-  availableFrom: z.coerce.date().nullable().optional(),
-  status: propertyStatusEnum.optional().default("Active"),
-  images: z.array(imageInputSchema).optional().default([]),
-  amenityIds: z.array(z.string().trim().min(1)).optional().default([])
+  title: z.string().min(3),
+  description: z.string().optional().default(""),
+  propertyType: z.enum(["Apartment", "House", "Condo", "Studio", "SharedRoom"]),
+
+  // Use z.coerce.number() for all numeric fields — this handles "2000" → 2000
+  price: z.coerce.number().positive(),
+  deposit: z.coerce.number().min(0).default(0),
+  numberOfBedrooms: z.coerce.number().min(0),
+  numberOfBathrooms: z.coerce.number().min(0),
+  floorNumber: z.coerce.number().min(0).optional().nullable(),
+  totalFloors: z.coerce.number().min(0).optional().nullable(),
+  areaSqFt: z.coerce.number().min(0).optional().nullable(),
+  leasePeriod: z.coerce.number().positive(),
+  initialPayment: z.coerce.number().min(0),
+
+  currency: z.string().default("ETB"),
+  address: z.string().min(1),
+  city: z.string().min(1),
+  availableFrom: z.string().optional().default(""),
+  isFurnished: z.coerce.boolean().default(false),
+  status: z.string().optional().default("Active"),
+  amenityIds: z.preprocess((val) => {
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return [];
+      }
+    }
+    return val;
+  }, z.array(z.string()).default([])),
+  primaryImageIndex: z.coerce.number().min(0).default(0)
 });
 
 export const updatePropertySchema = z
