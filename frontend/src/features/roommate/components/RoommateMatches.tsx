@@ -221,15 +221,22 @@ export const RoommateMatches: React.FC<Props> = ({
                             living here
                           </p>
                         ) : null}
-                        {match.leaseInfo?.leaseEndDate ? (
+                        {match.leaseInfo?.remainingDays != null ? (
+                          <p className="mt-1 text-xs text-(--palette-soft-purple)">
+                            Lease remaining: {match.leaseInfo.remainingDays} day
+                            {match.leaseInfo.remainingDays === 1 ? "" : "s"}
+                            {match.leaseInfo.leaseEndDate
+                              ? ` • Ends ${new Date(
+                                  match.leaseInfo.leaseEndDate,
+                                ).toLocaleDateString()}`
+                              : ""}
+                          </p>
+                        ) : match.leaseInfo?.leaseEndDate ? (
                           <p className="mt-1 text-xs text-(--palette-soft-purple)">
                             Lease ends:{" "}
                             {new Date(
                               match.leaseInfo.leaseEndDate,
                             ).toLocaleDateString()}
-                            {match.leaseInfo.remainingDays != null
-                              ? ` • ${match.leaseInfo.remainingDays} days left`
-                              : ""}
                           </p>
                         ) : null}
                       </div>
