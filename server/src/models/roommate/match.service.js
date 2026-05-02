@@ -4,11 +4,43 @@ import {
   RoommateMatch
 } from "./schema.js";
 import { UserProfile } from "../profile/schema.js";
+import { Property } from "../property/schema.js";
+import { Contract } from "../contract/schema.js";
 import { calculateRoommateMatch } from "./roommateMatcher.js";
 
 const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
 
 const toUserIdString = (id) => (id ? id.toString() : "");
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const addMonths = (date, months) => {
+  const nextDate = new Date(date);
+  nextDate.setMonth(nextDate.getMonth() + months);
+  return nextDate;
+};
+
+const buildLeaseInfo = ({ contract, property }) => {
+  if (!contract?.createdAt || !property?.leasePeriod) {
+    return null;
+  }
+
+  const contractCreatedAt = new Date(contract.createdAt);
+  if (Number.isNaN(contractCreatedAt.getTime())) {
+    return null;
+  }
+
+  const leaseEndDate = addMonths(contractCreatedAt, property.leasePeriod);
+  const remainingDays = Math.max(
+    0,
+    Math.ceil((leaseEndDate.getTime() - Date.now()) / DAY_MS)
+  );
+
+  return {
+    leaseEndDate: leaseEndDate.toISOString(),
+    remainingDays
+  };
+};
 
 export const generateMatchesForUser = async (userId) => {
   const currentProfile = await RoommateProfile.findOne({ userId }).lean();
@@ -118,8 +150,67 @@ export const getMatchesForUser = async (userId) => {
     roommateProfileMap[rp.userId.toString()] = rp;
   }
 
+  const resolvedPropertyIds = [
+    ...new Set(
+      matches
+        .map((match) => {
+          const targetIdStr = match.targetUserId?.toString();
+          const targetRoommateProfile = roommateProfileMap[targetIdStr] || null;
+
+          return (
+            match.propertyId ||
+            targetRoommateProfile?.selectedPropertyId ||
+            match.snapshot?.targetProfile?.selectedPropertyId ||
+            null
+          );
+        })
+        .filter(Boolean)
+        .map((propertyId) => propertyId.toString())
+    )
+  ];
+
+  const [properties, activeContracts] = await Promise.all([
+    resolvedPropertyIds.length
+      ? Property.find({ _id: { $in: resolvedPropertyIds } })
+          .select({ _id: 1, leasePeriod: 1 })
+          .lean()
+      : Promise.resolve([]),
+    resolvedPropertyIds.length
+      ? Contract.find({
+          listingId: { $in: resolvedPropertyIds },
+          status: "ACTIVE"
+        })
+          .select({ _id: 1, listingId: 1, createdAt: 1 })
+          .lean()
+      : Promise.resolve([])
+  ]);
+
+  const propertyMap = {};
+  for (const property of properties) {
+    propertyMap[property._id.toString()] = property;
+  }
+
+  const activeContractMap = {};
+  for (const contract of activeContracts) {
+    activeContractMap[contract.listingId.toString()] = contract;
+  }
+
   return matches.map((match) => {
     const targetIdStr = match.targetUserId?.toString();
+    const targetRoommateProfile = roommateProfileMap[targetIdStr] || null;
+    const resolvedPropertyId =
+      match.propertyId ||
+      targetRoommateProfile?.selectedPropertyId ||
+      match.snapshot?.targetProfile?.selectedPropertyId ||
+      null;
+
+    const propertyIdStr = resolvedPropertyId?.toString?.() || null;
+    const leaseInfo = propertyIdStr
+      ? buildLeaseInfo({
+          contract: activeContractMap[propertyIdStr],
+          property: propertyMap[propertyIdStr]
+        })
+      : null;
 
     return {
       ...match,
@@ -134,7 +225,9 @@ export const getMatchesForUser = async (userId) => {
         : null,
 
       // FULL roommate profile attached
-      targetRoommateProfile: roommateProfileMap[targetIdStr] || null
+      targetRoommateProfile,
+
+      leaseInfo
     };
   });
 };
