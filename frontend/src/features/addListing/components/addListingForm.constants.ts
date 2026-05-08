@@ -1,10 +1,12 @@
 import type { AddListingDraft, AddListingStepMeta } from "../types/types";
+import type { BankInfoDraft } from "../types/types";
 
 export const addListingSteps: AddListingStepMeta[] = [
   { id: 1, title: "Property Details" },
   { id: 2, title: "Location" },
   { id: 3, title: "Photos" },
-  { id: 4, title: "Amenities & Final Details" },
+  { id: 4, title: "Bank Information" },
+  { id: 5, title: "Amenities & Final Details" },
 ];
 
 export const propertyTypeOptions = [
@@ -37,4 +39,12 @@ export const initialAddListingDraft: AddListingDraft = {
   amenityIds: [],
   availableFrom: "",
   isFurnished: false,
+};
+
+export const initialBankInfoDraft: BankInfoDraft = {
+  accountName: "",
+  accountNumber: "",
+  bankCode: "",
+  bankName: "",
+  chapaSubaccountId: "",
 };

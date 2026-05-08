@@ -17,6 +17,18 @@ const userProfileSchema = new Schema(
     },
     fullName: { type: String, trim: true, maxlength: 200, default: "" },
     phoneNumber: { type: String, trim: true, maxlength: 50, default: null },
+    hasCompletedOnboarding: { type: Boolean, default: false },
+
+    bankInfo: {
+      type: {
+        accountName: { type: String, trim: true, default: null },
+        accountNumber: { type: String, trim: true, default: null },
+        bankCode: { type: String, trim: true, default: null },
+        bankName: { type: String, trim: true, default: null },
+        chapaSubaccountId: { type: String, trim: true, default: null }
+      },
+      default: null
+    },
     profilePictureUrl: { type: String, default: null },
     role: {
       type: String,

@@ -17,3 +17,10 @@ export const updateProfileSchema = z
       payload.removeProfilePicture === true,
     "At least one profile field must be provided"
   );
+
+export const setupBankSchema = z.object({
+  accountName: z.string().trim().min(1).max(200),
+  accountNumber: z.string().trim().min(1).max(50),
+  bankCode: z.string().trim().min(1).max(100),
+  bankName: z.string().trim().min(1).max(200)
+});

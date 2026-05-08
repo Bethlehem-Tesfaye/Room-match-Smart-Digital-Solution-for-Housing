@@ -92,16 +92,12 @@ export const getOrCreateConversation = async ({
     listingId: scope === "LISTING" ? normalizedListingId : null
   });
 
-  // 1. PRIMARY LOOKUP — exact key + flag match
   const existing = await Conversation.findOne({
-    participantsKey,
-    isRoommateChat
+    participantsKey
   }).lean();
 
   if (existing) return existing;
 
-  // 2. LEGACY MIGRATION — find old conversations without participantsKey
-  //    Pipeline order: match participants → group → filter both users → lookup conversation → filter by flag
   const legacyConversation = await ConversationParticipant.aggregate([
     {
       $match: {

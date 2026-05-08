@@ -28,7 +28,7 @@ export interface CreatorDeletePropertyResponse {
   message: string;
 }
 
-export type AddListingStep = 1 | 2 | 3 | 4;
+export type AddListingStep = 1 | 2 | 3 | 4 | 5;
 
 export interface AddListingImageDraft {
   id: string;
@@ -67,6 +67,19 @@ export type SetAddListingField = <K extends keyof AddListingDraft>(
 export interface AddListingStepMeta {
   id: AddListingStep;
   title: string;
+}
+
+export interface BankInfoDraft {
+  accountName: string;
+  accountNumber: string;
+  bankCode: string;
+  bankName: string;
+  chapaSubaccountId: string;
+}
+
+export interface BankOption {
+  id: string;
+  name: string;
 }
 
 export type CreateListingPayload = FormData;
