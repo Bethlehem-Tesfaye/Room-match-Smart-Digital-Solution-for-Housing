@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   CalendarClock,
@@ -7,8 +7,9 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { api } from "../../lib/axios";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import {
@@ -27,6 +28,8 @@ import type {
 import { palette } from "../../theme/palette";
 
 type RentalsTab = "requested" | "rented" | "termination" | "history";
+
+const pendingPaymentStorageKey = "pending_rental_payment_contract_id";
 
 const getListing = (
   listing: RentRequest["listingId"],
@@ -141,15 +144,78 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
   return `${minutes}m left`;
 };
 
+const getErrorMessage = (error: unknown) => {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const maybeResponse = error as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+
+    return (
+      maybeResponse.response?.data?.message ||
+      maybeResponse.message ||
+      "Request failed"
+    );
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Request failed";
+};
+
 function MyRentalsPage() {
   const [activeTab, setActiveTab] = useState<RentalsTab>("requested");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [pendingPaymentContractId, setPendingPaymentContractId] = useState<
+    string | null
+  >(null);
+  const paymentReturnHandledRef = useRef(false);
   const { user } = useCurrentUser();
   const rentalsQuery = useTenantRentalContracts();
   const cancelRentRequest = useCancelRentRequest();
   const createTerminationRequest = useCreateTerminationRequest();
   const acceptTerminationRequest = useAcceptTerminationRequest();
   const rejectTerminationRequest = useRejectTerminationRequest();
+
+  useEffect(() => {
+    if (searchParams.get("payment") !== "success") {
+      paymentReturnHandledRef.current = false;
+      return;
+    }
+
+    if (paymentReturnHandledRef.current) {
+      return;
+    }
+
+    paymentReturnHandledRef.current = true;
+
+    const contractId = window.localStorage.getItem(pendingPaymentStorageKey);
+
+    const finalizePayment = async () => {
+      if (!contractId) {
+        toast.success("Payment completed successfully.");
+        await rentalsQuery.refetch();
+        setSearchParams({}, { replace: true });
+        return;
+      }
+
+      try {
+        await api.post("/api/payments/confirm", { contractId });
+        toast.success("Payment completed successfully.");
+        await rentalsQuery.refetch();
+      } catch (error) {
+        toast.error(getErrorMessage(error) || "Payment confirmation failed");
+      } finally {
+        window.localStorage.removeItem(pendingPaymentStorageKey);
+        setSearchParams({}, { replace: true });
+      }
+    };
+
+    void finalizePayment();
+  }, [rentalsQuery, searchParams, setSearchParams]);
 
   const contracts = rentalsQuery.data ?? [];
 
@@ -239,6 +305,33 @@ function MyRentalsPage() {
       const message =
         error instanceof Error ? error.message : "Failed to cancel request";
       toast.error(message);
+    }
+  };
+
+  const handleCompletePayment = async (contractId: string) => {
+    setPendingPaymentContractId(contractId);
+
+    try {
+      const response = await api.post<{ checkout_url: string }>(
+        "/api/payments/initialize",
+        { contractId },
+      );
+
+      const checkoutUrl = response.data.checkout_url;
+
+      if (!checkoutUrl) {
+        throw new Error("Missing checkout URL");
+      }
+
+      window.localStorage.setItem(pendingPaymentStorageKey, contractId);
+
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      const message = getErrorMessage(error) || "Failed to start payment";
+      toast.error(message);
+      window.localStorage.removeItem(pendingPaymentStorageKey);
+    } finally {
+      setPendingPaymentContractId(null);
     }
   };
 
@@ -446,6 +539,12 @@ function MyRentalsPage() {
               const owner = getParty(contract.ownerId);
               const statusMeta = getStatusMeta(contract.status);
               const listingStateMeta = getListingStateMeta(listing);
+              const canCompletePayment =
+                contract.status === "RESERVED" &&
+                contract.paymentDueAt &&
+                new Date(contract.paymentDueAt).getTime() > nowTick;
+              const isCompletingThisPayment =
+                pendingPaymentContractId === contract._id;
 
               return (
                 <article
@@ -639,6 +738,22 @@ function MyRentalsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
+                      {activeTab === "requested" && canCompletePayment ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleCompletePayment(contract._id)
+                          }
+                          disabled={isCompletingThisPayment}
+                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          style={{ backgroundColor: "#059669" }}
+                        >
+                          {isCompletingThisPayment
+                            ? "Redirecting..."
+                            : "Complete Payment"}
+                        </button>
+                      ) : null}
+
                       {activeTab === "requested" ? (
                         <button
                           type="button"

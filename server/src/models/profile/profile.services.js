@@ -1,10 +1,84 @@
 import CustomError from "../../lib/errors.js";
+import { env } from "../../config/evnironments.js";
 import { UserProfile } from "./schema.js";
 
 const normalizePhoneNumber = (value) => {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   return value;
+};
+
+const normalizeBankField = (value) => {
+  if (value === undefined || value === null) return "";
+  return String(value).trim();
+};
+
+const extractChapaSubaccountId = (payload) => {
+  return (
+    payload?.data?.id ??
+    payload?.data?.subaccount_id ??
+    payload?.data?.subaccountId ??
+    payload?.data?.reference ??
+    payload?.id ??
+    payload?.subaccount_id ??
+    payload?.subaccountId ??
+    null
+  );
+};
+
+const requestChapaSubaccount = async ({
+  accountName,
+  accountNumber,
+  bankCode,
+  businessName
+}) => {
+  if (!env.CHAPA_SECRET_KEY) {
+    throw new CustomError("Missing Chapa secret key", 500);
+  }
+
+  const payload = {
+    account_name: accountName,
+    account_number: accountNumber,
+    bank_code: bankCode,
+    business_name: businessName,
+    split_type: "percentage",
+    split_value: 0.95
+  };
+
+  const response = await fetch("https://api.chapa.co/v1/subaccount", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.CHAPA_SECRET_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responsePayload = await response.json().catch(() => ({}));
+
+  console.log(
+    "DEBUG Chapa POST response:",
+    JSON.stringify(responsePayload, null, 2)
+  );
+
+  if (
+    !response.ok &&
+    typeof responsePayload?.message === "string" &&
+    responsePayload.message.toLowerCase().includes("does exist")
+  ) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new CustomError(
+      responsePayload?.message ||
+        responsePayload?.error ||
+        "Failed to set up bank information",
+      response.status || 500
+    );
+  }
+
+  return extractChapaSubaccountId(responsePayload) ?? null;
 };
 
 export const getProfileByUserId = async (userId) => {
@@ -70,6 +144,65 @@ export const updateProfileByUserId = async ({ userId, name, payload }) => {
 
   if (!profile) {
     throw new CustomError("Unable to update profile", 500);
+  }
+
+  return profile;
+};
+
+export const setupBankInfoByUserId = async ({ userId, name, payload }) => {
+  const accountName = normalizeBankField(payload.accountName);
+  const accountNumber = normalizeBankField(payload.accountNumber);
+  const bankCode = normalizeBankField(payload.bankCode);
+  const bankName = normalizeBankField(payload.bankName);
+
+  const existingProfile = await UserProfile.findOne({ userId }).lean();
+
+  if (!existingProfile) {
+    throw new CustomError("Profile not found", 404);
+  }
+
+  const existingSubaccountId =
+    existingProfile.bankInfo?.chapaSubaccountId ?? null;
+
+  const chapaSubaccountId =
+    (await requestChapaSubaccount({
+      accountName,
+      accountNumber,
+      bankCode,
+      businessName: existingProfile.fullName || name || accountName
+    })) ?? existingSubaccountId;
+
+  const profile = await UserProfile.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        bankInfo: {
+          accountName,
+          accountNumber,
+          bankCode,
+          bankName,
+          chapaSubaccountId
+        }
+      },
+      $setOnInsert: {
+        userId,
+        role: "user",
+        deletedAt: null,
+        fullName: existingProfile.fullName || name || "",
+        phoneNumber: existingProfile.phoneNumber ?? null,
+        hasCompletedOnboarding: existingProfile.hasCompletedOnboarding ?? false,
+        profilePictureUrl: existingProfile.profilePictureUrl ?? null
+      }
+    },
+    {
+      upsert: true,
+      new: true,
+      runValidators: true
+    }
+  ).lean();
+
+  if (!profile) {
+    throw new CustomError("Unable to save bank information", 500);
   }
 
   return profile;

@@ -1,14 +1,19 @@
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { api } from "../../../lib/axios";
 import { palette } from "../../../theme/palette";
+import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { useAmenities } from "../../property/hooks/usePropertyHooks";
+import BankInformationStep from "./BankInformationStep";
 import PropertyAmenitiesStep from "./PropertyAmenitiesStep";
 import PropertyDetailsStep from "./PropertyDetailsStep";
 import PropertyLocationStep from "./PropertyLocationStep";
 import PropertyPhotosStep from "./PropertyPhotosStep";
 import {
   addListingSteps,
+  initialBankInfoDraft,
   initialAddListingDraft,
 } from "./addListingForm.constants";
 import { useCreateCreatorProperty } from "../hooks/useCreatorPropertyHooks";
@@ -16,25 +21,71 @@ import type {
   AddListingDraft,
   AddListingImageDraft,
   AddListingStep,
+  BankInfoDraft,
+  BankOption,
   CreateListingPayload,
   SetAddListingField,
 } from "../types/types";
 import { useNavigate } from "react-router-dom";
 
+const bankQueryKey = ["banks"] as const;
+
+const initialAttemptedSteps = {
+  1: false,
+  2: false,
+  3: false,
+  4: false,
+  5: false,
+};
+
+type BankValidationErrors = {
+  accountName?: string;
+  accountNumber?: string;
+  bankCode?: string;
+  bankName?: string;
+};
+
+const hasBankValidationErrors = (errors: BankValidationErrors) =>
+  Object.values(errors).some(Boolean);
+
 function CreatePropertyForm() {
   const [step, setStep] = useState<AddListingStep>(1);
   const [draft, setDraft] = useState<AddListingDraft>(initialAddListingDraft);
+  const [bankInfo, setBankInfo] = useState<BankInfoDraft>(initialBankInfoDraft);
   const navigate = useNavigate();
   const [attemptedSteps, setAttemptedSteps] = useState<
     Record<AddListingStep, boolean>
-  >({
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-  });
+  >(initialAttemptedSteps);
+  const [isSavingBankInfo, setIsSavingBankInfo] = useState(false);
   const createProperty = useCreateCreatorProperty();
+  const profileQuery = useMyProfile(true);
   const { data: amenities = [] } = useAmenities();
+  const { data: banks = [], isLoading: isLoadingBanks } = useQuery<
+    BankOption[],
+    Error
+  >({
+    queryKey: bankQueryKey,
+    queryFn: async () => {
+      const response = await api.get<{ banks: BankOption[] }>("/api/banks");
+      return response.data.banks ?? [];
+    },
+  });
+
+  useEffect(() => {
+    const profileBankInfo = profileQuery.data?.bankInfo;
+
+    if (!profileBankInfo) {
+      return;
+    }
+
+    setBankInfo({
+      accountName: profileBankInfo.accountName ?? "",
+      accountNumber: profileBankInfo.accountNumber ?? "",
+      bankCode: profileBankInfo.bankCode ?? "",
+      bankName: profileBankInfo.bankName ?? "",
+      chapaSubaccountId: profileBankInfo.chapaSubaccountId ?? "",
+    });
+  }, [profileQuery.data]);
 
   const setField: SetAddListingField = (key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -44,6 +95,33 @@ function CreatePropertyForm() {
     () => addListingSteps.map((item) => item.id <= step),
     [step],
   );
+
+  const hasExistingBankAccount = Boolean(bankInfo.chapaSubaccountId);
+  const selectedBankName = useMemo(() => {
+    return (
+      banks.find((bank) => bank.id === bankInfo.bankCode)?.name ??
+      bankInfo.bankName ??
+      ""
+    );
+  }, [bankInfo.bankCode, bankInfo.bankName, banks]);
+
+  const bankValidationErrors = useMemo<BankValidationErrors>(() => {
+    const errors: BankValidationErrors = {};
+
+    if (!bankInfo.accountName.trim()) {
+      errors.accountName = "Account name is required.";
+    }
+
+    if (!bankInfo.accountNumber.trim()) {
+      errors.accountNumber = "Account number is required.";
+    }
+
+    if (!bankInfo.bankCode.trim()) {
+      errors.bankCode = "Bank name is required.";
+    }
+
+    return errors;
+  }, [bankInfo]);
 
   const validationErrors = useMemo(() => {
     const stepOneErrors: {
@@ -62,6 +140,12 @@ function CreatePropertyForm() {
 
     const stepThreeErrors: {
       images?: string;
+    } = {};
+
+    const stepFourErrors: {
+      accountName?: string;
+      accountNumber?: string;
+      bankCode?: string;
     } = {};
 
     const trimmedTitle = draft.title.trim();
@@ -103,13 +187,26 @@ function CreatePropertyForm() {
     //   stepThreeErrors.images = "At least one photo is required.";
     // }
 
+    if (!bankInfo.accountName.trim()) {
+      stepFourErrors.accountName = "Account name is required.";
+    }
+
+    if (!bankInfo.accountNumber.trim()) {
+      stepFourErrors.accountNumber = "Account number is required.";
+    }
+
+    if (!bankInfo.bankCode.trim()) {
+      stepFourErrors.bankCode = "Bank name is required.";
+    }
+
     return {
       1: stepOneErrors,
       2: stepTwoErrors,
       3: stepThreeErrors,
-      4: {},
+      4: stepFourErrors,
+      5: {},
     };
-  }, [draft]);
+  }, [bankInfo, draft]);
 
   const canGoNext = useMemo(
     () => Object.keys(validationErrors[step]).length === 0,
@@ -124,6 +221,76 @@ function CreatePropertyForm() {
     }
 
     setStep((prev) => (prev < 4 ? ((prev + 1) as AddListingStep) : prev));
+  };
+
+  const setBankField = <K extends keyof BankInfoDraft>(
+    key: K,
+    value: BankInfoDraft[K],
+  ) => {
+    setBankInfo((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const submitBankInfo = async () => {
+    setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
+
+    if (hasBankValidationErrors(validationErrors[4])) {
+      return false;
+    }
+
+    setIsSavingBankInfo(true);
+
+    try {
+      const response = await api.post<{
+        message: string;
+        profile: { bankInfo?: BankInfoDraft | null };
+      }>("/api/profile/setup-bank", {
+        accountName: bankInfo.accountName.trim(),
+        accountNumber: bankInfo.accountNumber.trim(),
+        bankCode: bankInfo.bankCode.trim(),
+        bankName: selectedBankName.trim(),
+      });
+
+      const savedBankInfo = response.data.profile.bankInfo;
+
+      if (savedBankInfo) {
+        setBankInfo({
+          accountName: savedBankInfo.accountName ?? "",
+          accountNumber: savedBankInfo.accountNumber ?? "",
+          bankCode: savedBankInfo.bankCode ?? "",
+          bankName: savedBankInfo.bankName ?? selectedBankName,
+          chapaSubaccountId: savedBankInfo.chapaSubaccountId ?? "",
+        });
+      }
+
+      toast.success(
+        response.data.message || "Bank information saved successfully.",
+      );
+      setStep(5);
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to save bank information";
+      toast.error(message);
+      return false;
+    } finally {
+      setIsSavingBankInfo(false);
+    }
+  };
+
+  const handlePrimaryAction = async () => {
+    if (step === 4) {
+      await submitBankInfo();
+      return;
+    }
+
+    if (step < 4) {
+      goNext();
+      return;
+    }
+
+    await onSubmit();
   };
 
   const goBack = () => {
@@ -249,7 +416,7 @@ function CreatePropertyForm() {
         URL.revokeObjectURL(image.previewUrl);
       });
       setDraft(initialAddListingDraft);
-      setAttemptedSteps({ 1: false, 2: false, 3: false, 4: false });
+      setAttemptedSteps({ 1: false, 2: false, 3: false, 4: false, 5: false });
       setStep(1);
     } catch (error) {
       const message =
@@ -291,6 +458,19 @@ function CreatePropertyForm() {
       );
     }
 
+    if (step === 4) {
+      return (
+        <BankInformationStep
+          bankInfo={bankInfo}
+          banks={banks}
+          hasExistingBankAccount={hasExistingBankAccount}
+          isLoadingBanks={isLoadingBanks}
+          errors={attemptedSteps[4] ? bankValidationErrors : {}}
+          onChangeField={setBankField}
+        />
+      );
+    }
+
     return (
       <PropertyAmenitiesStep
         draft={draft}
@@ -312,7 +492,7 @@ function CreatePropertyForm() {
         </p>
       </div>
 
-      <div className="mb-8 grid grid-cols-4 gap-2">
+      <div className="mb-8 grid grid-cols-5 gap-2">
         {addListingSteps.map((item, index) => (
           <div
             key={item.id}
@@ -347,20 +527,27 @@ function CreatePropertyForm() {
             <span />
           )}
 
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               type="button"
-              onClick={goNext}
+              onClick={() => void handlePrimaryAction()}
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-lg font-semibold text-white"
               style={{ backgroundColor: palette.purple }}
+              disabled={step === 4 ? isSavingBankInfo : false}
             >
-              Next
+              {step === 4
+                ? isSavingBankInfo
+                  ? "Saving..."
+                  : hasExistingBankAccount
+                    ? "Confirm & Continue"
+                    : "Save & Continue"
+                : "Next"}
               <ArrowRight size={18} />
             </button>
           ) : (
             <button
               type="button"
-              onClick={onSubmit}
+              onClick={() => void handlePrimaryAction()}
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-lg font-semibold text-white disabled:opacity-50"
               style={{ backgroundColor: palette.purple }}
               disabled={createProperty.isPending}
