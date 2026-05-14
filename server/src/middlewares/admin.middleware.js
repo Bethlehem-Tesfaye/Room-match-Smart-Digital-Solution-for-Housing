@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+
 import { MongoClient } from "mongodb";
 import CustomError from "../lib/errors.js";
 import { env } from "../config/evnironments.js";

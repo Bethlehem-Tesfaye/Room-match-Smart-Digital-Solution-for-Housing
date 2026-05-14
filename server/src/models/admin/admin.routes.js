@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable consistent-return */
-/* eslint-disable prettier/prettier */
 import { Router } from "express";
 import { MongoClient } from "mongodb";
 import { env } from "../../config/evnironments.js";
