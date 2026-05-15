@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const response = await axiosInstance.post("/auth/sign-in/email", {
+      const response = await axiosInstance.post("/api/auth/sign-in/email", {
         email,
         password,
       });

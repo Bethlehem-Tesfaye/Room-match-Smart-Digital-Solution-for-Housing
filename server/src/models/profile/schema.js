@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import mongoose from "mongoose";
 
 const { Schema, model, models, Types } = mongoose;
