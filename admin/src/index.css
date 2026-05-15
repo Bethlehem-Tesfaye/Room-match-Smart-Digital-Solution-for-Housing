@@ -1,14 +1,23 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Custom Admin Classes */
+.admin-container {
+  /* Use the variables from the frontend index.css you imported */
+  background-color: var(--app-bg);
+  min-height: 100vh;
 }
 
-html {
-  scroll-behavior: smooth;
+.admin-card {
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-surface-border);
+  border-radius: 12px;
+  transition: transform 0.2s;
 }
 
-body {
-  background-color: #f5f5f5;
-  font-family: system-ui, -apple-system, sans-serif;
+.admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Customizing the table further for admin efficiency */
+.admin-table-row:hover {
+  background-color: var(--palette-card-muted-bg);
 }

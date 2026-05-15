@@ -9,8 +9,9 @@
     "strict": false,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "allowJs": true
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "noEmit": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]

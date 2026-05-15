@@ -2,12 +2,11 @@
 /* eslint-disable consistent-return */
 import { Router } from "express";
 import { MongoClient } from "mongodb";
-// eslint-disable-next-line import/no-extraneous-dependencies
-import bcrypt from "bcryptjs";
 import { env } from "../../config/evnironments.js";
+import { auth } from "../auth/auth.js"; // Importing your Better Auth instance
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import adminMiddleware from "../../middlewares/admin.middleware.js";
-import CustomError from "../../lib/errors.js"; // Make sure this path correctly hits your custom error class
+import CustomError from "../../lib/errors.js";
 
 const adminRouter = Router();
 
@@ -26,7 +25,7 @@ const getDB = async () => {
 // PUBLIC ADMIN ROUTE (No Middleware)
 // ==========================================
 
-// Public endpoint to register the initial root admin securely via a master secret key
+// Public endpoint to register the initial root admin via Better Auth
 adminRouter.post("/register-root-admin", async (req, res, next) => {
   try {
     const { name, email, password, adminSecret } = req.body;
@@ -40,46 +39,34 @@ adminRouter.post("/register-root-admin", async (req, res, next) => {
       return next(new CustomError("Missing required registration fields", 400));
     }
 
-    const db = await getDB();
     const cleanEmail = email.trim().toLowerCase();
 
-    // Prevent duplicate registrations inside the base auth collection
-    const existingUser = await db.collection("user").findOne({ email: cleanEmail });
-    if (existingUser) {
-      return next(new CustomError("Email profile already exists", 400));
+    // 1. Force Better Auth to create BOTH the user entity and the credentials account record
+    const newUser = await auth.api.signUpEmail({
+      body: {
+        email: cleanEmail,
+        // eslint-disable-next-line object-shorthand
+        password: password,
+        name: name.trim(),
+      },
+      // Passing headers context ensures Better Auth treats it as an internal programmatic creation 
+      // which provisions the database collections correctly (creates both user and account docs)
+      headers: req.headers 
+    });
+
+    if (!newUser || !newUser.user) {
+      return next(new CustomError("Better Auth registration failed", 400));
     }
 
-    // Encrypt the password string before storing it in the credentials account record
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    const db = await getDB();
     const now = new Date();
 
-    // 1. Create entry inside the core 'user' collection
-    const userResult = await db.collection("user").insertOne({
-      name: name.trim(),
-      email: cleanEmail,
-      emailVerified: true,
-      image: "",
-      createdAt: now,
-      updatedAt: now
-    });
+    // 2. Prevent duplicate configuration tracks by dropping old profiles for this user ID
+    await db.collection("userProfile").deleteMany({ userId: newUser.user.id });
 
-    const newUserId = userResult.insertedId;
-
-    // 2. Create matching entry inside 'account' for credentials authentication logic
-    await db.collection("account").insertOne({
-      providerId: "credentials",
-      accountId: cleanEmail,
-      userId: newUserId,
-      password: hashedPassword,
-      createdAt: now,
-      updatedAt: now
-    });
-
-    // 3. Create target matching authorization document inside 'userProfile' for adminMiddleware lookup
+    // 3. Link the automated Better Auth user ID to an Admin Role profile inside userProfile
     await db.collection("userProfile").insertOne({
-      userId: newUserId, // Kept as string format to explicitly match your middleware implementation (user.id)
+      userId: newUser.user.id, // Links smoothly with req.user.id checked in your middleware
       fullName: name.trim(),
       role: "admin",
       isBlocked: false,
@@ -89,10 +76,11 @@ adminRouter.post("/register-root-admin", async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Administrative profile provisioned successfully."
+      message: "Administrative profile securely provisioned with complete credential paths via Better Auth."
     });
 
   } catch (err) {
+    // Passes along any Better Auth operational errors (like "User already exists") cleanly
     next(err);
   }
 });

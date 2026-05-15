@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../lib/axios";
 import { toast } from "sonner";
 import { LogOut, Users, Home, FileText } from "lucide-react";
-
+import { palette } from "../../../frontend/src/theme/palette"; // Adjust this path to your palette file
+import "../../../frontend/src/index.css"; 
+import "../index.css";
 interface DashboardData {
   statistics: {
     totalUsers: number;
@@ -34,30 +36,30 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleLogout = () => {
-    // Clear auth and redirect to login
     navigate("/login");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: palette.pageBg }}>
+        <div className="text-xl" style={{ color: palette.deep }}>Loading Admin Panel...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: palette.pageBg, color: palette.deep }}>
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="shadow-sm" style={{ backgroundColor: palette.sectionBg, borderBottom: `1px solid ${palette.border}` }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Room Match Admin</h1>
+          <h1 className="text-2xl font-bold">Room Match Admin</h1>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg transition hover:opacity-80"
+            style={{ backgroundColor: palette.cardMutedBg, color: palette.deep }}
           >
             <LogOut size={20} />
             Logout
@@ -68,39 +70,25 @@ export default function AdminDashboardPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Tabs */}
         <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === "dashboard"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <Home size={20} />
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === "users"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <Users size={20} />
-            Users
-          </button>
-          <button
-            onClick={() => setActiveTab("properties")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === "properties"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            <FileText size={20} />
-            Properties
-          </button>
+          {[
+            { id: "dashboard", icon: <Home size={20} />, label: "Dashboard" },
+            { id: "users", icon: <Users size={20} />, label: "Users" },
+            { id: "properties", icon: <FileText size={20} />, label: "Properties" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition"
+              style={{
+                backgroundColor: activeTab === tab.id ? palette.purple : palette.cardBg,
+                color: activeTab === tab.id ? "#fff" : palette.deep,
+                border: `1px solid ${palette.border}`
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Dashboard Tab */}
@@ -108,89 +96,52 @@ export default function AdminDashboardPage() {
           <div className="space-y-8">
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">
-                      Total Users
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {data?.statistics.totalUsers}
-                    </p>
+              {[
+                { label: "Total Users", val: data?.statistics.totalUsers, icon: <Users size={40} color={palette.purple}/> },
+                { label: "Total Properties", val: data?.statistics.totalProperties, icon: <FileText size={40} color={palette.deep}/> },
+                { label: "Total Messages", val: data?.statistics.totalMessages, icon: <FileText size={40} color={palette.softPurple}/> },
+              ].map((stat, i) => (
+                <div key={i} className="rounded-xl shadow-sm p-6 border" style={{ backgroundColor: palette.cardBg, borderColor: palette.border }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium opacity-70">{stat.label}</p>
+                      <p className="text-3xl font-bold mt-2">{stat.val}</p>
+                    </div>
+                    {stat.icon}
                   </div>
-                  <Users className="text-blue-600" size={40} />
                 </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">
-                      Total Properties
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {data?.statistics.totalProperties}
-                    </p>
-                  </div>
-                  <FileText className="text-green-600" size={40} />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">
-                      Total Messages
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {data?.statistics.totalMessages}
-                    </p>
-                  </div>
-                  <FileText className="text-purple-600" size={40} />
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Recent Users */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Recent Users
-                </h2>
+            {/* Recent Users Table */}
+            <div className="rounded-xl shadow-sm overflow-hidden border" style={{ backgroundColor: palette.cardBg, borderColor: palette.border }}>
+              <div className="px-6 py-4 border-b" style={{ borderColor: palette.border }}>
+                <h2 className="text-lg font-semibold">Recent Users (Internal)</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead style={{ backgroundColor: palette.cardMutedBg }}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                        Email
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                        Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                        Joined
-                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium">Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium">Email</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium">Role</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium">Joined</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {data?.recentUsers.map((user: any) => (
-                      <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {user.fullName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {user.userId}
-                        </td>
+                  <tbody className="divide-y" style={{ borderColor: palette.border }}>
+                    {/* FILTERING LOGIC: We exclude 'admin' from being shown in the matching-style list */}
+                    {data?.recentUsers
+                      .filter((user: any) => user.role !== "admin")
+                      .map((user: any) => (
+                      <tr key={user._id} className="transition-colors" style={{ borderBottom: `1px solid ${palette.border}` }}>
+                        <td className="px-6 py-4 text-sm font-medium">{user.fullName}</td>
+                        <td className="px-6 py-4 text-sm opacity-70">{user.userId}</td>
                         <td className="px-6 py-4 text-sm">
-                          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: palette.softPurple, color: palette.deep }}>
                             {user.role}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm opacity-70">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
@@ -202,25 +153,10 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Users Tab */}
-        {activeTab === "users" && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              All Users
-            </h2>
-            <p className="text-gray-600">User management features coming soon...</p>
-          </div>
-        )}
-
-        {/* Properties Tab */}
-        {activeTab === "properties" && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              All Properties
-            </h2>
-            <p className="text-gray-600">
-              Property management features coming soon...
-            </p>
+        {/* Other Tabs Placeholder */}
+        {(activeTab === "users" || activeTab === "properties") && (
+          <div className="rounded-xl shadow p-12 text-center border" style={{ backgroundColor: palette.cardBg, borderColor: palette.border }}>
+             <p className="opacity-60">Management interface for {activeTab} loading using {palette.purple} theme...</p>
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../models/auth/auth.js";
 import CustomError from "../lib/errors.js";
