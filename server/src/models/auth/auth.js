@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { betterAuth, logger } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { createAuthMiddleware } from "better-auth/api";
