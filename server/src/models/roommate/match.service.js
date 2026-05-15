@@ -121,7 +121,13 @@ export const generateMatchesForUser = async (userId) => {
 };
 
 export const getMatchesForUser = async (userId) => {
-  const matches = await RoommateMatch.find({ userId })
+  const currentProfile = await RoommateProfile.findOne({ userId }).lean();
+  const currentPropertyId = currentProfile?.selectedPropertyId ?? null;
+
+  const matches = await RoommateMatch.find({
+    userId,
+    propertyId: currentPropertyId
+  })
     .sort({ score: -1 })
     .lean();
 
