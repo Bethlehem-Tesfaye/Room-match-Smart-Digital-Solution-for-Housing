@@ -34,6 +34,10 @@ module.exports = [
       "no-param-reassign": "off",
       "prefer-destructuring": "off",
       "import/no-unresolved": "off",
+      "prefer-destructuring": "off",
+      "no-param-reassign": "off",
+      "no-continue": "off",
+      "no-void": "off",
       "no-underscore-dangle": [
         "error",
         { allow: ["_id", "_sum", "_count", "_avg", "_min", "_max"] }

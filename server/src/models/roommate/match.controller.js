@@ -9,7 +9,7 @@ export const generateMyMatches = async (req, res, next) => {
       count: matches.length
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
@@ -19,6 +19,6 @@ export const getMyMatches = async (req, res, next) => {
 
     return res.status(200).json({ matches });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };

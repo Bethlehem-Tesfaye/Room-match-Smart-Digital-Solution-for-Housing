@@ -13,7 +13,7 @@ const toObjectId = (value, fieldName) => {
 
   return new Types.ObjectId(value);
 };
-
+// eslint-disable-next-line no-unused-vars
 const buildParticipantsKey = (userAId, userBId, listingId = null) => {
   const usersPart = [userAId.toString(), userBId.toString()].sort().join(":");
   const listingPart = listingId ? listingId.toString() : "no-listing";

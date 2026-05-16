@@ -169,6 +169,7 @@ const buildRoommatePreferencesUpdateSet = (payload) => {
   return updateSet;
 };
 
+// eslint-disable-next-line no-unused-vars
 const buildDefaultRoommateProfile = (userId) => ({
   userId,
   profileType: "TYPE_B",
