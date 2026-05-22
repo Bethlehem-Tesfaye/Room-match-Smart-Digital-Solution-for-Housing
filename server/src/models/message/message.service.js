@@ -30,7 +30,7 @@ const ensureConversationParticipant = async ({ conversationId, userId }) => {
   }
 };
 
-//CREATE MESSAGE
+// CREATE MESSAGE
 export const createMessage = async ({
   conversationId,
   senderId,
@@ -93,7 +93,7 @@ export const createMessage = async ({
   }
 };
 
-//GET MESSAGES (PAGINATION)
+// GET MESSAGES (PAGINATION)
 export const getMessages = async ({
   conversationId,
   requesterUserId,

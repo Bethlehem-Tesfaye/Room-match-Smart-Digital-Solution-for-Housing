@@ -145,7 +145,7 @@ export const getOrCreateConversation = async ({
   }
 };
 
-//Get all conversations for a user (Inbox)
+// Get all conversations for a user (Inbox)
 
 export const getUserConversations = async (userId) => {
   const normalizedUserId = toObjectId(userId, "user id");

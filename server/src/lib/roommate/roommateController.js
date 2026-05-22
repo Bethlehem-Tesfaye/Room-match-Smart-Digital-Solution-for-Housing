@@ -100,7 +100,7 @@ export const getRoommateSuggestions = async (req, res) => {
       totalMatches: matches.length
     });
   } catch (error) {
-    console.error("Roommate matching error:", error);
+    // console.error("Roommate matching error:", error);
     return res.status(500).json({
       success: false,
       message: error.message
@@ -379,7 +379,7 @@ export const updatePreferences = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Update preferences error:", error);
+    // console.error("Update preferences error:", error);
     return res.status(500).json({
       success: false,
       message: error.message
@@ -426,7 +426,7 @@ export const getMyPreferences = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Get preferences error:", error);
+    // console.error("Get preferences error:", error);
     return res.status(500).json({
       success: false,
       message: error.message

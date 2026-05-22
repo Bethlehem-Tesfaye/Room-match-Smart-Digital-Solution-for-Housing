@@ -40,7 +40,7 @@ export const sendMessage = async (req, res, next) => {
   }
 };
 
-//GET /messages/:conversationId
+// GET /messages/:conversationId
 export const fetchMessages = async (req, res, next) => {
   try {
     const { conversationId } = req.params;

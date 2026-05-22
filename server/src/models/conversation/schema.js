@@ -62,7 +62,7 @@ const conversationParticipantSchema = new Schema(
   { timestamps: true }
 );
 
-//INDEXING RULES
+// INDEXING RULES
 conversationParticipantSchema.index(
   { conversationId: 1, userId: 1 },
   { unique: true }
