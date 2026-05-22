@@ -56,10 +56,10 @@ const requestChapaSubaccount = async ({
 
   const responsePayload = await response.json().catch(() => ({}));
 
-  console.log(
-    "DEBUG Chapa POST response:",
-    JSON.stringify(responsePayload, null, 2)
-  );
+  // console.log(
+  //   "DEBUG Chapa POST response:",
+  //   JSON.stringify(responsePayload, null, 2)
+  // );
 
   if (
     !response.ok &&

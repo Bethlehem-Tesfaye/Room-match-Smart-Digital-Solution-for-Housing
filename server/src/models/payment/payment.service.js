@@ -150,14 +150,14 @@ export const initializeContractPayment = async ({
 
   const ownerChapaSubaccountId = ownerProfile?.bankInfo?.chapaSubaccountId;
 
-  console.log(
-    "DEBUG contract.ownerId:",
-    contract.ownerId,
-    "| type:",
-    typeof contract.ownerId
-  );
-  console.log("DEBUG ownerProfile found:", ownerProfile);
-  console.log("DEBUG chapaSubaccountId:", ownerChapaSubaccountId);
+  // console.log(
+  //   "DEBUG contract.ownerId:",
+  //   contract.ownerId,
+  //   "| type:",
+  //   typeof contract.ownerId
+  // );
+  // console.log("DEBUG ownerProfile found:", ownerProfile);
+  // console.log("DEBUG chapaSubaccountId:", ownerChapaSubaccountId);
 
   if (!ownerChapaSubaccountId) {
     throw new CustomError("Owner bank information is not configured", 400);
@@ -321,10 +321,10 @@ export const confirmContractPayment = async ({ contractId, tenantUserId }) => {
   );
 
   const verifiedPayload = await parseChapaResponse(verifyResponse);
-  console.log(
-    "DEBUG Chapa verify full response:",
-    JSON.stringify(verifiedPayload, null, 2)
-  );
+  // console.log(
+  //   "DEBUG Chapa verify full response:",
+  //   JSON.stringify(verifiedPayload, null, 2)
+  // );
   const verifiedStatus = getChapaStatus(verifiedPayload);
 
   if (verifiedStatus === "failed") {

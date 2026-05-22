@@ -31,8 +31,6 @@ module.exports = [
       "no-await-in-loop": "off",
       "no-restricted-syntax": "off",
       "no-inner-declarations": "off",
-      "no-param-reassign": "off",
-      "prefer-destructuring": "off",
       "import/no-unresolved": "off",
       "prefer-destructuring": "off",
       "no-param-reassign": "off",

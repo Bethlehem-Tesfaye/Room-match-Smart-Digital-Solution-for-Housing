@@ -1,10 +1,10 @@
 import CustomError from "../../lib/errors.js";
 import { RoommateRequest, RoommateProfile } from "./schema.js";
 import { User } from "../auth/schema.js";
-import { UserProfile } from "../profile/schema.js";
+// import { UserProfile } from "../profile/schema.js";
 
 // helper
-const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
+// const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
 
 export const createRoommateRequestService = async ({
   requesterId,

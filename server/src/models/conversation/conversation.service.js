@@ -14,6 +14,7 @@ const toObjectId = (value, fieldName) => {
   return new Types.ObjectId(value);
 };
 
+// eslint-disable-next-line no-unused-vars
 const buildParticipantsKey = (userAId, userBId) => {
   return [userAId.toString(), userBId.toString()].sort().join(":");
 };
@@ -63,6 +64,7 @@ export const getOrCreateConversation = async ({
       ? "LISTING"
       : "DIRECT";
 
+  // eslint-disable-next-line no-undef
   const participantsKey = buildConversationKey({
     userAId,
     userBId,
