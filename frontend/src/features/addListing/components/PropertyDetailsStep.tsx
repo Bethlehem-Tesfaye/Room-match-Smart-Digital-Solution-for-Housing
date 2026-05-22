@@ -33,7 +33,7 @@ function PropertyDetailsStep({
           Property Details
         </div>
         <p className="text-sm" style={{ color: palette.softPurple }}>
-          Basic information about your property
+          Basic information about your properties
         </p>
       </div>
 
