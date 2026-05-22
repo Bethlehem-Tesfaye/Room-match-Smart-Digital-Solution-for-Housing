@@ -57,6 +57,7 @@ export const RoommateMatches: React.FC<Props> = ({
             const stayDurationMonths =
               match.profileSummary?.stayDurationMonths ?? null;
             const drinking = match.profileSummary?.drinking ?? "Not specified";
+            const smoking = match.profileSummary?.smoking ?? "Not specified";
             const occupation =
               match.profileSummary?.occupation || "Not specified";
             const interests = match.profileSummary?.interests ?? [];
@@ -127,7 +128,7 @@ export const RoommateMatches: React.FC<Props> = ({
                         <span className="font-semibold text-(--palette-deep)">
                           Budget:
                         </span>{" "}
-                        ${budgetMin} – ${budgetMax ?? "Open"}
+                        ETB {budgetMin} – {budgetMax ?? "Open"}
                       </div>
                       <div>
                         <span className="font-semibold text-(--palette-deep)">
@@ -137,10 +138,16 @@ export const RoommateMatches: React.FC<Props> = ({
                           ? `${stayDurationMonths} months`
                           : "Not specified"}
                       </div>
+
                       <div>
                         <span className="font-semibold">Drinking:</span>{" "}
                         {drinking}
                       </div>
+                      <div>
+                        <span className="font-semibold">Smoking:</span>{" "}
+                        {smoking}
+                      </div>
+
                       <div>
                         <span className="font-semibold">Occupation:</span>{" "}
                         {occupation}

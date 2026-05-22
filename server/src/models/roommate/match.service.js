@@ -9,9 +9,7 @@ import { Contract } from "../contract/schema.js";
 import { calculateRoommateMatch } from "./roommateMatcher.js";
 
 const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
-
 const toUserIdString = (id) => (id ? id.toString() : "");
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const addMonths = (date, months) => {
@@ -21,14 +19,10 @@ const addMonths = (date, months) => {
 };
 
 const buildLeaseInfo = ({ contract, property }) => {
-  if (!contract?.createdAt || !property?.leasePeriod) {
-    return null;
-  }
+  if (!contract?.createdAt || !property?.leasePeriod) return null;
 
   const contractCreatedAt = new Date(contract.createdAt);
-  if (Number.isNaN(contractCreatedAt.getTime())) {
-    return null;
-  }
+  if (Number.isNaN(contractCreatedAt.getTime())) return null;
 
   const leaseEndDate = addMonths(contractCreatedAt, property.leasePeriod);
   const remainingDays = Math.max(
@@ -60,49 +54,65 @@ export const generateMatchesForUser = async (userId) => {
     .map((p) => p.userId)
     .filter((id) => toUserIdString(id) !== currentUserIdStr);
 
-  const existingPreferenceDocs = await RoommatePreferences.find({
+  // Fetch full preference docs instead of just userId
+  const candidatePreferenceDocs = await RoommatePreferences.find({
     userId: { $in: candidateUserIds }
-  })
-    .select({ userId: 1 })
-    .lean();
+  }).lean();
 
-  const userIdsWithPreferences = new Set(
-    existingPreferenceDocs.map((p) => toUserIdString(p.userId))
-  );
+  // Build a map of userId -> full preferences
+  const candidatePreferencesMap = {};
+  for (const pref of candidatePreferenceDocs) {
+    candidatePreferencesMap[toUserIdString(pref.userId)] = pref;
+  }
 
   const qualifiedCandidates = candidateProfiles.filter(
     (p) =>
       toUserIdString(p.userId) !== currentUserIdStr &&
-      userIdsWithPreferences.has(toUserIdString(p.userId))
+      candidatePreferencesMap[toUserIdString(p.userId)]
   );
 
   const propertyId = currentProfile.selectedPropertyId ?? null;
   const results = [];
 
   for (const targetProfile of qualifiedCandidates) {
-    const score = calculateRoommateMatch({
+    const targetPreferences =
+      candidatePreferencesMap[toUserIdString(targetProfile.userId)];
+
+    // Calculate both directions
+    const scoreAtoB = calculateRoommateMatch({
       currentProfile,
       targetProfile,
       preferences
     });
 
-    if (score <= 0) continue;
+    const scoreBtoA = calculateRoommateMatch({
+      currentProfile: targetProfile,
+      targetProfile: currentProfile,
+      preferences: targetPreferences
+    });
+
+    // If either side is a hard 0, skip the match entirely
+    if (scoreAtoB <= 0 || scoreBtoA <= 0) continue;
+
+    // Average both scores
+    const mutualScore = Math.round(((scoreAtoB + scoreBtoA) / 2) * 100) / 100;
+
+    const targetPropertyId = targetProfile.selectedPropertyId ?? null;
 
     try {
+      // A -> B match
       const match = await RoommateMatch.findOneAndUpdate(
-        {
-          userId,
-          targetUserId: targetProfile.userId,
-          propertyId
-        },
+        { userId, targetUserId: targetProfile.userId, propertyId },
         {
           $set: {
             userId,
             targetUserId: targetProfile.userId,
             propertyId,
-            score,
+            score: mutualScore,
             snapshot: {
               targetProfile,
+              scoreAtoB,
+              scoreBtoA,
               generatedAt: new Date()
             }
           }
@@ -111,6 +121,30 @@ export const generateMatchesForUser = async (userId) => {
       );
 
       results.push(match);
+
+      // upsert the reverse match so B sees it too
+      await RoommateMatch.findOneAndUpdate(
+        {
+          userId: targetProfile.userId,
+          targetUserId: userId,
+          propertyId: targetPropertyId
+        },
+        {
+          $set: {
+            userId: targetProfile.userId,
+            targetUserId: userId,
+            propertyId: targetPropertyId,
+            score: mutualScore,
+            snapshot: {
+              targetProfile: currentProfile,
+              scoreAtoB: scoreBtoA,
+              scoreBtoA: scoreAtoB,
+              generatedAt: new Date()
+            }
+          }
+        },
+        { upsert: true, new: true }
+      );
     } catch (err) {
       if (err.code === 11000) continue;
       throw err;
@@ -120,6 +154,7 @@ export const generateMatchesForUser = async (userId) => {
   return results;
 };
 
+// getMatchesForUser stays exactly the same
 export const getMatchesForUser = async (userId) => {
   const currentProfile = await RoommateProfile.findOne({ userId }).lean();
   const currentPropertyId = currentProfile?.selectedPropertyId ?? null;
@@ -135,17 +170,14 @@ export const getMatchesForUser = async (userId) => {
     ...new Set(matches.map((m) => m.targetUserId?.toString()).filter(Boolean))
   ];
 
-  // Fetch basic user profile
   const userProfiles = await UserProfile.find({
     userId: { $in: targetUserIds }
   }).lean();
 
-  // Fetch roommate profiles (THIS is what you want to add)
   const roommateProfiles = await RoommateProfile.find({
     userId: { $in: targetUserIds }
   }).lean();
 
-  // Build maps
   const profileMap = {};
   for (const profile of userProfiles) {
     profileMap[profile.userId.toString()] = profile;
@@ -220,8 +252,6 @@ export const getMatchesForUser = async (userId) => {
 
     return {
       ...match,
-
-      // existing basic profile (optional)
       targetUserProfile: profileMap[targetIdStr]
         ? {
             fullName: profileMap[targetIdStr].fullName,
@@ -229,10 +259,7 @@ export const getMatchesForUser = async (userId) => {
             phoneNumber: profileMap[targetIdStr].phoneNumber
           }
         : null,
-
-      // FULL roommate profile attached
       targetRoommateProfile,
-
       leaseInfo
     };
   });

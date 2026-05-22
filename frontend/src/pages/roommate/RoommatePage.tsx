@@ -21,6 +21,7 @@ import { useInitiateConversation } from "../../features/message/hooks/useMessage
 import type { RoommateMatch } from "../../features/roommate/types/roommateTypes";
 import { useTenantRentalContracts } from "../../features/message/hooks/useMessageHooks";
 import type { RoommateType } from "../../features/roommate/types/roommateTypes";
+import { Home, Search } from "lucide-react";
 
 // ── One-time type picker ───────────────────────────────────────────────────
 interface TypePickerProps {
@@ -377,7 +378,7 @@ const RoommatePage: React.FC = () => {
     );
   }
 
-  // ── main UI ───────────────────────────────────────────────────────────────
+  // ── main UI
   return (
     <main className="min-h-screen pt-15">
       <LandingNavbar />
@@ -390,14 +391,21 @@ const RoommatePage: React.FC = () => {
           {/* Type badge */}
           <div className="mb-6 flex justify-center">
             <span className="rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm font-semibold text-(--palette-purple) shadow-sm">
-              {roommateType === "TYPE_A"
-                ? "🏠 I have a rented place"
-                : "🔍 I'm looking for a place"}
+              {roommateType === "TYPE_A" ? (
+                <div className="flex items-center justify-center">
+                  <Home className="mr-1 inline h-4 w-4" />I have a rented place
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <Search className="mr-1 inline h-4 w-4" />
+                  I'm looking for a place
+                </div>
+              )}
             </span>
           </div>
 
           {/* Tab navigation — only 2 tabs now */}
-          <div className="mb-6 flex flex-wrap items-end gap-10 border-b border-(--palette-border) px-2 pb-1">
+          <div className="mb-6 flex flex-wrap items-end gap-10 px-2 pb-1">
             <button
               type="button"
               onClick={() => setActivePanel("find-match")}
