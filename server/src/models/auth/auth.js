@@ -11,9 +11,7 @@ await client.connect();
 const db = client.db();
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db, {
-    client // enables transactions
-  }),
+  database: mongodbAdapter(db),
 
   experimental: {
     joins: true
