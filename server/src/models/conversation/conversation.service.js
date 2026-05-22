@@ -13,31 +13,9 @@ const toObjectId = (value, fieldName) => {
 
   return new Types.ObjectId(value);
 };
-// eslint-disable-next-line no-unused-vars
-const buildParticipantsKey = (userAId, userBId, listingId = null) => {
-  const usersPart = [userAId.toString(), userBId.toString()].sort().join(":");
-  const listingPart = listingId ? listingId.toString() : "no-listing";
 
-  return `${usersPart}:${listingPart}`;
-};
-const buildConversationKey = ({
-  userAId,
-  userBId,
-  scope,
-  listingId = null
-}) => {
-  const users = [userAId.toString(), userBId.toString()].sort();
-
-  if (scope === "ROOMMATE") {
-    // IMPORTANT: roommate chats NEVER depend on listing/property
-    return `roommate:${users[0]}:${users[1]}`;
-  }
-
-  if (scope === "LISTING") {
-    return `listing:${listingId}:${users[0]}:${users[1]}`;
-  }
-
-  return `direct:${users[0]}:${users[1]}`;
+const buildParticipantsKey = (userAId, userBId) => {
+  return [userAId.toString(), userBId.toString()].sort().join(":");
 };
 
 export const getOrCreateConversation = async ({

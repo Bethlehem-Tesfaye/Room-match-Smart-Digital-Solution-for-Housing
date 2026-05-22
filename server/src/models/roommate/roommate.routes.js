@@ -14,7 +14,6 @@ import {
   rejectRoommateRequest
 } from "./request.contoller.js";
 import { generateMyMatches, getMyMatches } from "./match.controller.js";
-
 const roommateRouters = Router();
 
 roommateRouters.use(authMiddleware);
