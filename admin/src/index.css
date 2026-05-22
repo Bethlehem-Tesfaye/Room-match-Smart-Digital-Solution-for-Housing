@@ -1,23 +1,126 @@
-/* Custom Admin Classes */
+/* Admin theme variables (kept locally so admin can run independently)
+   These match the frontend palette so the admin UI looks consistent.
+*/
+:root {
+  --app-bg: #f7f5ff;
+  --app-text: #1f2937;
+  --app-surface: #ffffff;
+  --app-surface-border: #c4bbf0;
+  --palette-deep: #363b4e;
+  --palette-purple: #4f3b78;
+  --palette-soft-purple: #927fbf;
+  --palette-light-purple: #c4bbf0;
+  --palette-page-bg: #f7f5ff;
+  --palette-section-bg: #f6f5fc;
+  --palette-card-bg: #ffffff;
+  --palette-card-muted-bg: #f4f1fe;
+  --palette-card-muted-alt-bg: #f9f7ff;
+  --palette-border: #e7e1fa;
+  --palette-chip-bg: #f1ecff;
+  --palette-input-bg: #ffffff;
+  --palette-skeleton: #e6e0f8;
+}
+
+html.dark {
+  --app-bg: #0f172a;
+  --app-text: #e2e8f0;
+  --app-surface: #111827;
+  --app-surface-border: #334155;
+  --palette-deep: #e5e7eb;
+  --palette-purple: #c4b5fd;
+  --palette-soft-purple: #a78bfa;
+  --palette-light-purple: #334155;
+  --palette-page-bg: #020617;
+  --palette-section-bg: #0b1220;
+  --palette-card-bg: #111827;
+  --palette-card-muted-bg: #1f2937;
+  --palette-card-muted-alt-bg: #1b2433;
+  --palette-border: #334155;
+  --palette-chip-bg: #1e293b;
+  --palette-input-bg: #0b1220;
+  --palette-skeleton: #1f2937;
+}
+
+/* Base layout */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--palette-page-bg);
+  color: var(--app-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Admin container */
 .admin-container {
-  /* Use the variables from the frontend index.css you imported */
-  background-color: var(--app-bg);
   min-height: 100vh;
+  padding: 0;
+  margin: 0;
+  background: var(--palette-page-bg);
 }
 
+/* Header */
+.admin-header {
+  background: var(--palette-section-bg);
+  border-bottom: 1px solid var(--palette-border);
+  padding: 1rem 1.5rem;
+}
+.admin-header .title { font-weight: 700; color: var(--palette-deep); font-size: 1.25rem; }
+.admin-header .controls button {
+  background: var(--palette-card-muted-bg);
+  color: var(--palette-deep);
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Cards */
 .admin-card {
-  background-color: var(--app-surface);
-  border: 1px solid var(--app-surface-border);
+  background: var(--palette-card-bg);
+  border: 1px solid var(--palette-border);
   border-radius: 12px;
-  transition: transform 0.2s;
+  padding: 1rem;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+.admin-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(79,59,120,0.08); }
+
+/* Buttons */
+.btn-primary {
+  background: var(--palette-purple);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--palette-deep);
+  border: 1px solid var(--palette-border);
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
 }
 
-.admin-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+/* Tables */
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { padding: 0.75rem 1rem; text-align: left; }
+.admin-table thead { background: var(--palette-card-muted-bg); }
+.admin-table tbody tr { border-bottom: 1px solid var(--palette-border); }
+.admin-table tbody tr:hover { background: var(--palette-card-muted-alt-bg); }
+
+/* Utility */
+.container { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem; }
+.grid { display: grid; gap: 1rem; }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.text-muted { color: rgba(55,65,81,0.7); }
+
+/* Small screens tweaks */
+@media (max-width: 768px) {
+  .grid-cols-3 { grid-template-columns: 1fr; }
+  .container { padding: 1rem; }
 }
 
-/* Customizing the table further for admin efficiency */
-.admin-table-row:hover {
-  background-color: var(--palette-card-muted-bg);
-}
+/* Keep admin-specific overrides last */

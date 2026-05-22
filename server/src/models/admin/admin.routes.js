@@ -85,6 +85,44 @@ adminRouter.post("/register-root-admin", async (req, res, next) => {
   }
 });
 
+// Public dashboard for local/dev testing (no auth). Returns same shape as protected dashboard.
+adminRouter.get("/dashboard-public", async (_req, res, next) => {
+  try {
+    const db = await getDB();
+
+    const totalUsers = await db.collection("user").countDocuments().catch(() => 0);
+    const totalProperties = await db.collection("property").countDocuments().catch(() => 0);
+    const totalMessages = await db.collection("message").countDocuments().catch(() => 0);
+
+    const recentListings = await db
+      .collection("property")
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray()
+      .catch(() => []);
+
+    const recentUsers = await db
+      .collection("userProfile")
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray()
+      .catch(() => []);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        statistics: { totalUsers, totalProperties, totalMessages },
+        recentListings,
+        recentUsers
+      }
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 // ==========================================
 // PROTECTED ADMIN ROUTES (Requires Auth & Admin Profile Role)
 // ==========================================

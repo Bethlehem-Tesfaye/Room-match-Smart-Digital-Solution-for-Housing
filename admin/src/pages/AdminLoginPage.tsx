@@ -32,14 +32,23 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-600 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2">Room Match</h1>
-        <p className="text-center text-gray-600 mb-8">Admin Portal</p>
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: "linear-gradient(135deg, var(--palette-page-bg) 0%, var(--palette-light-purple) 100%)",
+        color: "var(--palette-deep)"
+      }}
+    >
+      <div
+        className="rounded-lg shadow-xl p-8 w-full max-w-md"
+        style={{ background: "var(--palette-card-bg)", border: "1px solid var(--palette-border)" }}
+      >
+        <h1 className="text-3xl font-bold text-center mb-2" style={{ color: "var(--palette-purple)" }}>Room Match</h1>
+        <p className="text-center text-muted mb-8">Admin Portal</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--palette-deep)" }}>
               Email
             </label>
             <input
@@ -47,13 +56,14 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg"
+              style={{ borderColor: "var(--palette-border)", background: "var(--palette-input-bg)", color: "var(--palette-deep)" }}
               placeholder="admin@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--palette-deep)" }}>
               Password
             </label>
             <input
@@ -61,7 +71,8 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg"
+              style={{ borderColor: "var(--palette-border)", background: "var(--palette-input-bg)", color: "var(--palette-deep)" }}
               placeholder="••••••••"
             />
           </div>
@@ -69,13 +80,14 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
+            className="w-full text-white py-2 rounded-lg font-semibold disabled:opacity-60 transition"
+            style={{ background: "var(--palette-purple)", border: "1px solid var(--palette-purple)" }}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm mt-6" style={{ color: "var(--palette-deep)" }}>
           Only authorized admins can access this portal.
         </p>
       </div>
