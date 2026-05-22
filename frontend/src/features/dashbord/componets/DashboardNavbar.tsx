@@ -1,7 +1,7 @@
 import {
   Building2,
   ChevronDown,
-  Compass,
+  Home,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -175,15 +175,6 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
               );
             })}
 
-            <Link
-              to="/properties"
-              className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
-              style={{ color: palette.deep }}
-            >
-              <Compass size={16} style={{ color: palette.softPurple }} />
-              Discover Properties
-              <span className="absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-current transition-transform duration-300 group-hover:scale-x-100" />
-            </Link>
             {/* <Link
               to="/roommate"
               className="group relative inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-md font-semibold transition-colors"
@@ -260,6 +251,19 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                 >
                   <Settings size={16} />
                   Settings
+                </Link>
+
+                <Link
+                  to="/"
+                  role="menuitem"
+                  className={`flex w-full cursor-pointer items-center gap-3 border-t px-2 py-2 text-left text-md ${
+                    isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                  }`}
+                  style={{ color: "#64748B", borderColor: "#E4E4E7" }}
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <Home size={16} />
+                  Switch to Tenant View
                 </Link>
 
                 <button
@@ -340,19 +344,6 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                     );
                   })}
 
-                  <Link
-                    to="/properties"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold text-zinc-900 transition-colors ${isDark ? "hover:bg-gray-600" : "hover:bg-purple-100"}`}
-                  >
-                    <Compass
-                      className={`${isDark ? "text-white" : "text-black"}`}
-                      size={18}
-                    />
-                    <span className={`${isDark ? "text-white" : "text-black"}`}>
-                      Discover Properties
-                    </span>
-                  </Link>
                   <Link
                     to="/roommate"
                     onClick={() => setIsMobileMenuOpen(false)}

@@ -27,7 +27,7 @@ const baseNavItems = [
   { to: "/properties/saved", label: "Saved Property", icon: Heart },
   { to: "/roommate", label: "Find Roommate", icon: Users },
   { to: "/message", label: "Message", icon: MessageCircle },
-  { to: "/dashboard", label: "My Listings", icon: LayoutDashboard },
+  // { to: "/dashboard", label: "My Listings", icon: LayoutDashboard },
 ];
 
 function LandingNavbar() {
@@ -60,6 +60,7 @@ function LandingNavbar() {
   const profileName = profile?.fullName?.trim() || "My Profile";
   const profilePictureUrl = profile?.profilePictureUrl || null;
   const profileEmail = user?.email || "";
+  const showOwnerDashboardSwitch = isAuthenticated && profile?.role !== "admin";
 
   useEffect(() => {
     if (!isDropdownOpen && !isMobileMenuOpen) return;
@@ -185,9 +186,20 @@ function LandingNavbar() {
                     {profileName.charAt(0).toUpperCase()}
                   </span>
                 )}
-                <span className="hidden max-w-36 truncate xl:inline">
-                  {isSessionPending ? "Loading..." : profileName}
-                </span>
+
+                <div className="hidden flex-col items-start xl:flex">
+                  <span className="max-w-36 truncate text-sm font-semibold">
+                    {isSessionPending ? "Loading..." : profileName}
+                  </span>
+
+                  <span
+                    className="text-xs font-medium opacity-70"
+                    style={{ color: palette.purple }}
+                  >
+                    Tenant View
+                  </span>
+                </div>
+
                 <ChevronDown size={16} />
               </button>
 
@@ -243,6 +255,21 @@ function LandingNavbar() {
                     <Settings size={16} />
                     Settings
                   </Link>
+
+                  {showOwnerDashboardSwitch ? (
+                    <Link
+                      to="/dashboard"
+                      role="menuitem"
+                      className={`flex w-full cursor-pointer items-center gap-3 border-t px-2 py-2 text-left text-md ${
+                        isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                      }`}
+                      style={{ color: palette.deep, borderColor: "#E4E4E7" }}
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <LayoutDashboard size={16} />
+                      Switch to Owner Dashboard
+                    </Link>
+                  ) : null}
 
                   <button
                     type="button"

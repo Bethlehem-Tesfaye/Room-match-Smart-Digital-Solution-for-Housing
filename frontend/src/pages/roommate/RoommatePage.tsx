@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Home, Search } from "lucide-react";
 import {
   buildRoommateFormData,
   buildRoommatePreferencesPayload,
@@ -13,17 +14,20 @@ import {
   useGenerateRoommateMatches,
   type RoommateFormData,
 } from "../../features/roommate/hooks/useRoommateData";
-import { RoommatePreferences } from "../../features/roommate/components/RoommatePreferences";
+import { RoommateWizard } from "../../features/roommate/components/Roommatewizard";
 import { RoommateMatches } from "../../features/roommate/components/RoommateMatches";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
-import { useInitiateConversation } from "../../features/message/hooks/useMessageHooks";
-import type { RoommateMatch } from "../../features/roommate/types/roommateTypes";
-import { useTenantRentalContracts } from "../../features/message/hooks/useMessageHooks";
-import type { RoommateType } from "../../features/roommate/types/roommateTypes";
-import { Home, Search } from "lucide-react";
+import {
+  useInitiateConversation,
+  useTenantRentalContracts,
+} from "../../features/message/hooks/useMessageHooks";
+import type {
+  RoommateMatch,
+  RoommateType,
+} from "../../features/roommate/types/roommateTypes";
 
-// ── One-time type picker ───────────────────────────────────────────────────
+// ── TypePicker (unchanged) ─────────────────────────────────────────────────
 interface TypePickerProps {
   onPick: (type: RoommateType) => Promise<void>;
   isSaving: boolean;
@@ -41,7 +45,6 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
           Choose your situation to get started. This helps us find the right
           matches for you.
         </p>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <button
             type="button"
@@ -57,7 +60,6 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
               I'm already renting and looking for someone to share it with.
             </p>
           </button>
-
           <button
             type="button"
             disabled={isSaving}
@@ -73,7 +75,6 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
             </p>
           </button>
         </div>
-
         {isSaving && (
           <p className="mt-6 animate-pulse text-center text-sm text-(--palette-soft-purple)">
             Saving your choice...
@@ -83,12 +84,11 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
     </div>
   </main>
 );
-// ──────────────────────────────────────────────────────────────────────────
 
+// ── RoommatePage ───────────────────────────────────────────────────────────
 const RoommatePage: React.FC = () => {
   const navigate = useNavigate();
 
-  // ── data hooks ────────────────────────────────────────────────────────────
   const matchesQuery = useMyStoredMatches();
   const generateMatchesMutation = useGenerateRoommateMatches();
   const profileQuery = useMyRoommateProfile();
@@ -99,14 +99,12 @@ const RoommatePage: React.FC = () => {
   const rentalsQuery = useTenantRentalContracts();
   const initiateConversation = useInitiateConversation();
 
-  // ── local state ───────────────────────────────────────────────────────────
   const [localPreferences, setLocalPreferences] =
     useState<RoommateFormData | null>(null);
   const [roommateType, setRoommateType] = useState<RoommateType>("TYPE_B");
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
     null,
   );
-  const [activeStep, setActiveStep] = useState<1 | 2>(1);
   const [activePanel, setActivePanel] = useState<"find-match" | "matches">(
     "find-match",
   );
@@ -114,7 +112,6 @@ const RoommatePage: React.FC = () => {
   const [startingConversationForUserId, setStartingConversationForUserId] =
     useState<string | null>(null);
 
-  // ── derived server data ───────────────────────────────────────────────────
   const serverProfile = profileQuery.data ?? null;
   const serverPreferences = preferencesQuery.data;
   const formsLoading = profileQuery.isLoading || preferencesQuery.isLoading;
@@ -130,10 +127,8 @@ const RoommatePage: React.FC = () => {
   const loading = matchesQuery.isLoading;
   const error = matchesQuery.error?.message || null;
 
-  // Has the user ever saved a profileType? If not → show picker.
   const hasChosenType = !formsLoading && !!serverProfile?.profileType;
 
-  // ── sync server → local state ─────────────────────────────────────────────
   useEffect(() => {
     if (!serverProfile || !serverPreferences) return;
     setLocalPreferences(
@@ -145,12 +140,9 @@ const RoommatePage: React.FC = () => {
   }, [serverProfile, serverPreferences]);
 
   useEffect(() => {
-    if (serverProfile?.profileType) {
-      setRoommateType(serverProfile.profileType);
-    }
+    if (serverProfile?.profileType) setRoommateType(serverProfile.profileType);
   }, [serverProfile?.profileType]);
 
-  // ── rentals ───────────────────────────────────────────────────────────────
   const rentedContracts = rentalsQuery.data ?? [];
   const activeRentedContracts = rentedContracts.filter(
     (c) => c.status === "ACTIVE",
@@ -180,16 +172,14 @@ const RoommatePage: React.FC = () => {
     serverProfile?.selectedPropertyId,
   ]);
 
-  // ── callbacks ─────────────────────────────────────────────────────────────
   const handlePreferenceUpdate = useCallback(
     (
       field: keyof RoommateFormData,
       value: string | number | string[] | null,
     ) => {
-      setLocalPreferences((prev) => {
-        if (!prev) return prev;
-        return { ...prev, [field]: value };
-      });
+      setLocalPreferences((prev) =>
+        prev ? { ...prev, [field]: value } : prev,
+      );
     },
     [],
   );
@@ -211,7 +201,6 @@ const RoommatePage: React.FC = () => {
   const saveProfile = useCallback(async () => {
     const payload = buildProfilePayload();
     if (!payload) return false;
-
     const budgetMin = payload.budgetMin ?? 0;
     const budgetMax = payload.budgetMax ?? null;
     if (
@@ -223,14 +212,13 @@ const RoommatePage: React.FC = () => {
       toast.error("Maximum budget cannot be less than minimum budget");
       return false;
     }
-
     setIsSaving(true);
     try {
       const profile = await updateProfileMutation.mutateAsync(payload);
       setLocalPreferences((prev) =>
         prev ? buildRoommateFormData({ profile, preferences: prev }) : prev,
       );
-      toast.success("Roommate profile saved");
+      toast.success("Profile saved");
       return true;
     } catch (err) {
       toast.error(
@@ -245,14 +233,13 @@ const RoommatePage: React.FC = () => {
   const savePreferences = useCallback(async () => {
     const payload = buildPreferencePayload();
     if (!payload) return false;
-
     setIsSaving(true);
     try {
       const preferences = await updatePreferencesMutation.mutateAsync(payload);
       setLocalPreferences((prev) =>
         prev ? buildRoommateFormData({ profile: prev, preferences }) : prev,
       );
-      toast.success("Roommate preferences saved");
+      toast.success("Preferences saved");
       return true;
     } catch (err) {
       toast.error(
@@ -264,18 +251,20 @@ const RoommatePage: React.FC = () => {
     }
   }, [buildPreferencePayload, updatePreferencesMutation]);
 
-  const handleSaveOnly = useCallback(async () => {
-    if (activeStep === 1) await saveProfile();
-    else await savePreferences();
-  }, [activeStep, saveProfile, savePreferences]);
+  const handleSave = useCallback(async () => {
+    await Promise.all([saveProfile(), savePreferences()]);
+  }, [saveProfile, savePreferences]);
 
   const handleSaveAndRecompute = useCallback(async () => {
-    const profileSaved = await saveProfile();
-    const preferencesSaved = await savePreferences();
+    const [profileSaved, preferencesSaved] = await Promise.all([
+      saveProfile(),
+      savePreferences(),
+    ]);
     if (!profileSaved || !preferencesSaved) return;
     try {
       await generateMatchesMutation.mutateAsync();
-      toast.success("Roommate data saved and matches refreshed");
+      toast.success("Matches refreshed!");
+      setActivePanel("matches");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to recompute matches",
@@ -283,7 +272,6 @@ const RoommatePage: React.FC = () => {
     }
   }, [generateMatchesMutation, saveProfile, savePreferences]);
 
-  // ── one-time type picker handler ──────────────────────────────────────────
   const handlePickType = useCallback(
     async (type: RoommateType) => {
       setIsSaving(true);
@@ -306,11 +294,9 @@ const RoommatePage: React.FC = () => {
     [updateProfileMutation, selectedRentedPropertyId],
   );
 
-  // ── conversation handler ───────────────────────────────────────────────────
   const handleStartConversation = useCallback(
     async (match: RoommateMatch) => {
-      if (isPending) return;
-      if (!match.userId) {
+      if (isPending || !match.userId) {
         toast.error("Roommate user not found");
         return;
       }
@@ -318,7 +304,6 @@ const RoommatePage: React.FC = () => {
         toast.error("You cannot message yourself");
         return;
       }
-
       setStartingConversationForUserId(match.userId);
       try {
         const conversation = await initiateConversation.mutateAsync({
@@ -366,9 +351,8 @@ const RoommatePage: React.FC = () => {
     );
   }
 
-  if (!hasChosenType) {
+  if (!hasChosenType)
     return <TypePicker onPick={handlePickType} isSaving={isSaving} />;
-  }
 
   if (!localPreferences) {
     return (
@@ -378,13 +362,13 @@ const RoommatePage: React.FC = () => {
     );
   }
 
-  // ── main UI
+  // ── main UI ───────────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen pt-15">
       <LandingNavbar />
       <div className="bg-(--palette-page-bg) py-8">
         <div className="mx-auto max-w-6xl px-4">
-          <h1 className="mb-8 text-center text-3xl font-bold text-(--palette-deep)">
+          <h1 className="mb-6 text-center text-3xl font-bold text-(--palette-deep)">
             Find a Roommate
           </h1>
 
@@ -392,20 +376,19 @@ const RoommatePage: React.FC = () => {
           <div className="mb-6 flex justify-center">
             <span className="rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm font-semibold text-(--palette-purple) shadow-sm">
               {roommateType === "TYPE_A" ? (
-                <div className="flex items-center justify-center">
-                  <Home className="mr-1 inline h-4 w-4" />I have a rented place
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Home className="h-4 w-4" /> I have a rented place
+                </span>
               ) : (
-                <div className="flex items-center justify-center">
-                  <Search className="mr-1 inline h-4 w-4" />
-                  I'm looking for a place
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Search className="h-4 w-4" /> I'm looking for a place
+                </span>
               )}
             </span>
           </div>
 
-          {/* Tab navigation — only 2 tabs now */}
-          <div className="mb-6 flex flex-wrap items-end gap-10 px-2 pb-1">
+          {/* Tabs */}
+          <div className="mb-6 flex gap-8 border-b border-(--palette-border) px-1">
             <button
               type="button"
               onClick={() => setActivePanel("find-match")}
@@ -431,13 +414,14 @@ const RoommatePage: React.FC = () => {
           </div>
 
           {/* ── Find Match panel ── */}
-          {activePanel === "find-match" ? (
+          {activePanel === "find-match" && (
             <div className="space-y-4">
-              {roommateType === "TYPE_A" ? (
-                hasRentedRoom ? (
+              {/* Property selector for TYPE_A */}
+              {roommateType === "TYPE_A" &&
+                (hasRentedRoom ? (
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-4">
                     <p className="mb-2 text-sm font-semibold text-(--palette-deep)">
-                      Select one rented room
+                      Select rented room
                     </p>
                     <select
                       value={selectedPropertyId || ""}
@@ -485,89 +469,23 @@ const RoommatePage: React.FC = () => {
                       Find a place
                     </button>
                   </div>
-                )
-              ) : null}
+                ))}
 
-              {roommateType === "TYPE_B" || hasRentedRoom ? (
-                <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-4">
-                  <div className="mb-4 flex items-center justify-end gap-2">
-                    <div className="text-sm text-(--palette-soft-purple)">
-                      Step {activeStep} of 2
-                    </div>
-                  </div>
-
-                  <RoommatePreferences
-                    preferences={localPreferences}
-                    onUpdate={handlePreferenceUpdate}
-                    loading={false}
-                    variant={activeStep === 1 ? "profile" : "preferences"}
-                  />
-
-                  {isSaving || generateMatchesMutation.isPending ? (
-                    <div className="mt-3 animate-pulse text-center text-sm text-(--palette-soft-purple)">
-                      {generateMatchesMutation.isPending
-                        ? "Finding your matches..."
-                        : "Saving changes..."}
-                    </div>
-                  ) : null}
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {activeStep === 2 ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep(1)}
-                        className="rounded-lg border border-(--palette-border) px-4 py-2 font-semibold text-(--palette-deep)"
-                      >
-                        Back
-                      </button>
-                    ) : null}
-
-                    {activeStep === 1 ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleSaveOnly}
-                          className="rounded-lg bg-(--palette-chip-bg) px-4 py-2 font-semibold text-(--palette-deep)"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveStep(2)}
-                          className="rounded-lg bg-(--palette-purple) px-4 py-2 font-semibold text-white"
-                        >
-                          Next
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleSaveOnly}
-                          className="rounded-lg bg-(--palette-chip-bg) px-4 py-2 font-semibold text-(--palette-deep)"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSaveAndRecompute}
-                          disabled={
-                            isSaving || generateMatchesMutation.isPending
-                          }
-                          className="rounded-lg bg-(--palette-purple) px-4 py-2 font-semibold text-white disabled:opacity-60"
-                        >
-                          Save & Recompute
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ) : null}
+              {(roommateType === "TYPE_B" || hasRentedRoom) && (
+                <RoommateWizard
+                  preferences={localPreferences}
+                  onUpdate={handlePreferenceUpdate}
+                  isSaving={isSaving}
+                  isComputing={generateMatchesMutation.isPending}
+                  onSave={handleSave}
+                  onSaveAndRecompute={handleSaveAndRecompute}
+                />
+              )}
             </div>
-          ) : null}
+          )}
 
           {/* ── Matches panel ── */}
-          {activePanel === "matches" ? (
+          {activePanel === "matches" && (
             <div className="space-y-4">
               <RoommateMatches
                 matches={matches}
@@ -576,7 +494,7 @@ const RoommatePage: React.FC = () => {
                 startingConversationForUserId={startingConversationForUserId}
               />
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     </main>
