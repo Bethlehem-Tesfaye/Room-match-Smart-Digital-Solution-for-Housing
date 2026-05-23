@@ -31,6 +31,7 @@ const messageQueryKeys = {
     ["messages", "participants", conversationId] as const,
   messages: (conversationId: string, cursor: string | null) =>
     ["messages", "thread", conversationId, cursor] as const,
+  unreadNotificationCounts: ["notifications", "unread-counts"] as const,
   ownerActiveRentRequests: ["contracts", "owner", "active"] as const,
   rentRequestByConversation: (conversationId: string) =>
     ["contracts", "conversation", conversationId] as const,
@@ -123,6 +124,58 @@ const normalizeConversationSummaries = (
     const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
     const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
     return bTime - aTime;
+  });
+};
+
+export interface UnreadMessageCounts {
+  total: number;
+  byConversation: Record<string, number>;
+  byType: Record<string, number>;
+}
+
+export const useUnreadMessageCounts = (enabled = true) => {
+  return useQuery<UnreadMessageCounts, Error>({
+    queryKey: messageQueryKeys.unreadNotificationCounts,
+    enabled,
+    queryFn: async () => {
+      try {
+        const response = await api.get<UnreadMessageCounts>(
+          "/api/notifications/unread-counts",
+        );
+
+        return response.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    refetchInterval: enabled ? 30000 : false,
+  });
+};
+
+export const useMarkConversationRead = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      api.patch(`/api/notifications/read-by-conversation/${conversationId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.unreadNotificationCounts,
+      });
+    },
+  });
+};
+
+export const useMarkRentalNotificationsRead = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.patch("/api/notifications/read-rentals"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.unreadNotificationCounts,
+      });
+    },
   });
 };
 export const useConversations = (): UseQueryResult<

@@ -11,6 +11,7 @@ import {
   useOwnerAcceptedRentRequests,
   useOwnerTerminationRequests,
   useOwnerPendingRentRequests,
+  useMarkRentalNotificationsRead,
   useRejectTerminationRequest,
   useRejectRentRequest,
 } from "../../features/message/hooks/useMessageHooks";
@@ -63,15 +64,24 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
 function RentalRequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestsTab>("incoming");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const rentalNotificationsMarkedRef = useRef(false);
   const { user } = useCurrentUser();
   const requestsQuery = useOwnerPendingRentRequests();
   const acceptedRequestsQuery = useOwnerAcceptedRentRequests();
   const terminationRequestsQuery = useOwnerTerminationRequests();
+  const markRentalNotificationsRead = useMarkRentalNotificationsRead();
   const acceptRequest = useAcceptRentRequest();
   const rejectRequest = useRejectRentRequest();
   const cancelRequest = useCancelRentRequest();
   const acceptTerminationRequest = useAcceptTerminationRequest();
   const rejectTerminationRequest = useRejectTerminationRequest();
+
+  useEffect(() => {
+    if (!user || rentalNotificationsMarkedRef.current) return;
+
+    rentalNotificationsMarkedRef.current = true;
+    markRentalNotificationsRead.mutate();
+  }, [markRentalNotificationsRead, user]);
 
   const requests = requestsQuery.data || [];
   const acceptedRequests = (acceptedRequestsQuery.data || []).filter(

@@ -8,6 +8,7 @@ interface ConversationListProps {
   isPartnerLoading?: boolean;
   getConversationLabel: (conversationId: string) => string | undefined;
   onSelectConversation: (conversationId: string) => void;
+  unreadByConversation?: Record<string, number>;
 }
 
 function ConversationList({
@@ -17,6 +18,7 @@ function ConversationList({
   isPartnerLoading = false,
   getConversationLabel,
   onSelectConversation,
+  unreadByConversation,
 }: ConversationListProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -107,6 +109,8 @@ function ConversationList({
           const listingTitle = conversation.listing?.title;
           const listingLocation =
             conversation.listing?.city || conversation.listing?.address;
+          const unreadCount =
+            unreadByConversation?.[conversation.conversationId] ?? 0;
 
           return (
             <li
@@ -159,7 +163,11 @@ function ConversationList({
                           ? "Tap to open conversation"
                           : "No messages yet"}
                     </p>
-                    {isSelected ? (
+                    {unreadCount > 0 && !isSelected ? (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-(--palette-purple) px-1.5 text-[11px] font-bold text-white">
+                        {unreadCount}
+                      </span>
+                    ) : isSelected ? (
                       <span className="h-2.5 w-2.5 rounded-full bg-(--palette-soft-purple)" />
                     ) : null}
                   </div>

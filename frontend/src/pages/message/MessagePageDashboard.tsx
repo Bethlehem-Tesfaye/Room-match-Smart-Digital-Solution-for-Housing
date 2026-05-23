@@ -13,9 +13,11 @@ import {
   useConversationMessages,
   useConversationPartnersMap,
   useConversations,
+  useMarkConversationRead,
   useMessageSocket,
   useRejectRentRequest,
   useSendHttpMessage,
+  useUnreadMessageCounts,
 } from "../../features/message/hooks/useMessageHooks";
 import type { Message } from "../../features/message/types/type";
 import type { ConversationSummary } from "../../features/message/types/type";
@@ -45,6 +47,8 @@ function MessagePageDashboard() {
   >(() => searchParams.get("conversationId") || undefined);
 
   const conversationsQuery = useConversations();
+  const unreadCountsQuery = useUnreadMessageCounts();
+  const markConversationRead = useMarkConversationRead();
   const messagesState = useConversationMessages(selectedConversationId);
   const rentRequestQuery = useConversationRentRequest(selectedConversationId);
   const createRentRequest = useCreateRentRequest();
@@ -83,6 +87,7 @@ function MessagePageDashboard() {
   const setConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
     setSearchParams({ conversationId });
+    markConversationRead.mutate(conversationId);
   };
 
   const getConversationLabel = (conversationId: string) => {
@@ -120,6 +125,7 @@ function MessagePageDashboard() {
       incomingConversationId === currentConversationId
     ) {
       messagesState.appendMessage(incomingMessage);
+      markConversationRead.mutate(incomingConversationId);
       messagesState.refetch();
     } else if (!selectedConversationId && incomingConversationId) {
       setConversation(incomingConversationId);
@@ -170,6 +176,9 @@ function MessagePageDashboard() {
     enabled: !!user,
     onReceiveMessage: upsertIncomingMessage,
     onReceiveNotification: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-counts"],
+      });
       conversationsQuery.refetch();
     },
   });
@@ -294,6 +303,7 @@ function MessagePageDashboard() {
               isPartnerLoading={isPartnersLoading}
               getConversationLabel={getConversationLabel}
               onSelectConversation={setConversation}
+              unreadByConversation={unreadCountsQuery.data?.byConversation}
             />
           </aside>
 

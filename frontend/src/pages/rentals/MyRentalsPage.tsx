@@ -16,6 +16,7 @@ import {
   useAcceptTerminationRequest,
   useCancelRentRequest,
   useCreateTerminationRequest,
+  useMarkRentalNotificationsRead,
   useRejectTerminationRequest,
   useTenantRentalContracts,
 } from "../../features/message/hooks/useMessageHooks";
@@ -173,12 +174,21 @@ function MyRentalsPage() {
     string | null
   >(null);
   const paymentReturnHandledRef = useRef(false);
+  const rentalNotificationsMarkedRef = useRef(false);
   const { user } = useCurrentUser();
   const rentalsQuery = useTenantRentalContracts();
+  const markRentalNotificationsRead = useMarkRentalNotificationsRead();
   const cancelRentRequest = useCancelRentRequest();
   const createTerminationRequest = useCreateTerminationRequest();
   const acceptTerminationRequest = useAcceptTerminationRequest();
   const rejectTerminationRequest = useRejectTerminationRequest();
+
+  useEffect(() => {
+    if (!user || rentalNotificationsMarkedRef.current) return;
+
+    rentalNotificationsMarkedRef.current = true;
+    markRentalNotificationsRead.mutate();
+  }, [markRentalNotificationsRead, user]);
 
   useEffect(() => {
     if (searchParams.get("payment") !== "success") {

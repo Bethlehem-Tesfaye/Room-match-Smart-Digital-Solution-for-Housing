@@ -14,9 +14,23 @@ const toObjectId = (value, fieldName) => {
   return new Types.ObjectId(value);
 };
 
-// eslint-disable-next-line no-unused-vars
 const buildParticipantsKey = (userAId, userBId) => {
   return [userAId.toString(), userBId.toString()].sort().join(":");
+};
+
+const buildConversationKey = ({
+  userAId,
+  userBId,
+  scope,
+  listingId = null
+}) => {
+  const participantsKey = buildParticipantsKey(userAId, userBId);
+
+  if (scope === "LISTING" && listingId) {
+    return `${scope}:${listingId.toString()}:${participantsKey}`;
+  }
+
+  return `${scope}:${participantsKey}`;
 };
 
 export const getOrCreateConversation = async ({
@@ -64,7 +78,6 @@ export const getOrCreateConversation = async ({
       ? "LISTING"
       : "DIRECT";
 
-  // eslint-disable-next-line no-undef
   const participantsKey = buildConversationKey({
     userAId,
     userBId,

@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../../../components/logo";
 import useIsDark from "../../../lib/useTheme";
@@ -21,6 +22,10 @@ import { palette } from "../../../theme/palette";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
+import {
+  useMessageSocket,
+  useUnreadMessageCounts,
+} from "../../message/hooks/useMessageHooks";
 import type { DashboardTabItem, DashboardTabKey } from "../types/types";
 
 const dashboardTabs: DashboardTabItem[] = [
@@ -39,8 +44,10 @@ interface DashboardNavbarProps {
 function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { user, isPending: isSessionPending } = useCurrentUser();
   const { data: profile } = useMyProfile(true);
+  const unreadCountsQuery = useUnreadMessageCounts(true);
   const logoutMutation = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -48,6 +55,43 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const isDark = useIsDark();
+  const totalUnread = unreadCountsQuery.data?.total ?? 0;
+  const isConversationOpen =
+    (location.pathname === "/dashboard/message" ||
+      location.pathname === "/message") &&
+    new URLSearchParams(location.search).has("conversationId");
+
+  const bumpUnreadMessageCount = () => {
+    queryClient.setQueryData<{
+      total?: number;
+      byConversation?: Record<string, number>;
+      byType?: Record<string, number>;
+    }>(["notifications", "unread-counts"], (previous) => {
+      const byType = previous?.byType ?? {};
+
+      return {
+        total: (previous?.total ?? 0) + 1,
+        byConversation: previous?.byConversation ?? {},
+        byType: {
+          ...byType,
+          Message: (byType.Message ?? 0) + 1,
+        },
+      };
+    });
+  };
+
+  useMessageSocket({
+    enabled: !!user,
+    onReceiveNotification: (notification) => {
+      if (notification.type === "Message") {
+        bumpUnreadMessageCount();
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-counts"],
+      });
+    },
+  });
 
   const profileName = profile?.fullName?.trim() || "My Profile";
   const profileEmail = user?.email || "";
@@ -153,6 +197,10 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
             {dashboardTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.key;
+              const showUnreadBadge =
+                tab.key === "messages" &&
+                totalUnread > 0 &&
+                !isConversationOpen;
 
               return (
                 <button
@@ -164,6 +212,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                 >
                   <Icon size={16} style={{ color: palette.softPurple }} />
                   {tab.label}
+                  {showUnreadBadge ? (
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                  ) : null}
                   <span
                     className={`absolute -bottom-0.5 left-0 h-0.5 w-full origin-left bg-current transition-transform duration-300 ${
                       isActive
@@ -319,6 +372,10 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                   {dashboardTabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.key;
+                    const showUnreadBadge =
+                      tab.key === "messages" &&
+                      totalUnread > 0 &&
+                      !isConversationOpen;
 
                     return (
                       <button
@@ -328,7 +385,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                           setIsMobileMenuOpen(false);
                           handleTabChange(tab.key);
                         }}
-                        className={`flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-semibold transition-colors ${
+                        className={`flex ${tab.key === "messages" ? "relative" : ""} cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-semibold transition-colors ${
                           isActive
                             ? isDark
                               ? "bg-gray-700 text-purple-300"
@@ -340,6 +397,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                       >
                         <Icon size={18} />
                         <span>{tab.label}</span>
+                        {showUnreadBadge ? (
+                          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
+                            {totalUnread > 99 ? "99+" : totalUnread}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
