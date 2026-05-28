@@ -50,6 +50,7 @@ const roomateProfileSchema = new Schema(
     pets: { type: String, enum: ["yes", "no"], default: "no" },
     budgetMin: { type: Number, required: true, min: 0, default: 0 },
     budgetMax: { type: Number, default: null },
+    desiredRoommateCount: { type: Number, min: 1, max: 10, default: 1 },
     updatedFrom: {
       type: String,
       enum: ["profile", "preferences", "matching"],
@@ -223,6 +224,49 @@ roomateMatchSchema.index(
   { unique: true }
 );
 
+const roomateConnectionSchema = new Schema(
+  {
+    propertyId: {
+      type: Types.ObjectId,
+      ref: "Property",
+      required: true,
+      index: true
+    },
+    ownerUserId: {
+      type: Schema.Types.Mixed,
+      required: true,
+      index: true,
+      validate: {
+        validator(value) {
+          return typeof value === "string" || value instanceof Types.ObjectId;
+        },
+        message: "ownerUserId must be a string or ObjectId"
+      }
+    },
+    roommateUserId: {
+      type: Schema.Types.Mixed,
+      required: true,
+      index: true,
+      validate: {
+        validator(value) {
+          return typeof value === "string" || value instanceof Types.ObjectId;
+        },
+        message: "roommateUserId must be a string or ObjectId"
+      }
+    }
+  },
+  {
+    collection: "roommateConnection",
+    timestamps: true,
+    versionKey: false
+  }
+);
+
+roomateConnectionSchema.index(
+  { propertyId: 1, ownerUserId: 1, roommateUserId: 1 },
+  { unique: true }
+);
+
 export const RoommateProfile =
   models.RoommateProfile || model("RoommateProfile", roomateProfileSchema);
 export const RoommatePreferences =
@@ -232,10 +276,14 @@ export const RoommateRequest =
   models.RoommateRequest || model("RoommateRequest", roomateRequestSchema);
 export const RoommateMatch =
   models.RoommateMatch || model("RoommateMatch", roomateMatchSchema);
+export const RoommateConnection =
+  models.RoommateConnection ||
+  model("RoommateConnection", roomateConnectionSchema);
 
 export default {
   RoommateProfile,
   RoommatePreferences,
   RoommateRequest,
-  RoommateMatch
+  RoommateMatch,
+  RoommateConnection
 };
