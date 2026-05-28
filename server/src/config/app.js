@@ -7,6 +7,7 @@ import { notFound } from "../middlewares/notFound.middleware.js";
 import { errorHandler } from "../middlewares/error.middleware.js";
 import authRouter from "../models/auth/auth.routes.js";
 import emailRouter from "../routes/emailRoutes.js";
+import adminRouter from "../routes/admin.routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 app.use("/", emailRouter);
 app.use("/api", router);
 
