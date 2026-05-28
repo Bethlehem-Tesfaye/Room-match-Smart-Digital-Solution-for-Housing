@@ -33,6 +33,43 @@ export interface AdminReport {
   createdAt: string;
 }
 
+export interface AdminPropertyRow {
+  id: string;
+  title: string;
+  ownerName?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  postedDate?: string;
+}
+
+export interface AdminPropertyDetail {
+  _id: string;
+  ownerId: string;
+  ownerName?: string;
+  title: string;
+  description: string;
+  propertyType: string;
+  price: number;
+  currency: string;
+  deposit: number;
+  leasePeriod: number;
+  initialPayment: number;
+  address: string;
+  city: string;
+  numberOfBedrooms: number;
+  numberOfBathrooms: number;
+  floorNumber?: number | null;
+  totalFloors?: number | null;
+  areaSqFt?: number | null;
+  isFurnished: boolean;
+  availableFrom?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 const defaultHeaders = {
@@ -110,6 +147,54 @@ export const getAdminReports = async () => {
     credentials: "include",
   });
   return handleResponse<{ reports: AdminReport[] }>(response);
+};
+
+export const getAdminProperties = async () => {
+  const response = await fetch(`${apiUrl}/api/admin/properties`, {
+    method: "GET",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ properties: AdminPropertyRow[] }>(response);
+};
+
+export const getAdminProperty = async (id: string) => {
+  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, {
+    method: "GET",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ property: AdminPropertyDetail }>(response);
+};
+
+
+export const createAdminProperty = async (payload: Record<string, any>) => {
+  const response = await fetch(`${apiUrl}/api/admin/properties`, {
+    method: "POST",
+    headers: defaultHeaders,
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<{ property: AdminPropertyDetail }>(response);
+};
+
+export const updateAdminProperty = async (id: string, payload: Record<string, any>) => {
+  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, {
+    method: "PATCH",
+    headers: defaultHeaders,
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<{ property: AdminPropertyDetail }>(response);
+};
+
+export const deleteAdminProperty = async (id: string) => {
+  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, {
+    method: "DELETE",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ success: boolean }>(response);
 };
 
 export const setUserBlockedStatus = async (

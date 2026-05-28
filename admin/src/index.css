@@ -20,6 +20,12 @@ input {
   font: inherit;
 }
 
+.button.small,
+.button.secondary {
+  width: auto;
+  padding: 10px 16px;
+}
+
 .container {
   max-width: 520px;
   margin: 0 auto;
@@ -98,6 +104,42 @@ input:focus {
 .link-row a {
   color: #4f46e5;
   text-decoration: none;
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 580px;
+}
+
+.table th,
+.table td {
+  padding: 16px 14px;
+  text-align: left;
+  border-bottom: 1px solid #eef2f7;
+  color: #334155;
+}
+
+.table th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table-card {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 .alert {
@@ -235,15 +277,169 @@ input:focus {
 .link-block { background:none;border:none;color:#ef4444;cursor:pointer }
 
 /* modal */
-.modal-backdrop { position:fixed; inset:0; background:rgba(9,10,12,0.6); display:flex; align-items:center; justify-content:center }
-.modal { background:white; border-radius:12px; width:520px; max-width:92%; padding:18px }
-.modal-header { display:flex; justify-content:space-between; align-items:center }
-.modal-body { padding:12px 0 }
-.modal-user { display:flex; gap:12px; align-items:center; padding:8px; background:#f8fafc; border-radius:8px }
-.modal-name { font-weight:700 }
-.modal-email { color:#6b7280 }
-.hint { color:#6b7280; font-size:13px; margin-top:8px }
-.modal-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:12px }
-.btn { background:#fff; border:1px solid #e5e7eb; padding:8px 14px; border-radius:10px; cursor:pointer }
-.btn.danger { background:#ef4444; color:white; border:none }
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 10, 12, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 520px;
+  max-width: 92%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.modal.modal-large {
+  width: 800px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.modal-body {
+  padding: 12px 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  color: white;
+  border: none;
+}
+
+.btn-primary:disabled {
+  background: #c7d2fe;
+  cursor: not-allowed;
+}
+
+.btn.danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+/* property form */
+.property-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-section legend {
+  font-weight: 700;
+  padding: 0 4px;
+  color: #1f2937;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-field label input[type="checkbox"] {
+  width: auto;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #111827;
+  font-family: inherit;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal.modal-large {
+    width: 95%;
+  }
+}
+
+.button.tiny {
+  width: auto;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
 

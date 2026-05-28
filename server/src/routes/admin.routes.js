@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import { ObjectId } from "mongodb";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import adminMiddleware from "../middlewares/admin.middleware.js";
 import { env } from "../config/evnironments.js";
@@ -133,6 +134,90 @@ adminRouter.get("/reports", authMiddleware, adminMiddleware, async (req, res, ne
       .lean();
 
     return res.status(200).json({ reports });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin property CRUD
+adminRouter.get("/properties", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return res.status(500).json({ message: "Database connection unavailable." });
+
+    const props = await Property.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const ownerIds = [...new Set(props.map((p) => p.ownerId))];
+    const owners = await db
+      .collection("user")
+      .find({ _id: { $in: ownerIds.map((id) => new ObjectId(id)) } })
+      .toArray();
+    const ownerMap = new Map(owners.map((o) => [String(o._id), o.name || o.email || "Unknown"]));
+
+    const formatted = props.map((p) => ({
+      id: String(p._id),
+      title: p.title || "Untitled",
+      ownerName: ownerMap.get(p.ownerId) || "Unknown",
+      status: p.status || "Active",
+      createdAt: p.createdAt,
+      postedDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "",
+    }));
+    return res.status(200).json({ properties: formatted });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+adminRouter.get("/properties/:id", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return res.status(500).json({ message: "Database connection unavailable." });
+
+    const prop = await Property.findById(req.params.id).lean();
+    if (!prop) return res.status(404).json({ message: "Property not found." });
+
+    const owner = await db
+      .collection("user")
+      .findOne({ _id: new ObjectId(prop.ownerId) });
+
+    return res.status(200).json({
+      property: {
+        ...prop,
+        ownerName: owner?.name || owner?.email || "Unknown",
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/properties", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const data = req.body || {};
+    const created = await Property.create({ ...data, createdAt: new Date(), updatedAt: new Date() });
+    return res.status(201).json({ property: created });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.patch("/properties/:id", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const updates = { ...req.body, updatedAt: new Date() };
+    const updated = await Property.findByIdAndUpdate(req.params.id, updates, { new: true }).lean();
+    if (!updated) return res.status(404).json({ message: "Property not found." });
+    return res.status(200).json({ property: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.delete("/properties/:id", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    // soft-delete by default
+    const updated = await Property.findByIdAndUpdate(req.params.id, { deletedAt: new Date() }, { new: true }).lean();
+    if (!updated) return res.status(404).json({ message: "Property not found." });
+    return res.status(200).json({ success: true });
   } catch (error) {
     next(error);
   }

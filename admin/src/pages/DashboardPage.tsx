@@ -130,7 +130,7 @@ function DashboardPage() {
 
           <div className="tabs">
             <button className="tab active">Users ({loading ? "..." : statsData.totalUsers})</button>
-            <button className="tab">Properties ({loading ? "..." : statsData.properties})</button>
+            <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link></button>
             <button className="tab">Roommates ({loading ? "..." : statsData.roommateProfiles})</button>
             <button className="tab">
               <Link to="/dashboard/reports">Reports</Link>
