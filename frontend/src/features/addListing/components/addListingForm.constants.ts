@@ -39,6 +39,7 @@ export const initialAddListingDraft: AddListingDraft = {
   amenityIds: [],
   availableFrom: "",
   isFurnished: false,
+  allowRoommates: false,
 };
 
 export const initialBankInfoDraft: BankInfoDraft = {

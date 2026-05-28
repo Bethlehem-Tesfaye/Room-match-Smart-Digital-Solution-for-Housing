@@ -1,5 +1,11 @@
 import CustomError from "../../lib/errors.js";
+import { Contract } from "../contract/schema.js";
+import { Property } from "../property/schema.js";
 import { RoommatePreferences, RoommateProfile } from "./schema.js";
+import {
+  clearMatchesForUser,
+  generateMatchesForUser
+} from "./match.service.js";
 
 const ROOMMATE_PROFILE_FIELDS = new Set([
   "profileType",
@@ -123,6 +129,31 @@ const toPersistenceError = (error) => {
   return error;
 };
 
+const ensureRoommateEligibleProperty = async (propertyId) => {
+  if (!propertyId) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  const property = await Property.findOne({
+    _id: propertyId,
+    deletedAt: null
+  })
+    .select({ _id: 1, allowRoommates: 1 })
+    .lean();
+
+  if (!property?.allowRoommates) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  return property;
+};
+
 const buildRoommateProfileUpdateSet = (payload) => {
   const input = toObjectPayload(payload);
   const updateSet = {};
@@ -230,8 +261,38 @@ export const getRoommateProfileByUserId = async (userId) => {
 export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
   const updateSet = buildRoommateProfileUpdateSet(payload);
   const existingProfile = await RoommateProfile.findOne({ userId })
-    .select({ budgetMin: 1, budgetMax: 1 })
+    .select({ budgetMin: 1, budgetMax: 1, profileType: 1 })
     .lean();
+  const incomingType = updateSet.profileType ?? existingProfile?.profileType;
+  const typeChanged =
+    existingProfile?.profileType != null &&
+    incomingType != null &&
+    incomingType !== existingProfile.profileType;
+
+  if (incomingType === "TYPE_A") {
+    const activeContract = await Contract.findOne({
+      tenantId: userId,
+      status: "ACTIVE"
+    })
+      .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
+      .lean();
+
+    const activeListing = activeContract?.listingId;
+
+    if (!activeListing || typeof activeListing === "string") {
+      throw new CustomError(
+        "You need an active rental contract before switching to I have a rented place",
+        400
+      );
+    }
+
+    await ensureRoommateEligibleProperty(activeListing._id);
+    updateSet.selectedPropertyId = activeListing._id;
+  }
+
+  if (incomingType === "TYPE_B") {
+    updateSet.selectedPropertyId = null;
+  }
 
   const resolvedBudgetMin =
     updateSet.budgetMin ?? existingProfile?.budgetMin ?? 0;
@@ -245,6 +306,10 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
       "budgetMax must be null or greater than or equal to budgetMin",
       400
     );
+  }
+
+  if (typeChanged) {
+    await clearMatchesForUser(userId);
   }
 
   try {
@@ -264,6 +329,10 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
 
     if (!profile) {
       throw new CustomError("Unable to update roommate profile", 500);
+    }
+
+    if (typeChanged) {
+      await generateMatchesForUser(userId);
     }
 
     return profile;

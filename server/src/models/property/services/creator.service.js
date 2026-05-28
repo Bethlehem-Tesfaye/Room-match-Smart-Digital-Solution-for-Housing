@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import CustomError from "../../../lib/errors.js";
+import { clearMatchesForUser } from "../../roommate/match.service.js";
+import { RoommateProfile } from "../../roommate/schema.js";
 import {
   Amenity,
   Property,
@@ -54,6 +56,9 @@ export const updatePropertyById = async ({ propertyId, userId, payload }) => {
   ensureOwnership(property, userId);
 
   const { images, amenityIds, ...propertyUpdates } = payload;
+  const allowRoommatesChangedToFalse =
+    property.allowRoommates === true &&
+    propertyUpdates.allowRoommates === false;
 
   let amenityIdsToSync = amenityIds;
 
@@ -100,6 +105,28 @@ export const updatePropertyById = async ({ propertyId, userId, payload }) => {
       propertyId: _id,
       amenityIds: amenityIdsToSync
     });
+  }
+
+  if (allowRoommatesChangedToFalse) {
+    const affectedProfiles = await RoommateProfile.find({
+      profileType: "TYPE_A",
+      selectedPropertyId: _id
+    })
+      .select({ userId: 1 })
+      .lean();
+
+    await Promise.all(
+      affectedProfiles.map(async (profile) => {
+        await clearMatchesForUser(profile.userId);
+      })
+    );
+
+    if (affectedProfiles.length > 0) {
+      await RoommateProfile.updateMany(
+        { profileType: "TYPE_A", selectedPropertyId: _id },
+        { $set: { selectedPropertyId: null, updatedFrom: "matching" } }
+      );
+    }
   }
 
   const updated = await Property.findOne({ _id, deletedAt: null }).lean();

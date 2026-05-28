@@ -378,6 +378,9 @@ export const useUpdateRoommateProfile = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: roommateQueryKeys.profile,
       });
+      queryClient.invalidateQueries({
+        queryKey: roommateQueryKeys.matches,
+      });
     },
   });
 };

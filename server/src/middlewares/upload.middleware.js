@@ -173,6 +173,11 @@ export const normalizePropertyMultipartBody = (req, _res, next) => {
     normalized.isFurnished = furnished;
   }
 
+  const allowRoommates = normalizeBoolean(body.allowRoommates);
+  if (allowRoommates !== undefined) {
+    normalized.allowRoommates = allowRoommates;
+  }
+
   if (body.availableFrom === "") {
     normalized.availableFrom = null;
   }

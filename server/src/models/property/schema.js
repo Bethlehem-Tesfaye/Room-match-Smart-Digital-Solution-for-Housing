@@ -26,6 +26,7 @@ const propertySchema = new Schema(
     areaSqFt: { type: Number, default: null, min: 0 },
     isFurnished: { type: Boolean, default: false },
     availableFrom: { type: Date, default: null },
+    allowRoommates: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ["Active", "Reserved", "Rented", "Inactive"],

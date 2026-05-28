@@ -57,6 +57,7 @@ export interface AddListingDraft {
   amenityIds: string[];
   availableFrom: string;
   isFurnished: boolean;
+  allowRoommates: boolean;
 }
 
 export type SetAddListingField = <K extends keyof AddListingDraft>(

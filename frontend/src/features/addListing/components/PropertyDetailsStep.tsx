@@ -62,6 +62,35 @@ function PropertyDetailsStep({
         ) : null}
       </div>
 
+      <div
+        className="rounded-2xl border px-4 py-4"
+        style={{ borderColor: palette.border, backgroundColor: palette.pageBg }}
+      >
+        <label
+          className="flex items-start gap-3 text-sm font-semibold"
+          style={{ color: palette.deep }}
+        >
+          <input
+            type="checkbox"
+            checked={draft.allowRoommates}
+            onChange={(event) =>
+              setField("allowRoommates", event.target.checked)
+            }
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <span>
+            Do you allow tenants to add roommates?
+            <span
+              className="mt-1 block text-xs font-normal"
+              style={{ color: palette.softPurple }}
+            >
+              This allows tenants renting this property to use the roommate
+              matching feature.
+            </span>
+          </span>
+        </label>
+      </div>
+
       <div className="space-y-2">
         <label
           className="text-sm font-semibold"

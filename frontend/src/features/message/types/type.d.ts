@@ -8,6 +8,7 @@ export interface ConversationListing {
   address?: string;
   price?: number;
   currency?: string;
+  allowRoommates?: boolean;
   status?: "Active" | "Reserved" | "Rented" | "Inactive";
 }
 

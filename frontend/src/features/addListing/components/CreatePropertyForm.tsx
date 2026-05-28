@@ -391,6 +391,7 @@ function CreatePropertyForm() {
     );
     payload.append("availableFrom", draft.availableFrom || "");
     payload.append("isFurnished", String(draft.isFurnished));
+    payload.append("allowRoommates", String(draft.allowRoommates));
     payload.append("status", "Active");
     payload.append("amenityIds", JSON.stringify(draft.amenityIds));
     payload.append("leasePeriod", String(Number(draft.leasePeriod || 0)));

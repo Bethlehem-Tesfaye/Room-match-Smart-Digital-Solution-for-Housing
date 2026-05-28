@@ -922,7 +922,8 @@ export const getTenantRentalContracts = async ({ tenantUserId }) => {
     .populate({
       path: "listingId",
       model: Property,
-      select: "_id title city address price currency ownerId status deletedAt"
+      select:
+        "_id title city address price currency ownerId status deletedAt allowRoommates"
     })
     .populate({
       path: "terminationRequestedBy",

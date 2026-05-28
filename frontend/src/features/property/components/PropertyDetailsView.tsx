@@ -3,6 +3,7 @@ import {
   Bed,
   Building2,
   CalendarDays,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Layers,
@@ -11,6 +12,7 @@ import {
   Sofa,
   Banknote,
   Heart,
+  Ban,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -246,6 +248,24 @@ function PropertyDetailsView({
               style={{ backgroundColor: palette.chipBg, color: palette.purple }}
             >
               {property.status}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+              style={{
+                backgroundColor: property.allowRoommates
+                  ? "#DCFCE7"
+                  : "#FEF2F2",
+                color: property.allowRoommates ? "#166534" : "#991B1B",
+              }}
+            >
+              {property.allowRoommates ? (
+                <CheckCircle2 size={12} />
+              ) : (
+                <Ban size={12} />
+              )}
+              {property.allowRoommates
+                ? "Roommates Allowed"
+                : "No Additional Roommates"}
             </span>
             {isUnavailable ? (
               <span className="rounded-full bg-rose-600 px-2.5 py-1 text-xs font-bold tracking-wide text-white">

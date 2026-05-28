@@ -32,6 +32,7 @@ export interface EditListingDraft {
   amenityIds: string[];
   availableFrom: string;
   isFurnished: boolean;
+  allowRoommates: boolean;
 }
 
 export interface EditListingValidationErrors {

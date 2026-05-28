@@ -48,6 +48,7 @@ export interface Property {
   leasePeriod: number;
   initialPayment: number;
   availableFrom: string | null;
+  allowRoommates: boolean;
   status: PropertyStatus;
   createdAt: string;
   updatedAt: string;
@@ -77,6 +78,7 @@ export interface CreatePropertyInput {
   totalFloors?: number | null;
   areaSqFt?: number | null;
   isFurnished?: boolean;
+  allowRoommates?: boolean;
   availableFrom?: string | null;
   status?: PropertyStatus;
   leasePeriod: number;

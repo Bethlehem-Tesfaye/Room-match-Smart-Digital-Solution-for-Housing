@@ -79,6 +79,7 @@ export const createPropertySchema = z.object({
   city: z.string().min(1),
   availableFrom: z.string().optional().default(""),
   isFurnished: z.coerce.boolean().default(false),
+  allowRoommates: z.coerce.boolean().default(false),
   status: z.string().optional().default("Active"),
   amenityIds: z.preprocess((val) => {
     if (typeof val === "string") {
@@ -111,6 +112,7 @@ export const updatePropertySchema = z
     totalFloors: z.number().int().nullable().optional(),
     areaSqFt: z.number().nonnegative().nullable().optional(),
     isFurnished: z.boolean().optional(),
+    allowRoommates: z.boolean().optional(),
     availableFrom: z.coerce.date().nullable().optional(),
     status: propertyStatusEnum.optional(),
     images: z.array(imageInputSchema).optional(),

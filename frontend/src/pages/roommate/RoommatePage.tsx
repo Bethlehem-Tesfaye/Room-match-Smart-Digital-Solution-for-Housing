@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Home, Search } from "lucide-react";
+import { Home, RefreshCw, Search } from "lucide-react";
 import {
   buildRoommateFormData,
   buildRoommatePreferencesPayload,
@@ -31,9 +31,16 @@ import type {
 interface TypePickerProps {
   onPick: (type: RoommateType) => Promise<void>;
   isSaving: boolean;
+  canChooseTypeA: boolean;
+  typeABlockedMessage?: string | null;
 }
 
-const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
+const TypePicker: React.FC<TypePickerProps> = ({
+  onPick,
+  isSaving,
+  canChooseTypeA,
+  typeABlockedMessage,
+}) => (
   <main className="min-h-screen pt-15">
     <LandingNavbar />
     <div className="flex min-h-[80vh] items-center justify-center bg-(--palette-page-bg) px-4">
@@ -48,9 +55,16 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
         <div className="grid gap-4 sm:grid-cols-2">
           <button
             type="button"
-            disabled={isSaving}
             onClick={() => void onPick("TYPE_A")}
             className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
+            aria-disabled={!canChooseTypeA}
+            title={
+              !canChooseTypeA
+                ? (typeABlockedMessage ??
+                  "This rental does not allow roommates")
+                : undefined
+            }
+            disabled={isSaving || !canChooseTypeA}
           >
             <div className="mb-3 text-3xl">🏠</div>
             <h2 className="mb-1 text-lg font-bold text-(--palette-deep)">
@@ -59,6 +73,11 @@ const TypePicker: React.FC<TypePickerProps> = ({ onPick, isSaving }) => (
             <p className="text-sm text-(--palette-soft-purple)">
               I'm already renting and looking for someone to share it with.
             </p>
+            {!canChooseTypeA && typeABlockedMessage ? (
+              <p className="mt-3 text-xs font-semibold text-rose-600">
+                {typeABlockedMessage}
+              </p>
+            ) : null}
           </button>
           <button
             type="button"
@@ -111,12 +130,18 @@ const RoommatePage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [startingConversationForUserId, setStartingConversationForUserId] =
     useState<string | null>(null);
+  const [pendingTypeChange, setPendingTypeChange] =
+    useState<RoommateType | null>(null);
 
   const serverProfile = profileQuery.data ?? null;
   const serverPreferences = preferencesQuery.data;
-  const formsLoading = profileQuery.isLoading || preferencesQuery.isLoading;
+  const formsLoading =
+    profileQuery.isLoading ||
+    preferencesQuery.isLoading ||
+    rentalsQuery.isLoading;
   const formError =
     profileQuery.error?.message || preferencesQuery.error?.message || null;
+  const rentalError = rentalsQuery.error?.message || null;
 
   const matches: RoommateMatch[] = (matchesQuery.data ?? []).map((m: any) => ({
     ...(m as any),
@@ -149,8 +174,24 @@ const RoommatePage: React.FC = () => {
   );
   const hasRentedRoom = activeRentedContracts.length > 0;
 
+  const getContractListing = (
+    contract?: (typeof activeRentedContracts)[number],
+  ) => {
+    if (!contract) return null;
+
+    const listing = contract.listingId;
+    return typeof listing === "string" ? null : listing;
+  };
+
+  const roommateEligibleContracts = activeRentedContracts.filter(
+    (contract) => getContractListing(contract)?.allowRoommates === true,
+  );
+  const hasEligibleRoommateRental = roommateEligibleContracts.length > 0;
+  const canUseRoommateWizard =
+    roommateType === "TYPE_B" || hasEligibleRoommateRental;
+
   const selectedRentedPropertyId = (() => {
-    const listing = activeRentedContracts[0]?.listingId;
+    const listing = getContractListing(roommateEligibleContracts[0]);
     if (!listing || typeof listing === "string") return listing ?? null;
     return listing._id;
   })();
@@ -192,6 +233,20 @@ const RoommatePage: React.FC = () => {
       selectedPropertyId,
     });
   }, [localPreferences, roommateType, selectedPropertyId]);
+
+  const buildTypeSwitchPayload = useCallback(
+    (nextType: RoommateType) => {
+      if (!localPreferences) return null;
+
+      return buildRoommateProfilePayload({
+        formData: localPreferences,
+        profileType: nextType,
+        selectedPropertyId:
+          nextType === "TYPE_A" ? selectedRentedPropertyId : null,
+      });
+    },
+    [localPreferences, selectedRentedPropertyId],
+  );
 
   const buildPreferencePayload = useCallback(() => {
     if (!localPreferences) return null;
@@ -274,6 +329,11 @@ const RoommatePage: React.FC = () => {
 
   const handlePickType = useCallback(
     async (type: RoommateType) => {
+      if (type === "TYPE_A" && !hasEligibleRoommateRental) {
+        toast.error("This rental does not allow roommates");
+        return;
+      }
+
       setIsSaving(true);
       try {
         await updateProfileMutation.mutateAsync({
@@ -291,8 +351,51 @@ const RoommatePage: React.FC = () => {
         setIsSaving(false);
       }
     },
-    [updateProfileMutation, selectedRentedPropertyId],
+    [
+      hasEligibleRoommateRental,
+      updateProfileMutation,
+      selectedRentedPropertyId,
+    ],
   );
+
+  const handleChangeType = useCallback(() => {
+    const nextType: RoommateType =
+      roommateType === "TYPE_A" ? "TYPE_B" : "TYPE_A";
+
+    if (nextType === "TYPE_A" && !hasEligibleRoommateRental) {
+      toast.error("This rental does not allow roommates");
+      return;
+    }
+
+    setPendingTypeChange(nextType);
+  }, [hasEligibleRoommateRental, roommateType]);
+
+  const confirmTypeChange = useCallback(async () => {
+    if (!pendingTypeChange) return;
+
+    const payload = buildTypeSwitchPayload(pendingTypeChange);
+    if (!payload) return;
+
+    setIsSaving(true);
+    try {
+      const profile = await updateProfileMutation.mutateAsync(payload);
+
+      setRoommateType(profile.profileType);
+      setSelectedPropertyId(profile.selectedPropertyId ?? null);
+      setLocalPreferences((prev) =>
+        prev ? buildRoommateFormData({ profile, preferences: prev }) : prev,
+      );
+
+      setPendingTypeChange(null);
+      toast.success("Roommate type updated and matches refreshed");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to change roommate type",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [buildTypeSwitchPayload, pendingTypeChange, updateProfileMutation]);
 
   const handleStartConversation = useCallback(
     async (match: RoommateMatch) => {
@@ -323,16 +426,19 @@ const RoommatePage: React.FC = () => {
   );
 
   // ── guards ────────────────────────────────────────────────────────────────
-  if (error || formError) {
+  if (error || formError || rentalError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4">
         <div className="text-center">
-          <p className="text-lg text-red-500">Error: {error || formError}</p>
+          <p className="text-lg text-red-500">
+            Error: {error || formError || rentalError}
+          </p>
           <button
             onClick={() => {
               void matchesQuery.refetch();
               void profileQuery.refetch();
               void preferencesQuery.refetch();
+              void rentalsQuery.refetch();
             }}
             className="mt-4 rounded-lg bg-(--palette-purple) px-4 py-2 text-white transition hover:opacity-90"
           >
@@ -352,7 +458,18 @@ const RoommatePage: React.FC = () => {
   }
 
   if (!hasChosenType)
-    return <TypePicker onPick={handlePickType} isSaving={isSaving} />;
+    return (
+      <TypePicker
+        onPick={handlePickType}
+        isSaving={isSaving}
+        canChooseTypeA={hasEligibleRoommateRental}
+        typeABlockedMessage={
+          hasRentedRoom && !hasEligibleRoommateRental
+            ? "This rental does not allow roommates"
+            : null
+        }
+      />
+    );
 
   if (!localPreferences) {
     return (
@@ -374,7 +491,7 @@ const RoommatePage: React.FC = () => {
 
           {/* Type badge */}
           <div className="mb-6 flex justify-center">
-            <span className="rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm font-semibold text-(--palette-purple) shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm font-semibold text-(--palette-purple) shadow-sm">
               {roommateType === "TYPE_A" ? (
                 <span className="flex items-center gap-1.5">
                   <Home className="h-4 w-4" /> I have a rented place
@@ -384,7 +501,19 @@ const RoommatePage: React.FC = () => {
                   <Search className="h-4 w-4" /> I'm looking for a place
                 </span>
               )}
-            </span>
+              <button
+                type="button"
+                onClick={() => void handleChangeType()}
+                disabled={
+                  isSaving || (roommateType === "TYPE_B" && !hasRentedRoom)
+                }
+                aria-label="Change roommate type"
+                title="Change roommate type"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-(--palette-soft-purple) transition hover:border-(--palette-purple) hover:bg-(--palette-page-bg) hover:text-(--palette-purple) disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -418,7 +547,7 @@ const RoommatePage: React.FC = () => {
             <div className="space-y-4">
               {/* Property selector for TYPE_A */}
               {roommateType === "TYPE_A" &&
-                (hasRentedRoom ? (
+                (hasEligibleRoommateRental ? (
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-4">
                     <p className="mb-2 text-sm font-semibold text-(--palette-deep)">
                       Select rented room
@@ -434,14 +563,12 @@ const RoommatePage: React.FC = () => {
                       }}
                       className="w-full rounded-lg border border-(--palette-border) bg-(--palette-input-bg) px-3 py-2 text-(--app-text) outline-none"
                     >
-                      {activeRentedContracts.map((contract) => {
-                        const listing = contract.listingId;
-                        const listingId =
-                          typeof listing === "string" ? listing : listing._id;
-                        const label =
-                          typeof listing === "string"
-                            ? "Rented room"
-                            : `${listing.title}${listing.city ? ` • ${listing.city}` : ""}`;
+                      {roommateEligibleContracts.map((contract) => {
+                        const listing = getContractListing(contract);
+                        const listingId = listing?._id ?? "";
+                        const label = listing
+                          ? `${listing.title}${listing.city ? ` • ${listing.city}` : ""}`
+                          : "Rented room";
                         return (
                           <option key={contract._id} value={listingId}>
                             {label}
@@ -449,6 +576,27 @@ const RoommatePage: React.FC = () => {
                         );
                       })}
                     </select>
+                  </div>
+                ) : hasRentedRoom ? (
+                  <div className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) px-6 py-10 text-center shadow-sm">
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--palette-soft-purple)">
+                      Roommate matching is not allowed for your rental
+                    </p>
+                    <h2 className="mt-3 text-2xl font-bold text-(--palette-deep)">
+                      The property owner has disabled roommate sharing for your
+                      current rental.
+                    </h2>
+                    <p className="mx-auto mt-3 max-w-md text-sm text-(--palette-soft-purple)">
+                      Browse roommate-friendly properties if you want to switch
+                      to a shared-home setup.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/properties")}
+                      className="mt-6 rounded-full bg-(--palette-purple) px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                    >
+                      Browse roommate-friendly properties
+                    </button>
                   </div>
                 ) : (
                   <div className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) px-6 py-10 text-center shadow-sm">
@@ -471,7 +619,7 @@ const RoommatePage: React.FC = () => {
                   </div>
                 ))}
 
-              {(roommateType === "TYPE_B" || hasRentedRoom) && (
+              {canUseRoommateWizard && (
                 <RoommateWizard
                   preferences={localPreferences}
                   onUpdate={handlePreferenceUpdate}
@@ -493,6 +641,47 @@ const RoommatePage: React.FC = () => {
                 onStartConversation={handleStartConversation}
                 startingConversationForUserId={startingConversationForUserId}
               />
+            </div>
+          )}
+
+          {pendingTypeChange && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+              <div className="w-full max-w-lg rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-6 shadow-2xl">
+                <h2 className="text-2xl font-bold text-(--palette-deep)">
+                  Change roommate type?
+                </h2>
+                <p className="mt-3 text-sm text-(--palette-soft-purple)">
+                  Changing your roommate type will:
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-(--palette-soft-purple)">
+                  <li>• remove your current roommate matches</li>
+                  <li>• recompute new compatible matches</li>
+                  <li>• reset your rented property selection if needed</li>
+                </ul>
+                <p className="mt-4 rounded-2xl bg-(--palette-page-bg) px-4 py-3 text-sm text-(--palette-deep)">
+                  {pendingTypeChange === "TYPE_A"
+                    ? "You will switch to: I have a rented place"
+                    : "You will switch to: I'm looking for a place"}
+                </p>
+                <div className="mt-6 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPendingTypeChange(null)}
+                    disabled={isSaving}
+                    className="rounded-full border border-(--palette-border) px-4 py-2 text-sm font-semibold text-(--palette-deep) transition hover:bg-(--palette-page-bg) disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void confirmTypeChange()}
+                    disabled={isSaving}
+                    className="rounded-full bg-(--palette-purple) px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    {isSaving ? "Changing..." : "Yes, change type"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

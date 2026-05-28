@@ -7,10 +7,17 @@ import { UserProfile } from "../profile/schema.js";
 import { Property } from "../property/schema.js";
 import { Contract } from "../contract/schema.js";
 import { calculateRoommateMatch } from "./roommateMatcher.js";
+import CustomError from "../../lib/errors.js";
 
 const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
 const toUserIdString = (id) => (id ? id.toString() : "");
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const clearMatchesForUser = async (userId) => {
+  return RoommateMatch.deleteMany({
+    $or: [{ userId }, { targetUserId: userId }]
+  });
+};
 
 const addMonths = (date, months) => {
   const nextDate = new Date(date);
@@ -36,6 +43,47 @@ const buildLeaseInfo = ({ contract, property }) => {
   };
 };
 
+const validateTypeAEligibility = async (currentProfile) => {
+  if (currentProfile?.profileType !== "TYPE_A") return null;
+
+  const propertyId = currentProfile.selectedPropertyId ?? null;
+  if (!propertyId) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  const activeContract = await Contract.findOne({
+    tenantId: currentProfile.userId,
+    status: "ACTIVE"
+  })
+    .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
+    .lean();
+
+  const activeListing = activeContract?.listingId;
+
+  if (
+    !activeListing ||
+    typeof activeListing === "string" ||
+    activeListing._id?.toString() !== propertyId.toString()
+  ) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  if (!activeListing.allowRoommates) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  return activeListing;
+};
+
 export const generateMatchesForUser = async (userId) => {
   const currentProfile = await RoommateProfile.findOne({ userId }).lean();
   const preferences = await RoommatePreferences.findOne({ userId }).lean();
@@ -43,6 +91,8 @@ export const generateMatchesForUser = async (userId) => {
   if (!currentProfile || !preferences) {
     throw new Error("Profile or preferences missing");
   }
+
+  await validateTypeAEligibility(currentProfile);
 
   const currentUserIdStr = toUserIdString(userId);
 
