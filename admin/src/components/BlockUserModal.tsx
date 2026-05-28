@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { UserRow } from "./UserTable";
 
 const BlockUserModal: React.FC<{
@@ -8,6 +8,12 @@ const BlockUserModal: React.FC<{
   onConfirm: (reason?: string) => void;
 }> = ({ user, open, onClose, onConfirm }) => {
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setReason("");
+    }
+  }, [open, user?.id]);
 
   if (!open || !user) return null;
   const isBlocked = user.status === "Blocked";

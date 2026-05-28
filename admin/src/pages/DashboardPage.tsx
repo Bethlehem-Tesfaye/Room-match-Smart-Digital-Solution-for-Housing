@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import StatsCards from "../components/StatsCards";
-import SearchBar from "../components/SearchBar";
+import SearchBar, { SearchFilter } from "../components/SearchBar";
 import UserTable, { UserRow } from "../components/UserTable";
 import BlockUserModal from "../components/BlockUserModal";
 import { getAdminDashboardSummary, getAdminUsers, setUserBlockedStatus } from "../lib/api";
@@ -22,6 +23,7 @@ function DashboardPage() {
   const [statsData, setStatsData] = useState(defaultStats);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<SearchFilter>("all");
 
   useEffect(() => {
     const loadAdminData = async () => {
@@ -66,8 +68,18 @@ function DashboardPage() {
 
     const blocked = selectedUser.status !== "Blocked";
     try {
-      await setUserBlockedStatus(selectedUser.id, blocked);
-      setUsers((prev) => prev.map((u) => (u.id === selectedUser.id ? { ...u, status: blocked ? "Blocked" : "Active" } : u)));
+      const result = await setUserBlockedStatus(selectedUser.id, blocked, reason);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUser.id
+            ? {
+                ...u,
+                status: blocked ? "Blocked" : "Active",
+                reason: blocked ? result.reason || reason || "No reason provided." : null
+              }
+            : u,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update user status.");
     } finally {
@@ -79,7 +91,27 @@ function DashboardPage() {
   const filtered = users.filter((u) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+
+    switch (filter) {
+      case "name":
+        return u.name.toLowerCase().includes(q);
+      case "email":
+        return u.email.toLowerCase().includes(q);
+      case "type":
+        return u.type?.toLowerCase().includes(q) ?? false;
+      case "status":
+        return u.status?.toLowerCase().includes(q) ?? false;
+      case "joined":
+        return u.joined.toLowerCase().includes(q);
+      default:
+        return (
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.type?.toLowerCase().includes(q) ||
+          u.status?.toLowerCase().includes(q) ||
+          u.joined.toLowerCase().includes(q)
+        );
+    }
   });
 
   return (
@@ -94,12 +126,15 @@ function DashboardPage() {
 
       <main className="dashboard-main">
         <div className="container-wide">
-          <SearchBar value={search} onChange={setSearch} />
+          <SearchBar value={search} onChange={setSearch} filter={filter} onFilterChange={setFilter} />
 
           <div className="tabs">
             <button className="tab active">Users ({loading ? "..." : statsData.totalUsers})</button>
             <button className="tab">Properties ({loading ? "..." : statsData.properties})</button>
             <button className="tab">Roommates ({loading ? "..." : statsData.roommateProfiles})</button>
+            <button className="tab">
+              <Link to="/dashboard/reports">Reports</Link>
+            </button>
           </div>
 
           {error && <div className="dashboard-error">{error}</div>}

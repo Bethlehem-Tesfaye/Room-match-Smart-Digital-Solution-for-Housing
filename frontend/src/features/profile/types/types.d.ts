@@ -15,12 +15,17 @@ export interface Profile {
   profilePictureUrl: string | null;
   role: "user" | "admin";
   deletedAt: string | null;
+  blockedReason: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface GetMyProfileResponse {
   profile: Profile;
+}
+
+export interface RequestUnblockResponse {
+  message: string;
 }
 
 export interface UpdateProfileInput {

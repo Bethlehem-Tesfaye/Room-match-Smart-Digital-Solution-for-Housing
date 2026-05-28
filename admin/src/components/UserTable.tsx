@@ -8,6 +8,7 @@ export interface UserRow {
   role: string;
   joined: string;
   status?: string;
+  reason?: string | null;
 }
 
 const UserTable: React.FC<{
@@ -26,6 +27,7 @@ const UserTable: React.FC<{
             <th>Role</th>
             <th>Joined</th>
             <th>Status</th>
+            <th>Reason</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -45,6 +47,7 @@ const UserTable: React.FC<{
               </td>
               <td>{u.joined}</td>
               <td>{u.status ?? "Active"}</td>
+              <td>{u.reason || "—"}</td>
               <td>
                 {u.role === "admin" ? (
                   <span className="admin-action">—</span>

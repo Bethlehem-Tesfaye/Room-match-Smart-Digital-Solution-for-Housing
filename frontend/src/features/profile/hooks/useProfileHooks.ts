@@ -9,6 +9,7 @@ import { api } from "../../../lib/axios";
 import type {
   GetMyProfileResponse,
   Profile,
+  RequestUnblockResponse,
   UpdateMyProfileResponse,
   UpdateProfileInput,
 } from "../types/types";
@@ -107,6 +108,26 @@ export const useUpdateMyProfile = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: profileQueryKeys.me,
       });
+    },
+  });
+};
+
+export const useRequestUnblock = (): UseMutationResult<
+  RequestUnblockResponse,
+  Error,
+  { reason?: string }
+> => {
+  return useMutation<RequestUnblockResponse, Error, { reason?: string }>({
+    mutationFn: async ({ reason }) => {
+      try {
+        const res = await api.post<RequestUnblockResponse>(
+          "/api/profile/request-unblock",
+          { reason }
+        );
+        return res.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
     },
   });
 };

@@ -6,6 +6,7 @@ import { env } from "../config/evnironments.js";
 import { UserProfile } from "../models/profile/schema.js";
 import { Property } from "../models/property/schema.js";
 import { RoommateProfile } from "../models/roommate/schema.js";
+import { Notification } from "../models/notification/schema.js";
 
 const adminRouter = express.Router();
 
@@ -111,7 +112,8 @@ adminRouter.get("/users", authMiddleware, adminMiddleware, async (req, res, next
               year: "numeric"
             })
           : "",
-        status
+        status,
+        reason: profile?.blockedReason || null
       };
     });
 
@@ -121,25 +123,45 @@ adminRouter.get("/users", authMiddleware, adminMiddleware, async (req, res, next
   }
 });
 
+adminRouter.get("/reports", authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const reports = await Notification.find({
+      userId: req.userId,
+      title: { $regex: /^Unblock request from/i }
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({ reports });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.patch("/users/:id/blocked", authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const { blocked } = req.body;
+    const { blocked, reason } = req.body;
 
     if (typeof blocked !== "boolean") {
       return res.status(400).json({ message: "blocked must be a boolean." });
     }
 
+    const updateData = {
+      deletedAt: blocked ? new Date() : null,
+      blockedReason: blocked ? reason?.trim() || null : null
+    };
+
     const updateResult = await UserProfile.updateOne(
       { userId },
-      { $set: { deletedAt: blocked ? new Date() : null } }
+      { $set: updateData }
     );
 
     if (updateResult.matchedCount === 0) {
       return res.status(404).json({ message: "User profile not found." });
     }
 
-    return res.status(200).json({ userId, blocked });
+    return res.status(200).json({ userId, blocked, reason: updateData.blockedReason });
   } catch (error) {
     next(error);
   }

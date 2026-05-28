@@ -22,6 +22,15 @@ export interface AdminUserRow {
   role: string;
   joined: string;
   status: string;
+  reason?: string | null;
+}
+
+export interface AdminReport {
+  id: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -94,12 +103,25 @@ export const getAdminUsers = async () => {
   return handleResponse<{ users: AdminUserRow[] }>(response);
 };
 
-export const setUserBlockedStatus = async (userId: string, blocked: boolean) => {
+export const getAdminReports = async () => {
+  const response = await fetch(`${apiUrl}/api/admin/reports`, {
+    method: "GET",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ reports: AdminReport[] }>(response);
+};
+
+export const setUserBlockedStatus = async (
+  userId: string,
+  blocked: boolean,
+  reason?: string
+) => {
   const response = await fetch(`${apiUrl}/api/admin/users/${userId}/blocked`, {
     method: "PATCH",
     headers: defaultHeaders,
     credentials: "include",
-    body: JSON.stringify({ blocked }),
+    body: JSON.stringify({ blocked, reason }),
   });
-  return handleResponse<{ userId: string; blocked: boolean }>(response);
+  return handleResponse<{ userId: string; blocked: boolean; reason?: string | null }>(response);
 };

@@ -36,7 +36,8 @@ const userProfileSchema = new Schema(
       default: "user",
       required: true
     },
-    deletedAt: { type: Date, default: null }
+    deletedAt: { type: Date, default: null },
+    blockedReason: { type: String, trim: true, default: null }
   },
   {
     collection: "userProfile",

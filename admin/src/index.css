@@ -176,10 +176,22 @@ input:focus {
 
 .search-bar {
   margin: 18px 0 22px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-bar select {
+  min-width: 150px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid #e6eef7;
+  background: white;
+  color: #1f2937;
 }
 
 .search-bar input {
-  width: 100%;
+  flex: 1;
   padding: 16px 18px;
   border-radius: 12px;
   border: 1px solid #e6eef7;
