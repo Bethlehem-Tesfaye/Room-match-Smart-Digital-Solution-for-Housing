@@ -11,6 +11,33 @@ import {
 import PropertyEditModal from "../components/PropertyEditModal";
 import SearchBar, { SearchFilter } from "../components/SearchBar";
 
+// Helper component to display polished, color-coded status badges
+function StatusBadge({ status }: { status: string | undefined }) {
+  const label = status || "-";
+  const normalized = label.toLowerCase().trim();
+
+  const baseStyle: React.CSSProperties = {
+    padding: "4px 10px",
+    borderRadius: "12px",
+    fontSize: "0.82rem",
+    fontWeight: "600",
+    display: "inline-block",
+    textAlign: "center",
+  };
+
+  if (normalized === "active") {
+    return <span style={{ ...baseStyle, backgroundColor: "#e6f4ea", color: "#137333" }}>Active</span>;
+  }
+  if (normalized === "rented") {
+    return <span style={{ ...baseStyle, backgroundColor: "#fce8e6", color: "#c5221f" }}>Rented</span>;
+  }
+  if (normalized === "reserved") {
+    return <span style={{ ...baseStyle, backgroundColor: "#fef7e0", color: "#b06000" }}>Reserved</span>;
+  }
+
+  return <span style={{ ...baseStyle, backgroundColor: "#f1f3f4", color: "#5f6368" }}>{label}</span>;
+}
+
 function PropertiesPage() {
   const [properties, setProperties] = useState<AdminPropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +64,6 @@ function PropertiesPage() {
   useEffect(() => {
     void load();
   }, []);
-
 
   const handleEditClick = async (prop: AdminPropertyRow) => {
     try {
@@ -104,90 +130,164 @@ function PropertiesPage() {
         case "status":
           return (prop.status ?? "").toLowerCase().includes(q);
         case "all":
-        default:
-          return (
-            prop.title.toLowerCase().includes(q) ||
-            (prop.ownerName ?? "").toLowerCase().includes(q) ||
-            (prop.ownerEmail ?? "").toLowerCase().includes(q) ||
-            (prop.place ?? "").toLowerCase().includes(q) ||
-            (prop.status ?? "").toLowerCase().includes(q)
-          );
+          default:
+            return (
+              prop.title.toLowerCase().includes(q) ||
+              (prop.ownerName ?? "").toLowerCase().includes(q) ||
+              (prop.ownerEmail ?? "").toLowerCase().includes(q) ||
+              (prop.place ?? "").toLowerCase().includes(q) ||
+              (prop.status ?? "").toLowerCase().includes(q)
+            );
       }
     });
   }, [properties, search, filter]);
 
   return (
     <div className="dashboard-wrapper">
-      <header className="dashboard-hero">
-        <div className="dashboard-inner">
-          <h1 className="hero-title">Properties</h1>
-          <div className="button-row">
-            <button onClick={load} className="button secondary">
-              Refresh
-            </button>
-          </div>
+      <header className="dashboard-hero" style={{ padding: "24px 0" }}>
+        <div className="dashboard-inner" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "1.6rem" }}>🏠</span>
+          <h1 className="hero-title" style={{ margin: 0, fontSize: "1.75rem" }}>Properties</h1>
         </div>
       </header>
 
       <main className="dashboard-main">
         <div className="container-wide">
-          <div className="table-controls" style={{display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between'}}>
+          <div className="table-controls" style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between", marginBottom: "20px" }}>
             <SearchBar
-            value={search}
-            onChange={setSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            placeholder="Search properties by title, owner, place, or status"
-            filterOptions={[
-              { value: "all", label: "All fields" },
-              { value: "title", label: "Title" },
-              { value: "owner", label: "Owner" },
-              { value: "email", label: "Owner Email" },
-              { value: "place", label: "Place" },
-              { value: "status", label: "Status" },
-            ]}
-          />
-            <div style={{display:'flex', gap:8}}>
-              <Link to="/dashboard" className="button">
-                Back to Dashboard
+              value={search}
+              onChange={setSearch}
+              filter={filter}
+              onFilterChange={setFilter}
+              placeholder="Search properties by title, owner, place, or status..."
+              filterOptions={[
+                { value: "all", label: "All fields" },
+                { value: "title", label: "Title" },
+                { value: "owner", label: "Owner" },
+                { value: "email", label: "Owner Email" },
+                { value: "place", label: "Place" },
+                { value: "status", label: "Status" },
+              ]}
+            />
+            {/* Cleaned layout controls with smaller, modern presentation buttons */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Link 
+                to="/dashboard" 
+                className="button" 
+                style={{ 
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  gap: "6px",
+                  padding: "8px 14px",
+                  fontSize: "0.88rem",
+                  backgroundColor: "#4f46e5",
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  color: "#ffffff"
+                }}
+              >
+                <span>⬅</span> Back to Dashboard
               </Link>
-              <button onClick={load} className="button secondary">
+              <button 
+                onClick={load} 
+                className="button secondary" 
+                style={{ 
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  gap: "6px",
+                  padding: "8px 14px",
+                  fontSize: "0.88rem",
+                  border: "1px solid #d1d5db",
+                  backgroundColor: "#ffffff",
+                  color: "#374151",
+                  borderRadius: "6px",
+                  cursor: "pointer"
+                }}
+              >
+                <span style={{ display: "inline-block", transform: loading ? "rotate(360deg)" : "none", transition: "transform 1s ease" }}>🔄</span> 
                 Refresh
               </button>
             </div>
           </div>
-          {error ? <div className="alert">{error}</div> : null}
+
+          {error ? <div className="alert" style={{ marginBottom: "20px" }}>⚠️ {error}</div> : null}
+
           {loading ? (
-            <div>Loading...</div>
+            <div style={{ padding: "40px", textAlign: "center", fontSize: "1rem", color: "#888" }}>
+              🔄 Loading property database...
+            </div>
           ) : (
-            <div className="table-card">
-              <table className="table">
+            /* Clean table wrapper showing structural borders and subtle soft cell divisions */
+            <div className="table-card" style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", backgroundColor: "#ffffff" }}>
+              <table className="table" style={{ width: "100%", borderCollapse: "collapse", margin: 0 }}>
                 <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Owner</th>
-                    <th>Email</th>
-                    <th>Place</th>
-                    <th>Posted</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                  <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Title</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Owner</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Email</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Place</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Posted</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Status</th>
+                    <th style={{ padding: "12px 16px", fontSize: "0.88rem", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProperties.map((p) => (
-                      <tr key={p.id}>
-                        <td>{p.title}</td>
-                        <td>{p.ownerName || "Unknown"}</td>
-                        <td>{p.ownerEmail || "-"}</td>
-                        <td>{p.place || "-"}</td>
-                        <td>{p.postedDate || "-"}</td>
-                        <td>{p.status || "-"}</td>
-                      <td className="button-row">
-                        <button onClick={() => handleEditClick(p)} className="button small">
-                          Edit
+                    <tr key={p.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: "600", color: "#111827" }}>{p.title}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#4b5563" }}>{p.ownerName || "Unknown"}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#6b7280" }}>
+                        <span style={{ marginRight: "6px", opacity: 0.7 }}>✉️</span>
+                        {p.ownerEmail || "-"}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#4b5563" }}>
+                        <span style={{ marginRight: "6px", opacity: 0.7 }}>📍</span>
+                        {p.place || "-"}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#6b7280" }}>
+                        <span style={{ marginRight: "6px", opacity: 0.7 }}>📅</span>
+                        {p.postedDate || "-"}
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <StatusBadge status={p.status} />
+                      </td>
+                      {/* Compact, well-aligned tactical management buttons */}
+                      <td className="button-row" style={{ padding: "12px 16px", display: "flex", gap: "6px", justifyContent: "center", border: "none" }}>
+                        <button 
+                          onClick={() => handleEditClick(p)} 
+                          className="button small"
+                          style={{ 
+                            display: "inline-flex", 
+                            alignItems: "center", 
+                            gap: "4px",
+                            padding: "6px 12px",
+                            fontSize: "0.82rem",
+                            backgroundColor: "#f3f4f6",
+                            border: "1px solid #d1d5db",
+                            color: "#374151",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          ✏️ Edit
                         </button>
-                        <button onClick={() => handleDelete(p)} className="button small danger">
-                          Delete
+                        <button 
+                          onClick={() => handleDelete(p)} 
+                          className="button small danger"
+                          style={{ 
+                            display: "inline-flex", 
+                            alignItems: "center", 
+                            gap: "4px",
+                            padding: "6px 12px",
+                            fontSize: "0.82rem",
+                            backgroundColor: "#fef2f2",
+                            border: "1px solid #fee2e2",
+                            color: "#dc2626",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          🗑️ Delete
                         </button>
                       </td>
                     </tr>
@@ -214,4 +314,3 @@ function PropertiesPage() {
 }
 
 export default PropertiesPage;
-

@@ -18,7 +18,9 @@ export const getMyProfile = async (req, res, next) => {
 export const requestUnblock = async (req, res, next) => {
   try {
     if (!req.userId) {
-      return res.status(401).json({ message: "You must be signed in to request an unblock." });
+      return res
+        .status(401)
+        .json({ message: "You must be signed in to request an unblock." });
     }
 
     const { reason } = req.body;
@@ -29,7 +31,8 @@ export const requestUnblock = async (req, res, next) => {
     }
 
     const adminProfiles = await UserProfile.find({ role: "admin" }).lean();
-    const requesterName = profile.fullName || req.user?.name || req.user?.email || "Unknown user";
+    const requesterName =
+      profile.fullName || req.user?.name || req.user?.email || "Unknown user";
     const adminNotifications = adminProfiles
       .map((adminProfile) => adminProfile.userId)
       .filter(Boolean)
@@ -44,7 +47,9 @@ export const requestUnblock = async (req, res, next) => {
 
     await Promise.all(adminNotifications);
 
-    return res.status(200).json({ message: "Your unblock request has been sent to admins." });
+    return res
+      .status(200)
+      .json({ message: "Your unblock request has been sent to admins." });
   } catch (err) {
     return next(err);
   }

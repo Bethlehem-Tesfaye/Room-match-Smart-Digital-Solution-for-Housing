@@ -209,6 +209,12 @@ export const attachUploadedPropertyImages = async (req, _res, next) => {
       ? req.body.existingImageUrls
       : [];
 
+    // Only process images if there are files or existingImageUrls provided
+    // This prevents accidentally deleting all images during a non-image update
+    if (!files.length && !existingImageUrls.length) {
+      return next();
+    }
+
     const uploadedUrls = files.length
       ? await uploadMultipleImages(files, "roomMatch/property", req.userId)
       : [];
