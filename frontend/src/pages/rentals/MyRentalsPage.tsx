@@ -674,7 +674,7 @@ function MyRentalsPage() {
                             >
                               {isTerminationRequester(contract)
                                 ? "Waiting for the other party"
-                                : "Your response is required"}
+                                : "Your response is requireda"}
                             </div>
                           ) : null}
 
@@ -812,6 +812,13 @@ function MyRentalsPage() {
                             >
                               Reject
                             </button>
+                            <p
+                              className="mt-2 text-xs"
+                              style={{ color: palette.softPurple }}
+                            >
+                              If you do not respond within 30 days the request
+                              will be automatically accepted.
+                            </p>
                           </>
                         )
                       ) : null}

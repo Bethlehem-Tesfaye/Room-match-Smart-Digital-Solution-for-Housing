@@ -7,10 +7,14 @@ import {
 } from "../conversation/schema.js";
 import { Property } from "../property/schema.js";
 import { Contract } from "./schema.js";
+import * as notificationService from "../notification/notification.service.js";
 
 const { Types } = mongoose;
 const PAYMENT_WINDOW_HOURS = 72;
 const PAYMENT_WINDOW_MS = PAYMENT_WINDOW_HOURS * 60 * 60 * 1000;
+const TERMINATION_AUTO_RESOLVE_DAYS = 30;
+const TERMINATION_AUTO_RESOLVE_MS =
+  TERMINATION_AUTO_RESOLVE_DAYS * 24 * 60 * 60 * 1000;
 
 const toObjectId = (value, fieldName) => {
   if (!Types.ObjectId.isValid(value)) {
@@ -187,7 +191,7 @@ const getConversationContext = async ({ conversationId, userId }) => {
   };
 };
 
-const hydrateContract = async (contractId) => {
+const loadHydratedContract = async (contractId) => {
   return Contract.findById(contractId)
     .populate({
       path: "tenantId",
@@ -206,6 +210,116 @@ const hydrateContract = async (contractId) => {
       select: "_id title city address price currency ownerId status"
     })
     .lean();
+};
+
+const resolveTermination = async (
+  contract,
+  resolverUserId = null,
+  mode = "manual",
+  session = null
+) => {
+  if (!contract) {
+    throw new CustomError("Rent request not found", 404);
+  }
+
+  if (contract.status !== "TERMINATION_PENDING") {
+    throw new CustomError("No termination request is pending", 400);
+  }
+
+  if (mode === "manual") {
+    if (contract.terminationRequestedBy?.equals(resolverUserId)) {
+      throw new CustomError(
+        "You cannot approve your own termination request",
+        403
+      );
+    }
+  }
+
+  const listing = await Property.findOneAndUpdate(
+    {
+      _id: contract.listingId,
+      deletedAt: null
+    },
+    {
+      $set: { status: "Active" }
+    },
+    { new: true, session }
+  );
+
+  if (!listing) {
+    throw new CustomError("Listing not found", 404);
+  }
+
+  contract.status = "TERMINATED";
+  contract.terminationResolvedAt = new Date();
+  contract.terminationRequestedBy = null;
+  contract.terminationRequestedAt = null;
+  await contract.save({ session });
+
+  return contract;
+};
+
+const checkAndAutoResolveTermination = async (contract) => {
+  if (!contract || contract.status !== "TERMINATION_PENDING") {
+    return contract;
+  }
+
+  if (!contract.terminationRequestedAt) {
+    return contract;
+  }
+
+  const terminationRequestedAt = new Date(contract.terminationRequestedAt);
+  if (
+    Date.now() - terminationRequestedAt.getTime() <
+    TERMINATION_AUTO_RESOLVE_MS
+  ) {
+    return contract;
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const latestContract = await Contract.findById(contract._id).session(session);
+
+    if (!latestContract) {
+      await session.abortTransaction();
+      return null;
+    }
+
+    if (
+      latestContract.status !== "TERMINATION_PENDING" ||
+      !latestContract.terminationRequestedAt ||
+      Date.now() - new Date(latestContract.terminationRequestedAt).getTime() <
+        TERMINATION_AUTO_RESOLVE_MS
+    ) {
+      await session.abortTransaction();
+      return loadHydratedContract(contract._id);
+    }
+
+    await resolveTermination(latestContract, null, "auto", session);
+
+    await session.commitTransaction();
+
+    const hydratedContract = await loadHydratedContract(contract._id);
+    if (hydratedContract) {
+      hydratedContract.terminationAutoResolved = true;
+    }
+
+    return hydratedContract;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+const hydrateContract = async (contractId) => {
+  const contract = await loadHydratedContract(contractId);
+
+  return checkAndAutoResolveTermination(contract);
 };
 
 export const createRentRequest = async ({
@@ -336,6 +450,25 @@ export const createTerminationRequest = async ({
 
     await session.commitTransaction();
 
+    // notify the other party that a termination was requested and will auto-accept in 30 days
+    try {
+      const accepterId = contract.ownerId.equals(normalizedRequesterId)
+        ? contract.tenantId
+        : contract.ownerId;
+
+      await notificationService.createNotification({
+        userId: accepterId,
+        type: "ListingUpdate",
+        title: "Termination requested",
+        content:
+          "A termination request was made for this contract. If you do not respond within 30 days it will be automatically accepted.",
+        relatedEntityId: contract._id
+      });
+    } catch (notifyErr) {
+      // swallowing notification errors to avoid failing the main flow
+      // logging could be added here if a logger is available
+    }
+
     return hydrateContract(contract._id);
   } catch (error) {
     await session.abortTransaction();
@@ -364,37 +497,7 @@ export const acceptTerminationRequest = async ({
       throw new CustomError("Rent request not found", 404);
     }
 
-    if (contract.status !== "TERMINATION_PENDING") {
-      throw new CustomError("No termination request is pending", 400);
-    }
-
-    if (contract.terminationRequestedBy.equals(normalizedRequesterId)) {
-      throw new CustomError(
-        "You cannot approve your own termination request",
-        403
-      );
-    }
-
-    const listing = await Property.findOneAndUpdate(
-      {
-        _id: contract.listingId,
-        deletedAt: null
-      },
-      {
-        $set: { status: "Active" }
-      },
-      { new: true, session }
-    );
-
-    if (!listing) {
-      throw new CustomError("Listing not found", 404);
-    }
-
-    contract.status = "TERMINATED";
-    contract.terminationResolvedAt = new Date();
-    contract.terminationRequestedBy = null;
-    contract.terminationRequestedAt = null;
-    await contract.save({ session });
+    await resolveTermination(contract, normalizedRequesterId, "manual", session);
 
     await session.commitTransaction();
 
@@ -857,7 +960,11 @@ export const getOwnerActiveRentRequests = async ({ ownerUserId }) => {
     })
     .lean();
 
-  return activeContracts.filter(
+  const hydratedActiveContracts = await Promise.all(
+    activeContracts.map((contract) => checkAndAutoResolveTermination(contract))
+  );
+
+  return hydratedActiveContracts.filter(Boolean).filter(
     (contract) =>
       contract.tenantId && contract.listingId && !contract.listingId.deletedAt
   );
@@ -888,7 +995,11 @@ export const getOwnerTerminationRequests = async ({ ownerUserId }) => {
     })
     .lean();
 
-  return terminationContracts.filter(
+  const hydratedTerminationContracts = await Promise.all(
+    terminationContracts.map((contract) => checkAndAutoResolveTermination(contract))
+  );
+
+  return hydratedTerminationContracts.filter(Boolean).filter(
     (contract) =>
       contract.tenantId && contract.listingId && !contract.listingId.deletedAt
   );
@@ -932,7 +1043,11 @@ export const getTenantRentalContracts = async ({ tenantUserId }) => {
     })
     .lean();
 
-  return contracts.filter((contract) => {
+  const hydratedContracts = await Promise.all(
+    contracts.map((contract) => checkAndAutoResolveTermination(contract))
+  );
+
+  return hydratedContracts.filter(Boolean).filter((contract) => {
     const listing = contract.listingId;
     const owner = contract.ownerId;
 

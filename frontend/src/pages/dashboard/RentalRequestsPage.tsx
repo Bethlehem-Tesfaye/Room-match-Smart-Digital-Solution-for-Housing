@@ -359,6 +359,21 @@ function RentalRequestsPage() {
                                 "the other party")}
                           </p>
                         ) : null}
+
+                        {activeTab === "termination" ? (
+                          <div
+                            className="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold"
+                            style={{
+                              borderColor: "#F59E0B",
+                              backgroundColor: "#FFFBEB",
+                              color: "#B45309",
+                            }}
+                          >
+                            Explicit notice: if you do not accept or reject
+                            within 30 days, this termination request will be
+                            automatically accepted.
+                          </div>
+                        ) : null}
                       </div>
 
                       <div className="flex items-center gap-2">
