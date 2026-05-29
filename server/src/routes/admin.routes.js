@@ -117,7 +117,7 @@ adminRouter.get(
 
       const users = await db
         .collection("user")
-        .find({})
+        .find({ deletedAt: null })
         .sort({ createdAt: -1 })
         .limit(100)
         .toArray();
@@ -390,6 +390,54 @@ adminRouter.patch(
       return res
         .status(200)
         .json({ userId, blocked, reason: updateData.blockedReason });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.delete(
+  "/users/:id",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const userId = req.params.id;
+      if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user id." });
+      }
+
+      if (userId === req.userId) {
+        return res
+          .status(400)
+          .json({ message: "You cannot delete your own account." });
+      }
+
+      const db = mongoose.connection.db;
+      if (!db) {
+        return res.status(500).json({ message: "Database connection unavailable." });
+      }
+
+      const updateResult = await db.collection("user").updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { deletedAt: new Date() } }
+      );
+
+      if (updateResult.matchedCount === 0) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      await UserProfile.updateOne(
+        { userId },
+        {
+          $set: {
+            deletedAt: new Date(),
+            blockedReason: "Deleted by admin"
+          }
+        }
+      );
+
+      return res.status(200).json({ success: true });
     } catch (error) {
       next(error);
     }

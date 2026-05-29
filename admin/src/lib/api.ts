@@ -149,6 +149,24 @@ export const getAdminUsers = async () => {
   return handleResponse<{ users: AdminUserRow[] }>(response);
 };
 
+export const deleteAdminUser = async (id: string) => {
+  const response = await fetch(`${apiUrl}/api/admin/users/${id}`, {
+    method: "DELETE",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ success: boolean }>(response);
+};
+
+export const signOutAdmin = async () => {
+  const response = await fetch(`${apiUrl}/api/auth/sign-out`, {
+    method: "POST",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse(response);
+};
+
 export const getAdminReports = async () => {
   const response = await fetch(`${apiUrl}/api/admin/reports`, {
     method: "GET",

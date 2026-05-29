@@ -14,7 +14,8 @@ export interface UserRow {
 const UserTable: React.FC<{
   users: UserRow[];
   onBlock: (user: UserRow) => void;
-}> = ({ users, onBlock }) => {
+  onDelete: (user: UserRow) => void;
+}> = ({ users, onBlock, onDelete }) => {
   return (
     <div className="table-card">
       <h3>User Management</h3>
@@ -28,6 +29,7 @@ const UserTable: React.FC<{
             <th>Joined</th>
             <th>Status</th>
             <th>Reason</th>
+            <th>Delete</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -48,6 +50,15 @@ const UserTable: React.FC<{
               <td>{u.joined}</td>
               <td>{u.status ?? "Active"}</td>
               <td>{u.reason || "—"}</td>
+              <td>
+                <button
+                  className="link-delete"
+                  onClick={() => onDelete(u)}
+                  title={`Delete ${u.role === "admin" ? "admin" : "user"} ${u.name}`}
+                >
+                  Delete
+                </button>
+              </td>
               <td>
                 {u.role === "admin" ? (
                   <span className="admin-action">—</span>

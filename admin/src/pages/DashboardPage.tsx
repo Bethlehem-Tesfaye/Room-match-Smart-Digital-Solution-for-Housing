@@ -1,10 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import StatsCards from "../components/StatsCards";
 import SearchBar, { SearchFilter } from "../components/SearchBar";
 import UserTable, { UserRow } from "../components/UserTable";
 import BlockUserModal from "../components/BlockUserModal";
-import { getAdminDashboardSummary, getAdminUsers, setUserBlockedStatus } from "../lib/api";
+import {
+  getAdminDashboardSummary,
+  getAdminUsers,
+  setUserBlockedStatus,
+  deleteAdminUser,
+  signOutAdmin,
+} from "../lib/api";
 
 const defaultStats = {
   totalUsers: 0,
@@ -18,6 +24,7 @@ const defaultStats = {
 function DashboardPage() {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [activeUserTab, setActiveUserTab] = useState<"users" | "admins">("users");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [statsData, setStatsData] = useState(defaultStats);
@@ -58,6 +65,18 @@ function DashboardPage() {
     [statsData]
   );
 
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOutAdmin();
+      navigate("/login", { replace: true });
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Logout failed. Please try again.");
+    }
+  };
+
   const handleBlockClick = (user: UserRow) => {
     setSelectedUser(user);
     setModalOpen(true);
@@ -88,6 +107,18 @@ function DashboardPage() {
     }
   };
 
+  const handleDeleteUser = async (user: UserRow) => {
+    const confirmText = `Are you sure you want to permanently delete ${user.name} (${user.role})? This cannot be undone.`;
+    if (!window.confirm(confirmText)) return;
+
+    try {
+      await deleteAdminUser(user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete user.");
+    }
+  };
+
   const filtered = users.filter((u) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -114,12 +145,31 @@ function DashboardPage() {
     }
   });
 
+  const adminUsers = useMemo(
+    () => filtered.filter((u) => u.role === "admin"),
+    [filtered]
+  );
+
+  const normalUsers = useMemo(
+    () => filtered.filter((u) => u.role !== "admin"),
+    [filtered]
+  );
+
+  const currentViewUsers = activeUserTab === "admins" ? adminUsers : normalUsers;
+
   return (
     <div className="dashboard-wrapper">
       <header className="dashboard-hero">
         <div className="dashboard-inner">
-          <h1 className="hero-title">Admin Dashboard</h1>
-          <p className="hero-sub">Manage users, properties, and roommate profiles</p>
+          <div className="dashboard-header-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <div>
+              <h1 className="hero-title">Admin Dashboard</h1>
+              <p className="hero-sub">Manage users, properties, and roommate profiles</p>
+            </div>
+            <button className="button logout-button" onClick={handleLogout} style={{ padding: "10px 16px", borderRadius: "8px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
+              Logout
+            </button>
+          </div>
           <StatsCards items={stats} />
         </div>
       </header>
@@ -129,7 +179,8 @@ function DashboardPage() {
           <SearchBar value={search} onChange={setSearch} filter={filter} onFilterChange={setFilter} />
 
           <div className="tabs">
-            <button className="tab active">Users ({loading ? "..." : statsData.totalUsers})</button>
+            <button className={`tab ${activeUserTab === "users" ? "active" : ""}`} onClick={() => setActiveUserTab("users")}>Users ({loading ? "..." : normalUsers.length})</button>
+            <button className={`tab ${activeUserTab === "admins" ? "active" : ""}`} onClick={() => setActiveUserTab("admins")}>Admins ({loading ? "..." : adminUsers.length})</button>
             <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link></button>
             <button className="tab">Roommates ({loading ? "..." : statsData.roommateProfiles})</button>
             <button className="tab">
@@ -141,7 +192,7 @@ function DashboardPage() {
           {loading && users.length === 0 ? (
             <div className="dashboard-placeholder">Loading latest admin data…</div>
           ) : (
-            <UserTable users={filtered} onBlock={handleBlockClick} />
+            <UserTable users={currentViewUsers} onBlock={handleBlockClick} onDelete={handleDeleteUser} />
           )}
         </div>
       </main>
