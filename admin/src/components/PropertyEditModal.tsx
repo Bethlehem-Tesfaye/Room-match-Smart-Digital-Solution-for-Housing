@@ -5,12 +5,14 @@ interface PropertyEditModalProps {
   property: AdminPropertyDetail | null;
   open: boolean;
   onClose: () => void;
-  onSave: (data: Partial<AdminPropertyDetail>) => Promise<void>;
+  onSave: (data: Partial<AdminPropertyDetail> | FormData) => Promise<void>;
   loading?: boolean;
 }
 
 function PropertyEditModal({ property, open, onClose, onSave, loading }: PropertyEditModalProps) {
   const [formData, setFormData] = useState<Partial<AdminPropertyDetail>>({});
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
 
   useEffect(() => {
     if (property) {
@@ -34,6 +36,8 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
         availableFrom: property.availableFrom,
         status: property.status,
       });
+      setExistingImageUrls(property.images?.map((image) => image.imageUrl) || []);
+      setNewImageFiles([]);
     }
   }, [property, open]);
 
@@ -52,10 +56,42 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    setNewImageFiles(Array.from(files));
+  };
+
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    setExistingImageUrls((prev) => prev.filter((url) => url !== imageUrl));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await onSave(formData);
+      if (!property) return;
+
+      const useFormData =
+        newImageFiles.length > 0 ||
+        existingImageUrls.length !== (property.images?.length ?? 0);
+
+      if (useFormData) {
+        const payload = new FormData();
+
+        Object.entries(formData).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          payload.append(key, typeof value === "boolean" ? String(value) : String(value));
+        });
+
+        payload.append("existingImageUrls", JSON.stringify(existingImageUrls));
+
+        newImageFiles.forEach((file) => payload.append("images", file));
+
+        await onSave(payload);
+      } else {
+        await onSave(formData);
+      }
+
       onClose();
     } catch (error) {
       console.error(error);
@@ -288,6 +324,41 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   Furnished
                 </label>
               </div>
+            </fieldset>
+
+            {/* Images */}
+            <fieldset className="form-section">
+              <legend>Images</legend>
+              {existingImageUrls.length > 0 && (
+                <div className="image-preview-grid">
+                  {existingImageUrls.map((imageUrl) => (
+                    <div key={imageUrl} className="image-preview-card">
+                      <img src={imageUrl} alt="Existing property" />
+                      <button
+                        type="button"
+                        className="button tiny danger"
+                        onClick={() => handleRemoveExistingImage(imageUrl)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="form-field">
+                <label htmlFor="images">Add Images</label>
+                <input
+                  id="images"
+                  name="images"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleFileChange}
+                />
+              </div>
+              {newImageFiles.length > 0 && (
+                <p>{newImageFiles.length} new image(s) ready to upload.</p>
+              )}
             </fieldset>
 
             {/* Availability & Status */}

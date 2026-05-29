@@ -5,9 +5,17 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 import adminMiddleware from "../middlewares/admin.middleware.js";
 import { env } from "../config/evnironments.js";
 import { UserProfile } from "../models/profile/schema.js";
-import { Property } from "../models/property/schema.js";
+import { Property, PropertyImage } from "../models/property/schema.js";
 import { RoommateProfile } from "../models/roommate/schema.js";
 import { Notification } from "../models/notification/schema.js";
+import {
+  attachUploadedPropertyImages,
+  makeUploader,
+  normalizePropertyMultipartBody
+} from "../middlewares/upload.middleware.js";
+import { syncPropertyImages } from "../utils/property.creator.utils.js";
+
+const uploader = makeUploader();
 
 const adminRouter = express.Router();
 
@@ -151,16 +159,21 @@ adminRouter.get("/properties", authMiddleware, adminMiddleware, async (req, res,
       .collection("user")
       .find({ _id: { $in: ownerIds.map((id) => new ObjectId(id)) } })
       .toArray();
-    const ownerMap = new Map(owners.map((o) => [String(o._id), o.name || o.email || "Unknown"]));
+    const ownerMap = new Map(owners.map((o) => [String(o._id), { name: o.name || o.email || "Unknown", email: o.email || "" }]));
 
-    const formatted = props.map((p) => ({
-      id: String(p._id),
-      title: p.title || "Untitled",
-      ownerName: ownerMap.get(p.ownerId) || "Unknown",
-      status: p.status || "Active",
-      createdAt: p.createdAt,
-      postedDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "",
-    }));
+    const formatted = props.map((p) => {
+      const ownerData = ownerMap.get(p.ownerId) || { name: "Unknown", email: "" };
+      return {
+        id: String(p._id),
+        title: p.title || "Untitled",
+        ownerName: ownerData.name,
+        ownerEmail: ownerData.email,
+        place: [p.address, p.city].filter(Boolean).join(", "),
+        status: p.status || "Active",
+        createdAt: p.createdAt,
+        postedDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "",
+      };
+    });
     return res.status(200).json({ properties: formatted });
   } catch (error) {
     next(error);
@@ -180,10 +193,15 @@ adminRouter.get("/properties/:id", authMiddleware, adminMiddleware, async (req, 
       .collection("user")
       .findOne({ _id: new ObjectId(prop.ownerId) });
 
+    const images = await PropertyImage.find({ propertyId: prop._id, deletedAt: null })
+      .sort({ isPrimary: -1, createdAt: 1 })
+      .lean();
+
     return res.status(200).json({
       property: {
         ...prop,
         ownerName: owner?.name || owner?.email || "Unknown",
+        images,
       },
     });
   } catch (error) {
@@ -201,16 +219,37 @@ adminRouter.post("/properties", authMiddleware, adminMiddleware, async (req, res
   }
 });
 
-adminRouter.patch("/properties/:id", authMiddleware, adminMiddleware, async (req, res, next) => {
-  try {
-    const updates = { ...req.body, updatedAt: new Date() };
-    const updated = await Property.findByIdAndUpdate(req.params.id, updates, { new: true }).lean();
-    if (!updated) return res.status(404).json({ message: "Property not found." });
-    return res.status(200).json({ property: updated });
-  } catch (error) {
-    next(error);
+adminRouter.patch(
+  "/properties/:id",
+  authMiddleware,
+  adminMiddleware,
+  uploader.array("images", 10),
+  normalizePropertyMultipartBody,
+  attachUploadedPropertyImages,
+  async (req, res, next) => {
+    try {
+      const property = await Property.findById(req.params.id).lean();
+      if (!property) {
+        return res.status(404).json({ message: "Property not found." });
+      }
+
+      const { images, ...updates } = req.body;
+      const updated = await Property.findByIdAndUpdate(
+        req.params.id,
+        { ...updates, updatedAt: new Date() },
+        { new: true }
+      ).lean();
+
+      if (images !== undefined) {
+        await syncPropertyImages({ propertyId: property._id, images });
+      }
+
+      return res.status(200).json({ property: updated });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 adminRouter.delete("/properties/:id", authMiddleware, adminMiddleware, async (req, res, next) => {
   try {

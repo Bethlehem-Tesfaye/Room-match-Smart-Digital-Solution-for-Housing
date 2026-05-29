@@ -217,6 +217,8 @@ export const attachUploadedPropertyImages = async (req, _res, next) => {
       Boolean
     );
 
+    req.body.images = [];
+
     if (!mergedImageUrls.length) {
       return next();
     }

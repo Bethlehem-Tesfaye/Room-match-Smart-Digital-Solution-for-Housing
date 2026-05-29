@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useCurrentUser } from "../features/auth/hooks/useCurrentUser";
 import { useMyProfile, useRequestUnblock } from "../features/profile/hooks/useProfileHooks";
+import { useThemePreference } from "../features/setting/hooks/useSettingHooks";
 
 export function ProtectedLayout() {
   const { user, isPending } = useCurrentUser();
@@ -9,6 +10,7 @@ export function ProtectedLayout() {
 
   const profileQuery = useMyProfile(!!user);
   const unblockMutation = useRequestUnblock();
+  const { theme, setTheme } = useThemePreference();
 
   const isAuthenticationLoading = isPending || (user && profileQuery.isLoading);
   const isBlockedAccount =
@@ -27,32 +29,42 @@ export function ProtectedLayout() {
   if (isBlockedAccount) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
-        <div className="w-full max-w-2xl rounded-3xl border border-base-300 bg-white p-8 shadow-lg dark:bg-slate-900">
-          <h1 className="text-3xl font-semibold mb-3">Account Blocked</h1>
-          <p className="mb-4 text-base-content/80">
-            {profileQuery.error instanceof Error ? profileQuery.error.message : "Your account has been blocked."}
-          </p>
-          <p className="mb-6 text-base-content/70">
-            If you believe this block was applied in error, submit a request below and our admin team will review it.
-          </p>
+        <div className="w-full max-w-2xl rounded-3xl border border-base-300 bg-white p-8 shadow-lg dark:bg-slate-900 dark:text-slate-100">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold mb-3">Account Blocked</h1>
+              <p className="mb-2 text-slate-700 dark:text-slate-300">
+                {profileQuery.error instanceof Error ? profileQuery.error.message : "Your account has been blocked."}
+              </p>
+              <p className="text-slate-600 dark:text-slate-400">
+                If you believe this block was applied in error, submit a request below and our admin team will review it.
+              </p>
+            </div>
+            <button
+              className="btn btn-outline btn-sm w-full sm:w-auto"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+            </button>
+          </div>
 
-          <label className="block mb-2 font-medium">Request Unblock Reason (optional)</label>
+          <label className="block mb-2 font-medium text-slate-900 dark:text-slate-100">Request Unblock Reason (optional)</label>
           <textarea
             rows={4}
-            className="w-full rounded-2xl border border-base-300 bg-base-100 p-3 text-base-content focus:border-primary focus:outline-none"
+            className="w-full rounded-2xl border border-base-300 bg-base-100 p-3 text-slate-900 outline-none focus:border-primary focus:outline-none dark:bg-slate-800 dark:text-slate-100"
             value={requestReason}
             onChange={(event) => setRequestReason(event.target.value)}
             placeholder="Optional note to the admin explaining why you need access restored"
           />
 
           {unblockMutation.isError && (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/40 dark:text-red-200">
               {unblockMutation.error?.message}
             </div>
           )}
 
           {unblockMutation.isSuccess && (
-            <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+            <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/40 dark:text-green-200">
               {unblockMutation.data?.message ?? "Your unblock request has been submitted."}
             </div>
           )}

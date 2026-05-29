@@ -33,10 +33,18 @@ export interface AdminReport {
   createdAt: string;
 }
 
+export interface AdminPropertyImage {
+  _id: string;
+  imageUrl: string;
+  isPrimary: boolean;
+}
+
 export interface AdminPropertyRow {
   id: string;
   title: string;
   ownerName?: string;
+  ownerEmail?: string;
+  place?: string;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -67,6 +75,7 @@ export interface AdminPropertyDetail {
   status: string;
   createdAt: string;
   updatedAt: string;
+  images?: AdminPropertyImage[];
 }
 
 
@@ -178,13 +187,23 @@ export const createAdminProperty = async (payload: Record<string, any>) => {
   return handleResponse<{ property: AdminPropertyDetail }>(response);
 };
 
-export const updateAdminProperty = async (id: string, payload: Record<string, any>) => {
-  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, {
+export const updateAdminProperty = async (
+  id: string,
+  payload: Record<string, any> | FormData
+) => {
+  const requestInit: RequestInit = {
     method: "PATCH",
-    headers: defaultHeaders,
     credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  };
+
+  if (payload instanceof FormData) {
+    requestInit.body = payload;
+  } else {
+    requestInit.headers = defaultHeaders;
+    requestInit.body = JSON.stringify(payload);
+  }
+
+  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, requestInit);
   return handleResponse<{ property: AdminPropertyDetail }>(response);
 };
 

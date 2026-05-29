@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getAdminProperties,
   getAdminProperty,
-  createAdminProperty,
   updateAdminProperty,
   deleteAdminProperty,
   AdminPropertyRow,
   AdminPropertyDetail,
 } from "../lib/api";
 import PropertyEditModal from "../components/PropertyEditModal";
+import SearchBar, { SearchFilter } from "../components/SearchBar";
 
 function PropertiesPage() {
   const [properties, setProperties] = useState<AdminPropertyRow[]>([]);
@@ -17,6 +18,8 @@ function PropertiesPage() {
   const [selectedProperty, setSelectedProperty] = useState<AdminPropertyDetail | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<SearchFilter>("all");
 
   const load = async () => {
     setLoading(true);
@@ -35,31 +38,6 @@ function PropertiesPage() {
     void load();
   }, []);
 
-  const handleCreate = async () => {
-    const title = window.prompt("Property title");
-    if (!title) return;
-    try {
-      const res = await createAdminProperty({ title });
-      const createdDate = res.property.createdAt ? new Date(res.property.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }) : "";
-      setProperties((p) => [
-        {
-          id: String(res.property._id),
-          title: res.property.title,
-          ownerName: res.property.ownerName || "Unknown",
-          status: res.property.status,
-          createdAt: res.property.createdAt,
-          postedDate: createdDate,
-        },
-        ...p,
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Create failed.");
-    }
-  };
 
   const handleEditClick = async (prop: AdminPropertyRow) => {
     try {
@@ -74,7 +52,7 @@ function PropertiesPage() {
     }
   };
 
-  const handleSaveEdit = async (data: Partial<AdminPropertyDetail>) => {
+  const handleSaveEdit = async (data: Partial<AdminPropertyDetail> | FormData) => {
     if (!selectedProperty) return;
     try {
       setModalLoading(true);
@@ -84,8 +62,9 @@ function PropertiesPage() {
           x.id === selectedProperty._id
             ? {
                 ...x,
-                title: (res.property as any).title || res.property.title,
-                status: (res.property as any).status || res.property.status,
+                title: res.property.title,
+                status: res.property.status,
+                place: [res.property.address, res.property.city].filter(Boolean).join(", "),
               }
             : x
         )
@@ -109,14 +88,33 @@ function PropertiesPage() {
     }
   };
 
-  const handleViewDetails = (prop: AdminPropertyRow) => {
-    const details = [
-      `Owner: ${prop.ownerName || "Unknown"}`,
-      `Type: ${prop.status}`,
-      `Posted: ${prop.postedDate}`,
-    ].join("\n");
-    alert(details);
-  };
+  const filteredProperties = useMemo(() => {
+    if (!search) return properties;
+    const q = search.toLowerCase();
+    return properties.filter((prop) => {
+      switch (filter) {
+        case "title":
+          return prop.title.toLowerCase().includes(q);
+        case "owner":
+          return (prop.ownerName ?? "").toLowerCase().includes(q);
+        case "email":
+          return (prop.ownerEmail ?? "").toLowerCase().includes(q);
+        case "place":
+          return (prop.place ?? "").toLowerCase().includes(q);
+        case "status":
+          return (prop.status ?? "").toLowerCase().includes(q);
+        case "all":
+        default:
+          return (
+            prop.title.toLowerCase().includes(q) ||
+            (prop.ownerName ?? "").toLowerCase().includes(q) ||
+            (prop.ownerEmail ?? "").toLowerCase().includes(q) ||
+            (prop.place ?? "").toLowerCase().includes(q) ||
+            (prop.status ?? "").toLowerCase().includes(q)
+          );
+      }
+    });
+  }, [properties, search, filter]);
 
   return (
     <div className="dashboard-wrapper">
@@ -124,9 +122,6 @@ function PropertiesPage() {
         <div className="dashboard-inner">
           <h1 className="hero-title">Properties</h1>
           <div className="button-row">
-            <button onClick={handleCreate} className="button">
-              Create Property
-            </button>
             <button onClick={load} className="button secondary">
               Refresh
             </button>
@@ -136,6 +131,31 @@ function PropertiesPage() {
 
       <main className="dashboard-main">
         <div className="container-wide">
+          <div className="table-controls" style={{display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between'}}>
+            <SearchBar
+            value={search}
+            onChange={setSearch}
+            filter={filter}
+            onFilterChange={setFilter}
+            placeholder="Search properties by title, owner, place, or status"
+            filterOptions={[
+              { value: "all", label: "All fields" },
+              { value: "title", label: "Title" },
+              { value: "owner", label: "Owner" },
+              { value: "email", label: "Owner Email" },
+              { value: "place", label: "Place" },
+              { value: "status", label: "Status" },
+            ]}
+          />
+            <div style={{display:'flex', gap:8}}>
+              <Link to="/dashboard" className="button">
+                Back to Dashboard
+              </Link>
+              <button onClick={load} className="button secondary">
+                Refresh
+              </button>
+            </div>
+          </div>
           {error ? <div className="alert">{error}</div> : null}
           {loading ? (
             <div>Loading...</div>
@@ -146,24 +166,22 @@ function PropertiesPage() {
                   <tr>
                     <th>Title</th>
                     <th>Owner</th>
+                    <th>Email</th>
+                    <th>Place</th>
                     <th>Posted</th>
                     <th>Status</th>
-                    <th>Details</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {properties.map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.title}</td>
-                      <td>{p.ownerName || "Unknown"}</td>
-                      <td>{p.postedDate || "-"}</td>
-                      <td>{p.status || "-"}</td>
-                      <td>
-                        <button onClick={() => handleViewDetails(p)} className="button tiny">
-                          View
-                        </button>
-                      </td>
+                  {filteredProperties.map((p) => (
+                      <tr key={p.id}>
+                        <td>{p.title}</td>
+                        <td>{p.ownerName || "Unknown"}</td>
+                        <td>{p.ownerEmail || "-"}</td>
+                        <td>{p.place || "-"}</td>
+                        <td>{p.postedDate || "-"}</td>
+                        <td>{p.status || "-"}</td>
                       <td className="button-row">
                         <button onClick={() => handleEditClick(p)} className="button small">
                           Edit

@@ -213,11 +213,12 @@ input:focus {
 }
 
 .dashboard-main {
-  margin-top: -42px;
+  margin-top: 20px;
+  padding-top: 10px;
 }
 
 .search-bar {
-  margin: 18px 0 22px;
+  margin: 28px 0 28px;
   display: flex;
   gap: 12px;
   align-items: center;
