@@ -72,20 +72,37 @@ adminRouter.get(
           .json({ message: "Database connection is not available." });
       }
 
-      const totalUsers = await db.collection("user").countDocuments({});
-      const totalAdmins = await UserProfile.countDocuments({
-        role: "admin",
+      const activeUsers = await db
+        .collection("user")
+        .find({ deletedAt: null })
+        .project({ _id: 1 })
+        .toArray();
+      const activeUserIds = activeUsers.map((user) => String(user._id));
+
+      const ownerIds = new Set(
+        (await Property.distinct("ownerId", { deletedAt: null })).map(String)
+      );
+
+      const profiles = await UserProfile.find({
+        userId: { $in: activeUserIds },
         deletedAt: null
-      });
-      const owners = (await Property.distinct("ownerId", { deletedAt: null }))
-        .length;
+      }).lean();
+      const adminIds = new Set(
+        profiles.filter((profile) => profile.role === "admin").map((profile) => String(profile.userId))
+      );
+
+      const totalAdmins = adminIds.size;
+      const totalUsers = activeUserIds.filter((id) => !adminIds.has(id)).length;
+      const tenants = activeUserIds.filter(
+        (id) => !adminIds.has(id) && !ownerIds.has(id)
+      ).length;
+      const owners = ownerIds.size;
       const properties = await Property.countDocuments({ deletedAt: null });
       const activeListings = await Property.countDocuments({
         status: "Active",
         deletedAt: null
       });
       const roommateProfiles = await RoommateProfile.countDocuments();
-      const tenants = Math.max(totalUsers - totalAdmins, 0);
 
       return res.status(200).json({
         totalUsers,
