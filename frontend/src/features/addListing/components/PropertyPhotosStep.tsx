@@ -39,7 +39,7 @@ function PropertyPhotosStep({
         htmlFor="add-listing-upload"
         className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed"
         style={{
-          borderColor: errors.images ? "rgb(220 38 38)" : palette.border,
+          borderColor: palette.border,
           backgroundColor: palette.cardBg,
         }}
       >
@@ -51,9 +51,6 @@ function PropertyPhotosStep({
           PNG, JPG up to 10MB
         </p>
       </label>
-      {errors.images ? (
-        <p className="-mt-3 text-sm text-red-600">{errors.images}</p>
-      ) : null}
       <input
         id="add-listing-upload"
         type="file"

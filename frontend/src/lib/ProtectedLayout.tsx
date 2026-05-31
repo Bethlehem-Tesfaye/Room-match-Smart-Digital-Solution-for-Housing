@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useCurrentUser } from "../features/auth/hooks/useCurrentUser";
 
 export function ProtectedLayout() {
   const { user, isPending } = useCurrentUser();
+  const location = useLocation();
 
   if (isPending) {
     return (
@@ -11,7 +12,15 @@ export function ProtectedLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: `${location.pathname}${location.search}${location.hash}`,
+        }}
+      />
+    );
   }
 
   return <Outlet />;

@@ -8,10 +8,13 @@ import {
   Sparkles,
   Upload,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { api } from "../../../lib/axios";
 import { palette } from "../../../theme/palette";
+import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { useAmenities } from "../../property/hooks/usePropertyHooks";
 import type { Property } from "../../property/types/type";
 import {
@@ -23,6 +26,13 @@ import type {
   EditListingSectionKey,
   EditListingValidationErrors,
 } from "../types/types";
+import type { BankInfoDraft, BankOption } from "../../addListing/types/types";
+import BankInformationStep from "../../addListing/components/BankInformationStep";
+import {
+  currencyOptions,
+  initialBankInfoDraft,
+  propertyTypeOptions,
+} from "../../addListing/components/addListingForm.constants";
 
 const sectionItems: Array<{
   key: EditListingSectionKey;
@@ -32,18 +42,9 @@ const sectionItems: Array<{
   { key: "details", label: "Property Details", icon: Building2 },
   { key: "location", label: "Location", icon: MapPin },
   { key: "photos", label: "Photos", icon: ImageIcon },
+  { key: "bank", label: "Bank Information", icon: Sparkles },
   { key: "amenities", label: "Amenities & Final", icon: Sparkles },
 ];
-
-const propertyTypeOptions = [
-  "Apartment",
-  "House",
-  "Condo",
-  "Studio",
-  "SharedRoom",
-] as const;
-
-const currencyOptions = ["ETB", "USD", "EUR"];
 
 const createDraftFromProperty = (property: Property): EditListingDraft => ({
   title: property.title ?? "",
@@ -68,6 +69,8 @@ const createDraftFromProperty = (property: Property): EditListingDraft => ({
       : String(property.areaSqFt),
   address: property.address ?? "",
   city: property.city ?? "",
+  leasePeriod: String(property.leasePeriod ?? ""),
+  initialPayment: String(property.initialPayment ?? ""),
   images: (property.images ?? []).map((image) => ({
     id: image._id,
     imageUrl: image.imageUrl,
@@ -88,6 +91,7 @@ interface EditListingFormProps {
 
 function EditListingForm({ propertyId }: EditListingFormProps) {
   const navigate = useNavigate();
+  const profileQuery = useMyProfile(true);
   const {
     data: property,
     isLoading,
@@ -95,21 +99,56 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     error,
   } = useEditListingProperty(propertyId);
   const { data: amenities = [] } = useAmenities();
+  const { data: banks = [], isLoading: isLoadingBanks } = useQuery<
+    BankOption[],
+    Error
+  >({
+    queryKey: ["banks"],
+    queryFn: async () => {
+      const response = await api.get<{ banks: BankOption[] }>("/api/banks");
+      return response.data.banks ?? [];
+    },
+  });
   const updateMutation = useUpdateEditListingProperty();
   const validAmenityIdSet = useMemo(
     () => new Set(amenities.map((amenity) => amenity._id)),
     [amenities],
   );
+  const isRentedProperty = property?.status === "Rented";
 
   const [activeSection, setActiveSection] =
     useState<EditListingSectionKey>("details");
   const [draft, setDraft] = useState<EditListingDraft | null>(null);
+  const [bankInfo, setBankInfo] = useState<BankInfoDraft>(initialBankInfoDraft);
   const [attemptedSave, setAttemptedSave] = useState(false);
+  const selectedBankName = useMemo(() => {
+    return (
+      banks.find((bank) => bank.id === bankInfo.bankCode)?.name ??
+      bankInfo.bankName ??
+      ""
+    );
+  }, [bankInfo.bankCode, bankInfo.bankName, banks]);
 
   useEffect(() => {
     if (!property) return;
     setDraft(createDraftFromProperty(property));
   }, [property]);
+
+  useEffect(() => {
+    const profileBankInfo = profileQuery.data?.bankInfo;
+
+    if (!profileBankInfo) {
+      return;
+    }
+
+    setBankInfo({
+      accountName: profileBankInfo.accountName ?? "",
+      accountNumber: profileBankInfo.accountNumber ?? "",
+      bankCode: profileBankInfo.bankCode ?? "",
+      bankName: profileBankInfo.bankName ?? "",
+      chapaSubaccountId: profileBankInfo.chapaSubaccountId ?? "",
+    });
+  }, [profileQuery.data]);
 
   useEffect(() => {
     if (!draft) return;
@@ -152,6 +191,14 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       nextErrors.price = "Monthly rent is required.";
     }
 
+    if (!draft.leasePeriod || Number(draft.leasePeriod) <= 0) {
+      nextErrors.leasePeriod = "Lease period (months) is required.";
+    }
+
+    if (draft.initialPayment === "" || Number(draft.initialPayment) < 0) {
+      nextErrors.initialPayment = "Initial payment is required.";
+    }
+
     if (!draft.address.trim()) {
       nextErrors.address = "Address is required.";
     }
@@ -160,18 +207,44 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       nextErrors.city = "City is required.";
     }
 
-    if (!draft.images.length) {
-      nextErrors.images = "At least one property photo is required.";
+    return nextErrors;
+  }, [draft]);
+
+  const bankValidationErrors = useMemo(() => {
+    const nextErrors: {
+      accountName?: string;
+      accountNumber?: string;
+      bankCode?: string;
+      bankName?: string;
+    } = {};
+
+    if (!bankInfo.accountName.trim()) {
+      nextErrors.accountName = "Account name is required.";
+    }
+
+    if (!bankInfo.accountNumber.trim()) {
+      nextErrors.accountNumber = "Account number is required.";
+    }
+
+    if (!bankInfo.bankCode.trim()) {
+      nextErrors.bankCode = "Bank name is required.";
     }
 
     return nextErrors;
-  }, [draft]);
+  }, [bankInfo]);
 
   const setField = <K extends keyof EditListingDraft>(
     key: K,
     value: EditListingDraft[K],
   ) => {
     setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  const setBankField = <K extends keyof BankInfoDraft>(
+    key: K,
+    value: BankInfoDraft[K],
+  ) => {
+    setBankInfo((prev) => ({ ...prev, [key]: value }));
   };
 
   const uploadPhotos = (event: ChangeEvent<HTMLInputElement>) => {
@@ -259,12 +332,48 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   const submitUpdate = async () => {
     if (!draft) return;
 
+    if (isRentedProperty) {
+      toast.error("Rented properties cannot be edited.");
+      return;
+    }
+
     setAttemptedSave(true);
 
     if (Object.keys(errors).length > 0) {
-      if (errors.title || errors.price) setActiveSection("details");
+      if (
+        errors.title ||
+        errors.price ||
+        errors.leasePeriod ||
+        errors.initialPayment
+      )
+        setActiveSection("details");
       else if (errors.address || errors.city) setActiveSection("location");
-      else if (errors.images) setActiveSection("photos");
+      return;
+    }
+
+    if (
+      bankValidationErrors.accountName ||
+      bankValidationErrors.accountNumber ||
+      bankValidationErrors.bankCode
+    ) {
+      setActiveSection("bank");
+      return;
+    }
+
+    try {
+      await api.post("/api/profile/setup-bank", {
+        accountName: bankInfo.accountName.trim(),
+        accountNumber: bankInfo.accountNumber.trim(),
+        bankCode: bankInfo.bankCode.trim(),
+        bankName: selectedBankName.trim(),
+      });
+    } catch (bankError) {
+      const message =
+        bankError instanceof Error
+          ? bankError.message
+          : "Failed to save bank information";
+      toast.error(message);
+      setActiveSection("bank");
       return;
     }
 
@@ -276,6 +385,8 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     payload.append("price", String(Number(draft.price || 0)));
     payload.append("currency", draft.currency);
     payload.append("deposit", String(Number(draft.deposit || 0)));
+    payload.append("leasePeriod", String(Number(draft.leasePeriod || 0)));
+    payload.append("initialPayment", String(Number(draft.initialPayment || 0)));
     payload.append("address", draft.address.trim());
     payload.append("city", draft.city.trim());
     payload.append(
@@ -441,6 +552,18 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
         <p className="mt-2 text-lg" style={{ color: palette.softPurple }}>
           Jump to any section and update your property details quickly.
         </p>
+        {isRentedProperty ? (
+          <div
+            className="mt-4 rounded-xl border px-4 py-3 text-sm font-semibold"
+            style={{
+              borderColor: "#F4C7C7",
+              backgroundColor: "#FFF5F5",
+              color: "#B42318",
+            }}
+          >
+            This property is already rented, so editing is locked.
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
@@ -670,6 +793,140 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                   className="text-sm font-semibold"
                   style={{ color: palette.deep }}
                 >
+                  Floor Number
+                </label>
+                <input
+                  value={draft.floorNumber}
+                  onChange={(event) =>
+                    setField(
+                      "floorNumber",
+                      event.target.value.replace(/[^\d]/g, ""),
+                    )
+                  }
+                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  style={{
+                    borderColor: palette.border,
+                    backgroundColor: palette.inputBg,
+                    color: palette.deep,
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-semibold"
+                  style={{ color: palette.deep }}
+                >
+                  Total Floors
+                </label>
+                <input
+                  value={draft.totalFloors}
+                  onChange={(event) =>
+                    setField(
+                      "totalFloors",
+                      event.target.value.replace(/[^\d]/g, ""),
+                    )
+                  }
+                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  style={{
+                    borderColor: palette.border,
+                    backgroundColor: palette.inputBg,
+                    color: palette.deep,
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-semibold"
+                  style={{ color: palette.deep }}
+                >
+                  Area (sq ft)
+                </label>
+                <input
+                  value={draft.areaSqFt}
+                  onChange={(event) =>
+                    setField(
+                      "areaSqFt",
+                      event.target.value.replace(/[^\d]/g, ""),
+                    )
+                  }
+                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  style={{
+                    borderColor: palette.border,
+                    backgroundColor: palette.inputBg,
+                    color: palette.deep,
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-semibold"
+                  style={{ color: palette.deep }}
+                >
+                  Lease Period (months) *
+                </label>
+                <input
+                  value={draft.leasePeriod}
+                  onChange={(event) =>
+                    setField(
+                      "leasePeriod",
+                      event.target.value.replace(/[^\d]/g, ""),
+                    )
+                  }
+                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  style={{
+                    borderColor:
+                      attemptedSave && errors.leasePeriod
+                        ? "rgb(220 38 38)"
+                        : palette.border,
+                    backgroundColor: palette.inputBg,
+                    color: palette.deep,
+                  }}
+                />
+                {attemptedSave && errors.leasePeriod ? (
+                  <p className="text-sm text-red-600">{errors.leasePeriod}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-semibold"
+                  style={{ color: palette.deep }}
+                >
+                  Initial Payment *
+                </label>
+                <input
+                  value={draft.initialPayment}
+                  onChange={(event) =>
+                    setField(
+                      "initialPayment",
+                      event.target.value.replace(/[^\d]/g, ""),
+                    )
+                  }
+                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  style={{
+                    borderColor:
+                      attemptedSave && errors.initialPayment
+                        ? "rgb(220 38 38)"
+                        : palette.border,
+                    backgroundColor: palette.inputBg,
+                    color: palette.deep,
+                  }}
+                />
+                {attemptedSave && errors.initialPayment ? (
+                  <p className="text-sm text-red-600">
+                    {errors.initialPayment}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-semibold"
+                  style={{ color: palette.deep }}
+                >
                   Bedrooms
                 </label>
                 <input
@@ -767,27 +1024,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                 <p className="text-sm text-red-600">{errors.city}</p>
               ) : null}
             </div>
-
-            <div className="space-y-2">
-              <label
-                className="text-sm font-semibold"
-                style={{ color: palette.deep }}
-              >
-                Area (sq ft)
-              </label>
-              <input
-                value={draft.areaSqFt}
-                onChange={(event) =>
-                  setField("areaSqFt", event.target.value.replace(/[^\d]/g, ""))
-                }
-                className="w-full rounded-lg border px-4 py-2 outline-none"
-                style={{
-                  borderColor: palette.border,
-                  backgroundColor: palette.inputBg,
-                  color: palette.deep,
-                }}
-              />
-            </div>
           </div>
         ) : null}
 
@@ -797,10 +1033,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
               htmlFor="edit-listing-upload"
               className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed"
               style={{
-                borderColor:
-                  attemptedSave && errors.images
-                    ? "rgb(220 38 38)"
-                    : palette.border,
+                borderColor: palette.border,
                 backgroundColor: palette.cardBg,
               }}
             >
@@ -812,10 +1045,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                 Up to 10 images, JPG/PNG/WEBP
               </p>
             </label>
-            {attemptedSave && errors.images ? (
-              <p className="text-sm text-red-600">{errors.images}</p>
-            ) : null}
-
             <input
               id="edit-listing-upload"
               type="file"
@@ -865,6 +1094,30 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
               ))}
             </div>
           </div>
+        ) : null}
+
+        {activeSection === "bank" ? (
+          <BankInformationStep
+            bankInfo={bankInfo}
+            banks={banks}
+            hasExistingBankAccount={Boolean(bankInfo.chapaSubaccountId)}
+            isLoadingBanks={isLoadingBanks}
+            errors={{
+              accountName: attemptedSave
+                ? bankValidationErrors.accountName
+                : undefined,
+              accountNumber: attemptedSave
+                ? bankValidationErrors.accountNumber
+                : undefined,
+              bankCode: attemptedSave
+                ? bankValidationErrors.bankCode
+                : undefined,
+              bankName: attemptedSave
+                ? bankValidationErrors.bankName
+                : undefined,
+            }}
+            onChangeField={setBankField}
+          />
         ) : null}
 
         {activeSection === "amenities" ? (
@@ -970,12 +1223,16 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
             onClick={() => {
               void submitUpdate();
             }}
-            disabled={updateMutation.isPending}
+            disabled={updateMutation.isPending || isRentedProperty}
             className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
             style={{ backgroundColor: palette.purple, color: palette.pageBg }}
           >
             <CheckCircle2 size={16} />
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            {isRentedProperty
+              ? "Editing Locked"
+              : updateMutation.isPending
+                ? "Saving..."
+                : "Save Changes"}
           </button>
         </div>
       </div>

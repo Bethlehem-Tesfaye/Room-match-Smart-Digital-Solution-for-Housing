@@ -4,6 +4,7 @@ export type EditListingSectionKey =
   | "details"
   | "location"
   | "photos"
+  | "bank"
   | "amenities";
 
 export interface EditListingImageDraft {
@@ -28,6 +29,8 @@ export interface EditListingDraft {
   areaSqFt: string;
   address: string;
   city: string;
+  leasePeriod: string;
+  initialPayment: string;
   images: EditListingImageDraft[];
   amenityIds: string[];
   availableFrom: string;
@@ -38,7 +41,22 @@ export interface EditListingDraft {
 export interface EditListingValidationErrors {
   title?: string;
   price?: string;
+  leasePeriod?: string;
+  initialPayment?: string;
   address?: string;
   city?: string;
   images?: string;
+}
+
+export interface BankInfoDraft {
+  accountName: string;
+  accountNumber: string;
+  bankCode: string;
+  bankName: string;
+  chapaSubaccountId: string;
+}
+
+export interface BankOption {
+  id: string;
+  name: string;
 }

@@ -149,7 +149,9 @@ export const normalizePropertyMultipartBody = (req, _res, next) => {
     "price",
     "deposit",
     "numberOfBedrooms",
-    "numberOfBathrooms"
+    "numberOfBathrooms",
+    "leasePeriod",
+    "initialPayment"
   ];
 
   numericKeys.forEach((key) => {

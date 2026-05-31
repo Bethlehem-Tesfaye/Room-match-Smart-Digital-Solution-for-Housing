@@ -183,10 +183,6 @@ function CreatePropertyForm() {
       stepTwoErrors.city = "City is required.";
     }
 
-    // if (!draft.images.length) {
-    //   stepThreeErrors.images = "At least one photo is required.";
-    // }
-
     if (!bankInfo.accountName.trim()) {
       stepFourErrors.accountName = "Account name is required.";
     }

@@ -55,6 +55,10 @@ export const updatePropertyById = async ({ propertyId, userId, payload }) => {
 
   ensureOwnership(property, userId);
 
+  if (property.status === "Rented") {
+    throw new CustomError("Rented properties cannot be edited", 409);
+  }
+
   const { images, amenityIds, ...propertyUpdates } = payload;
   const allowRoommatesChangedToFalse =
     property.allowRoommates === true &&

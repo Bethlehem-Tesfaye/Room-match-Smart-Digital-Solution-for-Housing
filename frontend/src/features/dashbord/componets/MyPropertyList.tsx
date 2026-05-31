@@ -387,19 +387,30 @@ function MyPropertyList() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            navigate(`/properties/${property._id}/edit`)
-                          }
+                          onClick={() => {
+                            if (property.status === "Rented") {
+                              toast.info("Rented properties cannot be edited.");
+                              return;
+                            }
+
+                            navigate(`/properties/${property._id}/edit`);
+                          }}
+                          disabled={property.status === "Rented"}
                           className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
                             isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
                           }`}
-                          style={{ color: palette.deep }}
+                          style={{
+                            color:
+                              property.status === "Rented"
+                                ? palette.softPurple
+                                : palette.deep,
+                          }}
                         >
                           <Pencil size={16} />
                           Edit
                         </button>
 
-                        {property.status === "Rented" ? (
+                        {property.status === "Rented" && (
                           <button
                             type="button"
                             onClick={() => {
@@ -418,26 +429,6 @@ function MyPropertyList() {
                             {terminationRequestByPropertyId.has(property._id)
                               ? "Termination Pending"
                               : "Send Termination Request"}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleMarkAsRented(
-                                property._id,
-                                property.status,
-                              )
-                            }
-                            disabled={markingRentedPropertyId === property._id}
-                            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                              isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                            }`}
-                            style={{ color: palette.deep }}
-                          >
-                            <CircleCheck size={16} />
-                            {markingRentedPropertyId === property._id
-                              ? "Marking..."
-                              : "Mark as Rented"}
                           </button>
                         )}
 
