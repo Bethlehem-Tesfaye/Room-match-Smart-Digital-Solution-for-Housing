@@ -8,6 +8,7 @@ import {
 import { Property } from "../property/schema.js";
 import { Contract } from "./schema.js";
 import * as notificationService from "../notification/notification.service.js";
+import { emitToUser } from "../../config/socket.js";
 
 const { Types } = mongoose;
 const PAYMENT_WINDOW_HOURS = 72;
@@ -298,6 +299,151 @@ const hydrateContract = async (contractId) => {
   return maybeAutoTerminateNotice(contract);
 };
 
+const ownerUnreadTerminationFilter = (normalizedOwnerId) => ({
+  ownerId: normalizedOwnerId,
+  status: "TERMINATION_PENDING",
+  terminationRequestedBy: { $nin: [null, normalizedOwnerId] },
+  terminationRequestedAt: { $ne: null },
+  $or: [
+    { ownerTerminationViewedAt: null },
+    {
+      $expr: {
+        $lt: ["$ownerTerminationViewedAt", "$terminationRequestedAt"]
+      }
+    }
+  ]
+});
+
+export const getOwnerRentalUnreadCounts = async ({ ownerUserId }) => {
+  const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
+
+  const [incomingUnreadCount, terminationUnreadCount] = await Promise.all([
+    Contract.countDocuments({
+      ownerId: normalizedOwnerId,
+      status: "PENDING",
+      ownerIncomingViewedAt: null
+    }),
+    Contract.countDocuments(ownerUnreadTerminationFilter(normalizedOwnerId))
+  ]);
+
+  return {
+    incomingUnreadCount,
+    terminationUnreadCount,
+    totalUnreadCount: incomingUnreadCount + terminationUnreadCount
+  };
+};
+
+export const markOwnerIncomingAsRead = async ({ ownerUserId }) => {
+  const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
+
+  const result = await Contract.updateMany(
+    {
+      ownerId: normalizedOwnerId,
+      status: "PENDING",
+      ownerIncomingViewedAt: null
+    },
+    { $set: { ownerIncomingViewedAt: new Date() } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const markOwnerTerminationAsRead = async ({ ownerUserId }) => {
+  const normalizedOwnerId = toObjectId(ownerUserId, "owner user id");
+
+  const result = await Contract.updateMany(
+    ownerUnreadTerminationFilter(normalizedOwnerId),
+    { $set: { ownerTerminationViewedAt: new Date() } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const emitOwnerRentalUnreadUpdate = async (ownerUserId) => {
+  const ownerId = String(ownerUserId);
+  const counts = await getOwnerRentalUnreadCounts({ ownerUserId: ownerId });
+  emitToUser(ownerId, "rental:unread-update", counts);
+  return counts;
+};
+
+const tenantUnreadRequestedFilter = (normalizedTenantId, now = new Date()) => ({
+  tenantId: normalizedTenantId,
+  status: "RESERVED",
+  paymentDueAt: { $gt: now },
+  acceptedAt: { $ne: null },
+  $or: [
+    { tenantRequestedViewedAt: null },
+    {
+      $expr: {
+        $lt: ["$tenantRequestedViewedAt", "$acceptedAt"]
+      }
+    }
+  ]
+});
+
+const tenantUnreadTerminationFilter = (normalizedTenantId) => ({
+  tenantId: normalizedTenantId,
+  status: "TERMINATION_PENDING",
+  terminationRequestedBy: { $nin: [null, normalizedTenantId] },
+  terminationRequestedAt: { $ne: null },
+  $or: [
+    { tenantTerminationViewedAt: null },
+    {
+      $expr: {
+        $lt: ["$tenantTerminationViewedAt", "$terminationRequestedAt"]
+      }
+    }
+  ]
+});
+
+export const getTenantRentalUnreadCounts = async ({ tenantUserId }) => {
+  const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
+  const now = new Date();
+
+  const [requestedUnreadCount, terminationUnreadCount] = await Promise.all([
+    Contract.countDocuments(
+      tenantUnreadRequestedFilter(normalizedTenantId, now)
+    ),
+    Contract.countDocuments(tenantUnreadTerminationFilter(normalizedTenantId))
+  ]);
+
+  return {
+    requestedUnreadCount,
+    terminationUnreadCount,
+    totalUnreadCount: requestedUnreadCount + terminationUnreadCount
+  };
+};
+
+export const markTenantRequestedAsRead = async ({ tenantUserId }) => {
+  const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
+  const now = new Date();
+
+  const result = await Contract.updateMany(
+    tenantUnreadRequestedFilter(normalizedTenantId, now),
+    { $set: { tenantRequestedViewedAt: new Date() } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const markTenantTerminationAsRead = async ({ tenantUserId }) => {
+  const normalizedTenantId = toObjectId(tenantUserId, "tenant user id");
+
+  const result = await Contract.updateMany(
+    tenantUnreadTerminationFilter(normalizedTenantId),
+    { $set: { tenantTerminationViewedAt: new Date() } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const emitTenantRentalUnreadUpdate = async (tenantUserId) => {
+  const tenantId = String(tenantUserId);
+  const counts = await getTenantRentalUnreadCounts({ tenantUserId: tenantId });
+  emitToUser(tenantId, "tenant-rental:unread-update", counts);
+  return counts;
+};
+
 export const createRentRequest = async ({
   conversationId,
   requesterUserId
@@ -347,6 +493,8 @@ export const createRentRequest = async ({
     conversationId: context.conversationId,
     status: "PENDING"
   });
+
+  void emitOwnerRentalUnreadUpdate(context.ownerId).catch(() => undefined);
 
   return hydrateContract(contract._id);
 };
@@ -425,17 +573,25 @@ export const createTerminationNotice = async ({
     contract.terminationEffectiveDate = new Date(
       Date.now() + TERMINATION_NOTICE_MS
     );
+
+    // New notice must appear unread for the other party.
+    if (!contract.ownerId.equals(normalizedRequesterId)) {
+      contract.ownerTerminationViewedAt = null;
+    } else {
+      contract.tenantTerminationViewedAt = null;
+    }
+
     await contract.save({ session });
 
     await session.commitTransaction();
 
-    // notify the other party that a termination was requested and will auto-accept in 30 days
-    try {
-      const accepterId = contract.ownerId.equals(normalizedRequesterId)
-        ? contract.tenantId
-        : contract.ownerId;
+    const accepterId = contract.ownerId.equals(normalizedRequesterId)
+      ? contract.tenantId
+      : contract.ownerId;
 
-      await notificationService.createNotification({
+    // Notify the other party that a termination was requested.
+    try {
+      const notification = await notificationService.createNotification({
         userId: accepterId,
         type: "ListingUpdate",
         title: "Termination notice created",
@@ -443,9 +599,16 @@ export const createTerminationNotice = async ({
           "A termination notice was created for this contract. The rental will automatically terminate when the notice period ends unless the initiator withdraws it first.",
         relatedEntityId: contract._id
       });
+
+      emitToUser(accepterId, "notification:receive", notification);
     } catch (notifyErr) {
       // swallowing notification errors to avoid failing the main flow
-      // logging could be added here if a logger is available
+    }
+
+    if (!contract.ownerId.equals(normalizedRequesterId)) {
+      void emitOwnerRentalUnreadUpdate(contract.ownerId).catch(() => undefined);
+    } else {
+      void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
     }
 
     return hydrateContract(contract._id);
@@ -492,6 +655,9 @@ export const withdrawTerminationNotice = async ({
     await contract.save({ session });
 
     await session.commitTransaction();
+
+    void emitOwnerRentalUnreadUpdate(contract.ownerId).catch(() => undefined);
+    void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
 
     return hydrateContract(contract._id);
   } catch (error) {
@@ -619,9 +785,13 @@ export const acceptRentRequest = async ({ contractId, ownerUserId }) => {
     contract.status = "RESERVED";
     contract.acceptedAt = new Date();
     contract.paymentDueAt = getPaymentDueAt(contract.acceptedAt);
+    contract.tenantRequestedViewedAt = null;
     await contract.save({ session });
 
     await session.commitTransaction();
+
+    void emitOwnerRentalUnreadUpdate(normalizedOwnerId).catch(() => undefined);
+    void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
 
     return hydrateContract(contract._id);
   } catch (error) {
@@ -659,6 +829,8 @@ export const rejectRentRequest = async ({ contractId, ownerUserId }) => {
 
     await session.commitTransaction();
 
+    void emitOwnerRentalUnreadUpdate(normalizedOwnerId).catch(() => undefined);
+
     return hydrateContract(contract._id);
   } catch (error) {
     await session.abortTransaction();
@@ -694,6 +866,8 @@ export const cancelRentRequest = async ({ contractId, requesterUserId }) => {
       );
     }
 
+    const wasPending = contract.status === "PENDING";
+
     if (
       contract.status === "ACTIVE" ||
       contract.status === "TERMINATION_PENDING" ||
@@ -714,6 +888,10 @@ export const cancelRentRequest = async ({ contractId, requesterUserId }) => {
     await contract.save({ session });
 
     await session.commitTransaction();
+
+    if (wasPending) {
+      void emitOwnerRentalUnreadUpdate(contract.ownerId).catch(() => undefined);
+    }
 
     return hydrateContract(contract._id);
   } catch (error) {
@@ -816,6 +994,8 @@ export const completeContractPayment = async ({ contractId, tenantUserId }) => {
     await contract.save({ session });
 
     await session.commitTransaction();
+
+    void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
 
     return hydrateContract(contract._id);
   } catch (error) {

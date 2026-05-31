@@ -9,6 +9,14 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { api } from "../../../lib/axios";
+import {
+  ownerRentalUnreadCountsQueryKey,
+  setOwnerRentalUnreadCounts,
+} from "../../dashbord/hooks/useRentalUnreadHooks";
+import {
+  setTenantRentalUnreadCounts,
+  tenantRentalUnreadCountsQueryKey,
+} from "../../rentals/hooks/useTenantRentalUnreadHooks";
 import type {
   Conversation,
   ConversationParticipant,
@@ -407,22 +415,45 @@ export const useSendPropertyMessage = (): UseMutationResult<
   });
 };
 
+export interface RentalUnreadUpdatePayload {
+  incomingUnreadCount: number;
+  terminationUnreadCount: number;
+  totalUnreadCount: number;
+}
+
+export interface TenantRentalUnreadUpdatePayload {
+  requestedUnreadCount: number;
+  terminationUnreadCount: number;
+  totalUnreadCount: number;
+}
+
 interface UseMessageSocketOptions {
   enabled: boolean;
   onReceiveMessage?: (message: Message) => void;
   onReceiveNotification?: (notification: Notification) => void;
+  onRentalUnreadUpdate?: (counts: RentalUnreadUpdatePayload) => void;
+  onTenantRentalUnreadUpdate?: (counts: TenantRentalUnreadUpdatePayload) => void;
 }
 
 export const useMessageSocket = ({
   enabled,
   onReceiveMessage,
   onReceiveNotification,
+  onRentalUnreadUpdate,
+  onTenantRentalUnreadUpdate,
 }: UseMessageSocketOptions) => {
+  const queryClient = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
   const onReceiveMessageRef = useRef<typeof onReceiveMessage>(onReceiveMessage);
   const onReceiveNotificationRef = useRef<typeof onReceiveNotification>(
     onReceiveNotification,
   );
+  const onRentalUnreadUpdateRef = useRef<typeof onRentalUnreadUpdate>(
+    onRentalUnreadUpdate,
+  );
+  const onTenantRentalUnreadUpdateRef = useRef<
+    typeof onTenantRentalUnreadUpdate
+  >(onTenantRentalUnreadUpdate);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -432,6 +463,14 @@ export const useMessageSocket = ({
   useEffect(() => {
     onReceiveNotificationRef.current = onReceiveNotification;
   }, [onReceiveNotification]);
+
+  useEffect(() => {
+    onRentalUnreadUpdateRef.current = onRentalUnreadUpdate;
+  }, [onRentalUnreadUpdate]);
+
+  useEffect(() => {
+    onTenantRentalUnreadUpdateRef.current = onTenantRentalUnreadUpdate;
+  }, [onTenantRentalUnreadUpdate]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -446,6 +485,12 @@ export const useMessageSocket = ({
 
     socket.on("connect", () => {
       setIsConnected(true);
+      void queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
+      });
     });
 
     socket.on("disconnect", () => {
@@ -457,8 +502,33 @@ export const useMessageSocket = ({
     });
 
     socket.on("notification:receive", (notification: Notification) => {
+      if (notification.type === "ListingUpdate") {
+        void queryClient.invalidateQueries({
+          queryKey: ownerRentalUnreadCountsQueryKey,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: tenantRentalUnreadCountsQueryKey,
+        });
+      }
+
       onReceiveNotificationRef.current?.(notification);
     });
+
+    socket.on(
+      "rental:unread-update",
+      (counts: RentalUnreadUpdatePayload) => {
+        setOwnerRentalUnreadCounts(queryClient, counts);
+        onRentalUnreadUpdateRef.current?.(counts);
+      },
+    );
+
+    socket.on(
+      "tenant-rental:unread-update",
+      (counts: TenantRentalUnreadUpdatePayload) => {
+        setTenantRentalUnreadCounts(queryClient, counts);
+        onTenantRentalUnreadUpdateRef.current?.(counts);
+      },
+    );
 
     socketRef.current = socket;
 
@@ -467,7 +537,7 @@ export const useMessageSocket = ({
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [enabled]);
+  }, [enabled, queryClient]);
 
   const sendRealtimeMessage = useCallback(
     (payload: MessageSendInput): Promise<MessageSendAck> => {
@@ -617,6 +687,12 @@ export const useCreateRentRequest = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerTerminationRequests,
       });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
+      });
     },
   });
 };
@@ -658,6 +734,12 @@ const useUpdateRentRequestStatus = (
       });
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerTerminationRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
       });
     },
   });
@@ -708,6 +790,12 @@ export const useCancelRentRequest = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerTerminationRequests,
       });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
+      });
     },
   });
 };
@@ -751,6 +839,12 @@ export const useCreateTerminationNotice = (): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.ownerTerminationRequests,
       });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
+      });
     },
   });
 };
@@ -793,6 +887,12 @@ export const useWithdrawTerminationNotice = (): UseMutationResult<
       });
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.conversationList,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
       });
     },
   });

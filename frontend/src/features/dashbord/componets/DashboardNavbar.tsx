@@ -26,13 +26,15 @@ import {
   useMessageSocket,
   useUnreadMessageCounts,
 } from "../../message/hooks/useMessageHooks";
+import { useRentalUnreadCounts } from "../context/RentalUnreadCountsContext";
+import { setOwnerRentalUnreadCounts } from "../hooks/useRentalUnreadHooks";
 import type { DashboardTabItem, DashboardTabKey } from "../types/types";
 
 const dashboardTabs: DashboardTabItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "my-properties", label: "My Properties", icon: Building2 },
   { key: "messages", label: "Messages", icon: MessageCircle },
-  { key: "rental-requests", label: "Rental Requests", icon: ClipboardCheck },
+  { key: "rental-requests", label: "Rental Management", icon: ClipboardCheck },
   //   { key: "add-listing", label: "Add Listing", icon: PlusSquare },
 ];
 
@@ -48,6 +50,7 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
   const { user, isPending: isSessionPending } = useCurrentUser();
   const { data: profile } = useMyProfile(true);
   const unreadCountsQuery = useUnreadMessageCounts(true);
+  const { totalUnreadCount: rentalTotalUnread } = useRentalUnreadCounts();
   const logoutMutation = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -87,9 +90,18 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
         bumpUnreadMessageCount();
       }
 
+      if (notification.type === "ListingUpdate") {
+        void queryClient.invalidateQueries({
+          queryKey: ["contracts", "owner", "unread-counts"],
+        });
+      }
+
       void queryClient.invalidateQueries({
         queryKey: ["notifications", "unread-counts"],
       });
+    },
+    onRentalUnreadUpdate: (counts) => {
+      setOwnerRentalUnreadCounts(queryClient, counts);
     },
   });
 
@@ -197,10 +209,18 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
             {dashboardTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.key;
-              const showUnreadBadge =
+              const showMessageUnreadBadge =
                 tab.key === "messages" &&
                 totalUnread > 0 &&
                 !isConversationOpen;
+              const showRentalUnreadBadge =
+                tab.key === "rental-requests" && rentalTotalUnread > 0;
+              const tabUnreadCount =
+                tab.key === "messages"
+                  ? totalUnread
+                  : tab.key === "rental-requests"
+                    ? rentalTotalUnread
+                    : 0;
 
               return (
                 <button
@@ -212,9 +232,9 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                 >
                   <Icon size={16} style={{ color: palette.softPurple }} />
                   {tab.label}
-                  {showUnreadBadge ? (
+                  {showMessageUnreadBadge || showRentalUnreadBadge ? (
                     <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                      {totalUnread > 99 ? "99+" : totalUnread}
+                      {tabUnreadCount > 99 ? "99+" : tabUnreadCount}
                     </span>
                   ) : null}
                   <span
@@ -372,10 +392,18 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                   {dashboardTabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.key;
-                    const showUnreadBadge =
+                    const showMessageUnreadBadge =
                       tab.key === "messages" &&
                       totalUnread > 0 &&
                       !isConversationOpen;
+                    const showRentalUnreadBadge =
+                      tab.key === "rental-requests" && rentalTotalUnread > 0;
+                    const tabUnreadCount =
+                      tab.key === "messages"
+                        ? totalUnread
+                        : tab.key === "rental-requests"
+                          ? rentalTotalUnread
+                          : 0;
 
                     return (
                       <button
@@ -385,7 +413,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                           setIsMobileMenuOpen(false);
                           handleTabChange(tab.key);
                         }}
-                        className={`flex ${tab.key === "messages" ? "relative" : ""} cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-semibold transition-colors ${
+                        className={`flex ${
+                          showMessageUnreadBadge || showRentalUnreadBadge
+                            ? "relative"
+                            : ""
+                        } cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-semibold transition-colors ${
                           isActive
                             ? isDark
                               ? "bg-gray-700 text-purple-300"
@@ -397,9 +429,9 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                       >
                         <Icon size={18} />
                         <span>{tab.label}</span>
-                        {showUnreadBadge ? (
+                        {showMessageUnreadBadge || showRentalUnreadBadge ? (
                           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                            {totalUnread > 99 ? "99+" : totalUnread}
+                            {tabUnreadCount > 99 ? "99+" : tabUnreadCount}
                           </span>
                         ) : null}
                       </button>

@@ -8,7 +8,6 @@ import {
   useAcceptRentRequest,
   useCancelRentRequest,
   useCreateTerminationNotice,
-  useMarkRentalNotificationsRead,
   useOwnerActiveRentRequests,
   useOwnerAcceptedRentRequests,
   useOwnerPendingRentRequests,
@@ -17,9 +16,20 @@ import {
   useWithdrawTerminationNotice,
 } from "../../features/message/hooks/useMessageHooks";
 import type { RentRequest } from "../../features/message/types/type";
+import { useRentalUnreadCounts } from "../../features/dashbord/context/RentalUnreadCountsContext";
 import { palette } from "../../theme/palette";
 
 type RequestsTab = "active" | "incoming" | "accepted" | "termination";
+
+function TabUnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 const getPartyName = (party: RentRequest["tenantId"]) => {
   if (typeof party === "string") return party;
@@ -96,14 +106,18 @@ const formatNoticeDate = (value?: string | null) => {
 function RentalRequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestsTab>("active");
   const [nowTick, setNowTick] = useState(() => Date.now());
-  const rentalNotificationsMarkedRef = useRef(false);
   const { user } = useCurrentUser();
+  const {
+    incomingUnreadCount,
+    terminationUnreadCount,
+    markIncomingAsRead,
+    markTerminationAsRead,
+  } = useRentalUnreadCounts();
 
   const activeRequestsQuery = useOwnerActiveRentRequests();
   const requestsQuery = useOwnerPendingRentRequests();
   const acceptedRequestsQuery = useOwnerAcceptedRentRequests();
   const terminationRequestsQuery = useOwnerTerminationRequests();
-  const markRentalNotificationsRead = useMarkRentalNotificationsRead();
 
   const acceptRequest = useAcceptRentRequest();
   const rejectRequest = useRejectRentRequest();
@@ -111,12 +125,36 @@ function RentalRequestsPage() {
   const createTerminationNotice = useCreateTerminationNotice();
   const withdrawTerminationNotice = useWithdrawTerminationNotice();
 
-  useEffect(() => {
-    if (!user || rentalNotificationsMarkedRef.current) return;
+  const incomingMarkStartedRef = useRef(false);
+  const terminationMarkStartedRef = useRef(false);
 
-    rentalNotificationsMarkedRef.current = true;
-    markRentalNotificationsRead.mutate();
-  }, [markRentalNotificationsRead, user]);
+  useEffect(() => {
+    if (activeTab !== "incoming") {
+      incomingMarkStartedRef.current = false;
+      return;
+    }
+
+    if (incomingMarkStartedRef.current) return;
+    incomingMarkStartedRef.current = true;
+
+    void markIncomingAsRead().catch(() => {
+      incomingMarkStartedRef.current = false;
+    });
+  }, [activeTab, markIncomingAsRead]);
+
+  useEffect(() => {
+    if (activeTab !== "termination") {
+      terminationMarkStartedRef.current = false;
+      return;
+    }
+
+    if (terminationMarkStartedRef.current) return;
+    terminationMarkStartedRef.current = true;
+
+    void markTerminationAsRead().catch(() => {
+      terminationMarkStartedRef.current = false;
+    });
+  }, [activeTab, markTerminationAsRead]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -268,7 +306,10 @@ function RentalRequestsPage() {
                 border: `1px solid ${palette.border}`,
               }}
             >
-              Incoming ({requests.length})
+              <span className="inline-flex items-center">
+                Incoming ({requests.length})
+                <TabUnreadBadge count={incomingUnreadCount} />
+              </span>
             </button>
 
             <button
@@ -297,7 +338,10 @@ function RentalRequestsPage() {
                 border: `1px solid ${palette.border}`,
               }}
             >
-              Termination Notices ({terminationRequests.length})
+              <span className="inline-flex items-center">
+                Termination Notices ({terminationRequests.length})
+                <TabUnreadBadge count={terminationUnreadCount} />
+              </span>
             </button>
           </div>
 

@@ -9,7 +9,15 @@ import {
   getOwnerAcceptedRentRequests,
   getOwnerPendingRentRequests,
   getOwnerTerminationRequests,
+  getOwnerRentalUnreadCounts,
   getTenantRentalContracts,
+  markOwnerIncomingAsRead,
+  markOwnerTerminationAsRead,
+  emitOwnerRentalUnreadUpdate,
+  emitTenantRentalUnreadUpdate,
+  getTenantRentalUnreadCounts,
+  markTenantRequestedAsRead,
+  markTenantTerminationAsRead,
   rejectRentRequest,
   sweepExpiredTerminationNotices,
   withdrawTerminationNotice
@@ -182,6 +190,65 @@ export const fetchOwnerActiveRequests = async (req, res, next) => {
   }
 };
 
+// GET /contracts/owner/unread-counts
+export const fetchOwnerRentalUnreadCounts = async (req, res, next) => {
+  try {
+    const counts = await getOwnerRentalUnreadCounts({
+      ownerUserId: req.userId
+    });
+
+    return res.status(200).json(counts);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/owner/mark-incoming-read
+export const markOwnerIncomingRead = async (req, res, next) => {
+  try {
+    const result = await markOwnerIncomingAsRead({
+      ownerUserId: req.userId
+    });
+
+    const counts = await getOwnerRentalUnreadCounts({
+      ownerUserId: req.userId
+    });
+
+    void emitOwnerRentalUnreadUpdate(req.userId).catch(() => undefined);
+
+    return res.status(200).json({
+      message: "Incoming rental requests marked as read",
+      ...result,
+      counts
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/owner/mark-termination-read
+export const markOwnerTerminationRead = async (req, res, next) => {
+  try {
+    const result = await markOwnerTerminationAsRead({
+      ownerUserId: req.userId
+    });
+
+    const counts = await getOwnerRentalUnreadCounts({
+      ownerUserId: req.userId
+    });
+
+    void emitOwnerRentalUnreadUpdate(req.userId).catch(() => undefined);
+
+    return res.status(200).json({
+      message: "Termination notices marked as read",
+      ...result,
+      counts
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 // GET /contracts/owner/termination-requests
 export const fetchOwnerTerminationRequests = async (req, res, next) => {
   try {
@@ -190,6 +257,65 @@ export const fetchOwnerTerminationRequests = async (req, res, next) => {
     });
 
     return res.status(200).json({ contracts });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// GET /contracts/tenant/unread-counts
+export const fetchTenantRentalUnreadCounts = async (req, res, next) => {
+  try {
+    const counts = await getTenantRentalUnreadCounts({
+      tenantUserId: req.userId
+    });
+
+    return res.status(200).json(counts);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/tenant/mark-requested-read
+export const markTenantRequestedRead = async (req, res, next) => {
+  try {
+    const result = await markTenantRequestedAsRead({
+      tenantUserId: req.userId
+    });
+
+    const counts = await getTenantRentalUnreadCounts({
+      tenantUserId: req.userId
+    });
+
+    void emitTenantRentalUnreadUpdate(req.userId).catch(() => undefined);
+
+    return res.status(200).json({
+      message: "Requested rental updates marked as read",
+      ...result,
+      counts
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// PATCH /contracts/tenant/mark-termination-read
+export const markTenantTerminationRead = async (req, res, next) => {
+  try {
+    const result = await markTenantTerminationAsRead({
+      tenantUserId: req.userId
+    });
+
+    const counts = await getTenantRentalUnreadCounts({
+      tenantUserId: req.userId
+    });
+
+    void emitTenantRentalUnreadUpdate(req.userId).catch(() => undefined);
+
+    return res.status(200).json({
+      message: "Termination notices marked as read",
+      ...result,
+      counts
+    });
   } catch (err) {
     return next(err);
   }

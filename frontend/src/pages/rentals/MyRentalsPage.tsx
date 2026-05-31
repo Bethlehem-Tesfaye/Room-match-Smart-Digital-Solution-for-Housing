@@ -15,10 +15,10 @@ import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import {
   useCancelRentRequest,
   useCreateTerminationNotice,
-  useMarkRentalNotificationsRead,
   useWithdrawTerminationNotice,
   useTenantRentalContracts,
 } from "../../features/message/hooks/useMessageHooks";
+import { useTenantRentalUnreadCountsContext } from "../../features/rentals/context/TenantRentalUnreadCountsContext";
 import type {
   ContractStatus,
   ConversationListing,
@@ -28,6 +28,16 @@ import type {
 import { palette } from "../../theme/palette";
 
 type RentalsTab = "requested" | "rented" | "termination" | "history";
+
+function TabUnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 const pendingPaymentStorageKey = "pending_rental_payment_contract_id";
 
@@ -202,20 +212,47 @@ function MyRentalsPage() {
     string | null
   >(null);
   const paymentReturnHandledRef = useRef(false);
-  const rentalNotificationsMarkedRef = useRef(false);
+  const requestedMarkStartedRef = useRef(false);
+  const terminationMarkStartedRef = useRef(false);
   const { user } = useCurrentUser();
+  const {
+    requestedUnreadCount,
+    terminationUnreadCount,
+    markRequestedAsRead,
+    markTerminationAsRead,
+  } = useTenantRentalUnreadCountsContext();
   const rentalsQuery = useTenantRentalContracts();
-  const markRentalNotificationsRead = useMarkRentalNotificationsRead();
   const cancelRentRequest = useCancelRentRequest();
   const createTerminationNotice = useCreateTerminationNotice();
   const withdrawTerminationNotice = useWithdrawTerminationNotice();
 
   useEffect(() => {
-    if (!user || rentalNotificationsMarkedRef.current) return;
+    if (activeTab !== "requested") {
+      requestedMarkStartedRef.current = false;
+      return;
+    }
 
-    rentalNotificationsMarkedRef.current = true;
-    markRentalNotificationsRead.mutate();
-  }, [markRentalNotificationsRead, user]);
+    if (requestedMarkStartedRef.current) return;
+    requestedMarkStartedRef.current = true;
+
+    void markRequestedAsRead().catch(() => {
+      requestedMarkStartedRef.current = false;
+    });
+  }, [activeTab, markRequestedAsRead]);
+
+  useEffect(() => {
+    if (activeTab !== "termination") {
+      terminationMarkStartedRef.current = false;
+      return;
+    }
+
+    if (terminationMarkStartedRef.current) return;
+    terminationMarkStartedRef.current = true;
+
+    void markTerminationAsRead().catch(() => {
+      terminationMarkStartedRef.current = false;
+    });
+  }, [activeTab, markTerminationAsRead]);
 
   useEffect(() => {
     if (searchParams.get("payment") !== "success") {
@@ -499,7 +536,10 @@ function MyRentalsPage() {
               border: `1px solid ${palette.border}`,
             }}
           >
-            Requested ({requestContracts.length})
+            <span className="inline-flex items-center">
+              Requested ({requestContracts.length})
+              <TabUnreadBadge count={requestedUnreadCount} />
+            </span>
           </button>
 
           <button
@@ -514,7 +554,10 @@ function MyRentalsPage() {
               border: `1px solid ${palette.border}`,
             }}
           >
-            Termination ({terminationContracts.length})
+            <span className="inline-flex items-center">
+              Termination ({terminationContracts.length})
+              <TabUnreadBadge count={terminationUnreadCount} />
+            </span>
           </button>
 
           <button

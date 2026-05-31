@@ -26,6 +26,8 @@ import {
   useMessageSocket,
   useUnreadMessageCounts,
 } from "../../message/hooks/useMessageHooks";
+import { useTenantRentalUnreadCountsContext } from "../../rentals/context/TenantRentalUnreadCountsContext";
+import { setTenantRentalUnreadCounts } from "../../rentals/hooks/useTenantRentalUnreadHooks";
 
 const baseNavItems = [
   { to: "/properties", label: "Find Place", icon: Search },
@@ -45,6 +47,7 @@ function LandingNavbar() {
   const queryClient = useQueryClient();
   const { data: profile } = useMyProfile(isAuthenticated);
   const unreadCountsQuery = useUnreadMessageCounts(isAuthenticated);
+  const tenantRentalUnread = useTenantRentalUnreadCountsContext();
   const logoutMutation = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,6 +72,7 @@ function LandingNavbar() {
   const profileEmail = user?.email || "";
   const showOwnerDashboardSwitch = isAuthenticated && profile?.role !== "admin";
   const totalUnread = unreadCountsQuery.data?.total ?? 0;
+  const tenantRentalTotalUnread = tenantRentalUnread.totalUnreadCount;
   const isConversationOpen =
     (location.pathname === "/message" ||
       location.pathname === "/dashboard/message") &&
@@ -100,9 +104,18 @@ function LandingNavbar() {
         bumpUnreadMessageCount();
       }
 
+      if (notification.type === "ListingUpdate") {
+        void queryClient.invalidateQueries({
+          queryKey: ["contracts", "tenant", "unread-counts"],
+        });
+      }
+
       void queryClient.invalidateQueries({
         queryKey: ["notifications", "unread-counts"],
       });
+    },
+    onTenantRentalUnreadUpdate: (counts) => {
+      setTenantRentalUnreadCounts(queryClient, counts);
     },
   });
 
@@ -174,17 +187,29 @@ function LandingNavbar() {
           <nav className="hidden items-center gap-2 lg:flex">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const showUnreadBadge =
+              const showMessageUnreadBadge =
                 item.to === "/message" &&
                 totalUnread > 0 &&
                 !isConversationOpen;
+              const showMyRentalsUnreadBadge =
+                item.to === "/my-rentals" && tenantRentalTotalUnread > 0;
+              const itemUnreadCount =
+                item.to === "/message"
+                  ? totalUnread
+                  : item.to === "/my-rentals"
+                    ? tenantRentalTotalUnread
+                    : 0;
 
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   end={item.to === "/properties"}
-                  className={`group ${item.to === "/message" ? "relative" : ""} inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors`}
+                  className={`group ${
+                    showMessageUnreadBadge || showMyRentalsUnreadBadge
+                      ? "relative"
+                      : ""
+                  } inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors`}
                   style={({ isActive }) => ({
                     color: isActive ? palette.purple : palette.deep,
                   })}
@@ -193,9 +218,9 @@ function LandingNavbar() {
                     <>
                       <Icon size={13} style={{ color: palette.softPurple }} />
                       {item.label}
-                      {showUnreadBadge ? (
+                      {showMessageUnreadBadge || showMyRentalsUnreadBadge ? (
                         <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                          {totalUnread > 99 ? "99+" : totalUnread}
+                          {itemUnreadCount > 99 ? "99+" : itemUnreadCount}
                         </span>
                       ) : null}
                       <span
@@ -389,10 +414,18 @@ function LandingNavbar() {
                 <nav className="flex flex-col p-2">
                   {navItems.map((item) => {
                     const Icon = item.icon;
-                    const showUnreadBadge =
+                    const showMessageUnreadBadge =
                       item.to === "/message" &&
                       totalUnread > 0 &&
                       !isConversationOpen;
+                    const showMyRentalsUnreadBadge =
+                      item.to === "/my-rentals" && tenantRentalTotalUnread > 0;
+                    const itemUnreadCount =
+                      item.to === "/message"
+                        ? totalUnread
+                        : item.to === "/my-rentals"
+                          ? tenantRentalTotalUnread
+                          : 0;
 
                     return (
                       <NavLink
@@ -401,7 +434,11 @@ function LandingNavbar() {
                         end={item.to === "/properties"}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={({ isActive }) =>
-                          `flex ${item.to === "/message" ? "relative" : ""} items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                          `flex ${
+                            showMessageUnreadBadge || showMyRentalsUnreadBadge
+                              ? "relative"
+                              : ""
+                          } items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
                             isActive
                               ? isDark
                                 ? "bg-gray-700 text-purple-300"
@@ -417,9 +454,9 @@ function LandingNavbar() {
                       >
                         <Icon size={18} />
                         <span>{item.label}</span>
-                        {showUnreadBadge ? (
+                        {showMessageUnreadBadge || showMyRentalsUnreadBadge ? (
                           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                            {totalUnread > 99 ? "99+" : totalUnread}
+                            {itemUnreadCount > 99 ? "99+" : itemUnreadCount}
                           </span>
                         ) : null}
                       </NavLink>

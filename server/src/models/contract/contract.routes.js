@@ -9,8 +9,14 @@ import {
   fetchOwnerActiveRequests,
   fetchOwnerAcceptedRequests,
   fetchOwnerTerminationRequests,
+  fetchOwnerRentalUnreadCounts,
   fetchOwnerPendingRequests,
   fetchTenantRentals,
+  fetchTenantRentalUnreadCounts,
+  markOwnerIncomingRead,
+  markOwnerTerminationRead,
+  markTenantRequestedRead,
+  markTenantTerminationRead,
   rejectRequest,
   createTerminationNoticeHandler,
   withdrawTerminationNoticeHandler,
@@ -38,6 +44,24 @@ contractRouter.get(
   fetchConversationRentRequest
 );
 
+contractRouter.get(
+  "/owner/unread-counts",
+  authMiddleware,
+  fetchOwnerRentalUnreadCounts
+);
+
+contractRouter.patch(
+  "/owner/mark-incoming-read",
+  authMiddleware,
+  markOwnerIncomingRead
+);
+
+contractRouter.patch(
+  "/owner/mark-termination-read",
+  authMiddleware,
+  markOwnerTerminationRead
+);
+
 contractRouter.get("/owner/pending", authMiddleware, fetchOwnerPendingRequests);
 
 contractRouter.get(
@@ -52,6 +76,24 @@ contractRouter.get(
   "/owner/termination-notices",
   authMiddleware,
   fetchOwnerTerminationRequests
+);
+
+contractRouter.get(
+  "/tenant/unread-counts",
+  authMiddleware,
+  fetchTenantRentalUnreadCounts
+);
+
+contractRouter.patch(
+  "/tenant/mark-requested-read",
+  authMiddleware,
+  markTenantRequestedRead
+);
+
+contractRouter.patch(
+  "/tenant/mark-termination-read",
+  authMiddleware,
+  markTenantTerminationRead
 );
 
 contractRouter.get("/tenant/my-rentals", authMiddleware, fetchTenantRentals);

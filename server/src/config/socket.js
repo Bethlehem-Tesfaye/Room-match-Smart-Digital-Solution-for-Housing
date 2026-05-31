@@ -14,14 +14,14 @@ export const getSocketByUserId = (userId) => {
   return onlineUsers.get(userId) ?? null;
 };
 
-export const emitToUser = (userId, event, payload) => {
-  const socketId = getSocketByUserId(userId);
+const getUserRoom = (userId) => `user:${String(userId)}`;
 
-  if (!io || !socketId) {
+export const emitToUser = (userId, event, payload) => {
+  if (!io || !userId) {
     return false;
   }
 
-  io.to(socketId).emit(event, payload);
+  io.to(getUserRoom(userId)).emit(event, payload);
   return true;
 };
 
@@ -71,11 +71,13 @@ export const initSocket = (httpServer) => {
     const userId = socket.userId;
 
     onlineUsers.set(userId, socket.id);
+    socket.join(getUserRoom(userId));
 
     logger.info(`Socket connected: ${socket.id}`);
 
     socket.on("user:online", () => {
       onlineUsers.set(userId, socket.id);
+      socket.join(getUserRoom(userId));
     });
 
     socket.on("message:send", async (data, ack) => {
@@ -112,10 +114,13 @@ export const initSocket = (httpServer) => {
 
         const { message, notification } = result;
 
-        const receiverSocketId = getSocketByUserId(result.receiverId);
+        const receiverOnline = emitToUser(
+          result.receiverId,
+          "message:receive",
+          message
+        );
 
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("message:receive", message);
+        if (receiverOnline) {
           emitToUser(result.receiverId, "notification:receive", notification);
         }
 
@@ -125,7 +130,7 @@ export const initSocket = (httpServer) => {
           ok: true,
           conversationId: String(result.conversationId),
           message,
-          receiverOnline: !!receiverSocketId
+          receiverOnline
         });
       } catch (err) {
         logger.error({ err }, "message:send failed");

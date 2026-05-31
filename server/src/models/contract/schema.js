@@ -72,6 +72,26 @@ const contractSchema = new Schema(
     terminationResolvedAt: {
       type: Date,
       default: null
+    },
+    ownerIncomingViewedAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
+    ownerTerminationViewedAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
+    tenantRequestedViewedAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
+    tenantTerminationViewedAt: {
+      type: Date,
+      default: null,
+      index: true
     }
   },
   { timestamps: true }
