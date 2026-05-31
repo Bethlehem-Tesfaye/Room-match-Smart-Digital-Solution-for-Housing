@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAdminReports, AdminReport } from "../lib/api";
+import { getAdminReports, markAdminReportsAsRead, AdminReport } from "../lib/api";
 
 // Helper component to display clean, visual status chips for appeal records
 function ReportStatusBadge({ isRead }: { isRead: boolean }) {
@@ -31,6 +31,7 @@ function ReportsPage() {
       setError(null);
 
       try {
+        await markAdminReportsAsRead();
         const response = await getAdminReports();
         setReports(response.reports ?? []);
       } catch (err) {

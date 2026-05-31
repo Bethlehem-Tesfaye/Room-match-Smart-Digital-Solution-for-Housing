@@ -7,6 +7,8 @@ import BlockUserModal from "../components/BlockUserModal";
 import {
   getAdminDashboardSummary,
   getAdminUsers,
+  getAdminReports,
+  getAdminNotificationCounts,
   setUserBlockedStatus,
   deleteAdminUser,
   signOutAdmin,
@@ -31,25 +33,35 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<SearchFilter>("all");
+  const [notificationCounts, setNotificationCounts] = useState({
+    propertyNotifications: 0,
+    reportNotifications: 0
+  });
+
+  const loadAdminData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const summary = await getAdminDashboardSummary();
+      setStatsData(summary);
+
+      const usersResponse = await getAdminUsers();
+      setUsers(usersResponse.users ?? []);
+
+      const countsResponse = await getAdminNotificationCounts();
+      setNotificationCounts({
+        propertyNotifications: countsResponse.propertyNotifications ?? 0,
+        reportNotifications: countsResponse.reportNotifications ?? 0
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load admin dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadAdminData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const summary = await getAdminDashboardSummary();
-        setStatsData(summary);
-
-        const usersResponse = await getAdminUsers();
-        setUsers(usersResponse.users ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load admin dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     void loadAdminData();
   }, []);
 
@@ -132,8 +144,15 @@ function DashboardPage() {
         return u.type?.toLowerCase().includes(q) ?? false;
       case "status":
         return u.status?.toLowerCase().includes(q) ?? false;
-      case "joined":
-        return u.joined.toLowerCase().includes(q);
+      case "joined": {
+        if (!u.joined) return false;
+        const selectedDate = new Date(search);
+        if (Number.isNaN(selectedDate.getTime())) {
+          return u.joined.toLowerCase().includes(q);
+        }
+        const userDate = new Date(u.joined);
+        return !Number.isNaN(userDate.getTime()) && userDate.toDateString() === selectedDate.toDateString();
+      }
       default:
         return (
           u.name.toLowerCase().includes(q) ||
@@ -176,16 +195,14 @@ function DashboardPage() {
 
       <main className="dashboard-main">
         <div className="container-wide">
-          <SearchBar value={search} onChange={setSearch} filter={filter} onFilterChange={setFilter} />
+          <SearchBar value={search} onChange={setSearch} filter={filter} onFilterChange={(newFilter) => { setFilter(newFilter); setSearch(""); }} />
 
           <div className="tabs">
             <button className={`tab ${activeUserTab === "users" ? "active" : ""}`} onClick={() => setActiveUserTab("users")}>Users ({loading ? "..." : normalUsers.length})</button>
             <button className={`tab ${activeUserTab === "admins" ? "active" : ""}`} onClick={() => setActiveUserTab("admins")}>Admins ({loading ? "..." : adminUsers.length})</button>
-            <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link></button>
+            <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link>{notificationCounts.propertyNotifications > 0 && <span className="tab-badge">{notificationCounts.propertyNotifications}</span>}</button>
             <button className="tab">Roommates ({loading ? "..." : statsData.roommateProfiles})</button>
-            <button className="tab">
-              <Link to="/dashboard/reports">Reports</Link>
-            </button>
+            <button className="tab"><Link to="/dashboard/reports">Reports</Link>{notificationCounts.reportNotifications > 0 && <span className="tab-badge">{notificationCounts.reportNotifications}</span>}</button>
           </div>
 
           {error && <div className="dashboard-error">{error}</div>}

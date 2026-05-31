@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import CustomError from "../../../lib/errors.js";
 import { clearMatchesForUser } from "../../roommate/match.service.js";
 import { RoommateProfile } from "../../roommate/schema.js";
+import { UserProfile } from "../../profile/schema.js";
+import * as notificationService from "../../notification/notification.service.js";
 import {
   Amenity,
   Property,
@@ -35,6 +37,30 @@ export const createProperty = async ({ userId, payload }) => {
   ]);
 
   const saved = await Property.findById(property._id).lean();
+
+  try {
+    const adminProfiles = await UserProfile.find({
+      role: "admin",
+      deletedAt: null
+    })
+      .select("userId")
+      .lean();
+
+    await Promise.all(
+      adminProfiles.map((admin) =>
+        notificationService.createNotification({
+          userId: admin.userId,
+          type: "ListingUpdate",
+          title: "New property added",
+          content: `A new property listing was added: ${property.title || "Untitled listing"}.`,
+          relatedEntityId: property._id
+        })
+      )
+    );
+  } catch (notifyErr) {
+    // Do not block property creation for notification failures.
+  }
+
   return buildPropertyResponse(saved);
 };
 

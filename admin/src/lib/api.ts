@@ -176,6 +176,29 @@ export const getAdminReports = async () => {
   return handleResponse<{ reports: AdminReport[] }>(response);
 };
 
+export const markAdminReportsAsRead = async () => {
+  const response = await fetch(`${apiUrl}/api/admin/reports/read-all`, {
+    method: "PATCH",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<{ updatedCount: number }>(response);
+};
+
+export interface AdminNotificationCountResponse {
+  propertyNotifications: number;
+  reportNotifications: number;
+}
+
+export const getAdminNotificationCounts = async () => {
+  const response = await fetch(`${apiUrl}/api/admin/notifications/counts`, {
+    method: "GET",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<AdminNotificationCountResponse>(response);
+};
+
 export const getAdminProperties = async () => {
   const response = await fetch(`${apiUrl}/api/admin/properties`, {
     method: "GET",
@@ -234,6 +257,11 @@ export const deleteAdminProperty = async (id: string) => {
   return handleResponse<{ success: boolean }>(response);
 };
 
+export interface UnreadNotificationCountsResponse {
+  total: number;
+  byConversation?: Record<string, number>;
+}
+
 export const setUserBlockedStatus = async (
   userId: string,
   blocked: boolean,
@@ -246,4 +274,13 @@ export const setUserBlockedStatus = async (
     body: JSON.stringify({ blocked, reason }),
   });
   return handleResponse<{ userId: string; blocked: boolean; reason?: string | null }>(response);
+};
+
+export const getUnreadNotificationCounts = async () => {
+  const response = await fetch(`${apiUrl}/api/notifications/unread-counts`, {
+    method: "GET",
+    headers: defaultHeaders,
+    credentials: "include",
+  });
+  return handleResponse<UnreadNotificationCountsResponse>(response);
 };

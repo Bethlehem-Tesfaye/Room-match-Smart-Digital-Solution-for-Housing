@@ -253,9 +253,25 @@ input:focus {
   border-radius: 10px;
   border: none;
   cursor: pointer;
+  position: relative;
 }
 
 .tab.active { background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1;
+}
 
 .table-card {
   background: white;

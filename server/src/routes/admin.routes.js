@@ -206,6 +206,59 @@ adminRouter.get(
   }
 );
 
+adminRouter.patch(
+  "/reports/read-all",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const result = await Notification.updateMany(
+        {
+          userId: req.userId,
+          title: { $regex: /^Unblock request from/i },
+          isRead: false
+        },
+        { $set: { isRead: true } }
+      );
+
+      return res.status(200).json({
+        updatedCount: result.modifiedCount ?? 0
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.get(
+  "/notifications/counts",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const [propertyNotifications, reportNotifications] = await Promise.all([
+        Notification.countDocuments({
+          userId: req.userId,
+          type: "ListingUpdate",
+          isRead: false
+        }),
+        Notification.countDocuments({
+          userId: req.userId,
+          title: { $regex: /^Unblock request from/i },
+          isRead: false
+        })
+      ]);
+
+      return res.status(200).json({
+        propertyNotifications,
+        reportNotifications
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // Admin property CRUD
 adminRouter.get(
   "/properties",
@@ -315,6 +368,30 @@ adminRouter.post(
         createdAt: new Date(),
         updatedAt: new Date()
       });
+
+      try {
+        const adminProfiles = await UserProfile.find({
+          role: "admin",
+          deletedAt: null
+        })
+          .select("userId")
+          .lean();
+
+        await Promise.all(
+          adminProfiles.map((admin) =>
+            Notification.create({
+              userId: admin.userId,
+              type: "ListingUpdate",
+              title: "New property added",
+              content: `A new property listing was added: ${created.title || "Untitled listing"}.`,
+              relatedEntityId: created._id
+            })
+          )
+        );
+      } catch (notifyErr) {
+        // Do not block admin property creation for notification issues.
+      }
+
       return res.status(201).json({ property: created });
     } catch (error) {
       next(error);
