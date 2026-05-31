@@ -458,10 +458,10 @@ function MyRentalsPage() {
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: palette.deep }}>
+            <h1 className="text-3xl font-semibold text-(--palette-deep)">
               My Rentals
             </h1>
-            <p className="mt-2 text-sm" style={{ color: palette.softPurple }}>
+            <p className="mt-2 text-sm text-(--palette-soft-purple)">
               Track your rental requests, payment status, and active rentals in
               one place.
             </p>
@@ -475,16 +475,10 @@ function MyRentalsPage() {
                 backgroundColor: palette.cardBg,
               }}
             >
-              <p
-                className="text-xs font-semibold"
-                style={{ color: palette.softPurple }}
-              >
+              <p className="text-xs font-semibold text-(--palette-soft-purple)">
                 Rented
               </p>
-              <p
-                className="mt-2 text-3xl font-bold"
-                style={{ color: palette.deep }}
-              >
+              <p className="mt-2 text-3xl font-semibold text-(--palette-deep)">
                 {rentalsQuery.isLoading ? "..." : rentedContracts.length}
               </p>
             </div>
@@ -495,16 +489,10 @@ function MyRentalsPage() {
                 backgroundColor: palette.cardBg,
               }}
             >
-              <p
-                className="text-xs font-semibold"
-                style={{ color: palette.softPurple }}
-              >
+              <p className="text-xs font-semibold text-(--palette-soft-purple)">
                 Requested
               </p>
-              <p
-                className="mt-2 text-3xl font-bold"
-                style={{ color: palette.deep }}
-              >
+              <p className="mt-2 text-3xl font-semibold text-(--palette-deep)">
                 {rentalsQuery.isLoading ? "..." : requestContracts.length}
               </p>
             </div>
@@ -515,11 +503,14 @@ function MyRentalsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("rented")}
-            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "rented"
+                ? "text-(--palette-page-bg)"
+                : "text-(--palette-deep)"
+            }`}
             style={{
               backgroundColor:
                 activeTab === "rented" ? palette.purple : palette.cardBg,
-              color: activeTab === "rented" ? palette.pageBg : palette.deep,
               border: `1px solid ${palette.border}`,
             }}
           >
@@ -528,11 +519,14 @@ function MyRentalsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("requested")}
-            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "requested"
+                ? "text-(--palette-page-bg)"
+                : "text-(--palette-deep)"
+            }`}
             style={{
               backgroundColor:
                 activeTab === "requested" ? palette.purple : palette.cardBg,
-              color: activeTab === "requested" ? palette.pageBg : palette.deep,
               border: `1px solid ${palette.border}`,
             }}
           >
@@ -545,12 +539,14 @@ function MyRentalsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("termination")}
-            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "termination"
+                ? "text-(--palette-page-bg)"
+                : "text-(--palette-deep)"
+            }`}
             style={{
               backgroundColor:
                 activeTab === "termination" ? palette.purple : palette.cardBg,
-              color:
-                activeTab === "termination" ? palette.pageBg : palette.deep,
               border: `1px solid ${palette.border}`,
             }}
           >
@@ -563,11 +559,14 @@ function MyRentalsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("history")}
-            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "history"
+                ? "text-(--palette-page-bg)"
+                : "text-(--palette-deep)"
+            }`}
             style={{
               backgroundColor:
                 activeTab === "history" ? palette.purple : palette.cardBg,
-              color: activeTab === "history" ? palette.pageBg : palette.deep,
               border: `1px solid ${palette.border}`,
             }}
           >
@@ -644,10 +643,7 @@ function MyRentalsPage() {
 
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
-                            <h2
-                              className="truncate text-xl font-semibold"
-                              style={{ color: palette.deep }}
-                            >
+                            <h2 className="truncate text-xl font-semibold text-(--palette-deep)">
                               {listing?.title || "Rental Listing"}
                             </h2>
                             <span
@@ -664,10 +660,7 @@ function MyRentalsPage() {
                             ) : null}
                           </div>
 
-                          <p
-                            className="mt-1 text-sm"
-                            style={{ color: palette.softPurple }}
-                          >
+                          <p className="mt-1 text-sm text-(--palette-soft-purple)">
                             {[listing?.city, listing?.address]
                               .filter(Boolean)
                               .join(", ") || "Location not available"}
@@ -683,22 +676,13 @@ function MyRentalsPage() {
                             backgroundColor: palette.cardMutedAltBg,
                           }}
                         >
-                          <p
-                            className="text-xs font-semibold uppercase tracking-wide"
-                            style={{ color: palette.softPurple }}
-                          >
+                          <p className="text-xs font-semibold uppercase tracking-wide text-(--palette-soft-purple)">
                             Property Details
                           </p>
-                          <p
-                            className="mt-2 text-base font-semibold"
-                            style={{ color: palette.deep }}
-                          >
+                          <p className="mt-2 text-base font-semibold text-(--palette-deep)">
                             {formatPrice(listing)}
                           </p>
-                          <p
-                            className="mt-1 text-sm"
-                            style={{ color: palette.softPurple }}
-                          >
+                          <p className="mt-1 text-sm text-(--palette-soft-purple)">
                             {activeTab === "requested"
                               ? contract.status === "RESERVED"
                                 ? "Payment is pending. The request will disappear automatically if payment is not completed in time."
@@ -750,16 +734,10 @@ function MyRentalsPage() {
                                 backgroundColor: "#FFF8E7",
                               }}
                             >
-                              <p
-                                className="text-sm font-semibold"
-                                style={{ color: palette.deep }}
-                              >
+                              <p className="text-sm font-semibold text-(--palette-deep)">
                                 Termination Notice Active
                               </p>
-                              <p
-                                className="mt-2 text-sm"
-                                style={{ color: palette.deep }}
-                              >
+                              <p className="mt-2 text-sm text-(--palette-deep)">
                                 Requested by:{" "}
                                 {noticeInitiator?.name ||
                                   noticeInitiator?.email ||
@@ -767,34 +745,22 @@ function MyRentalsPage() {
                                     ? "you"
                                     : "the other party")}
                               </p>
-                              <p
-                                className="mt-1 text-sm"
-                                style={{ color: palette.deep }}
-                              >
+                              <p className="mt-1 text-sm text-(--palette-deep)">
                                 Notice Submitted:{" "}
                                 {formatNoticeDate(
                                   contract.terminationRequestedAt,
                                 )}
                               </p>
-                              <p
-                                className="mt-1 text-sm"
-                                style={{ color: palette.deep }}
-                              >
+                              <p className="mt-1 text-sm text-(--palette-deep)">
                                 Rental Ends:{" "}
                                 {formatNoticeDate(
                                   contract.terminationEffectiveDate,
                                 )}
                               </p>
-                              <p
-                                className="mt-1 text-sm font-semibold"
-                                style={{ color: palette.purple }}
-                              >
+                              <p className="mt-1 text-sm font-semibold text-(--palette-purple)">
                                 {noticeCountdown || "Notice period active"}
                               </p>
-                              <p
-                                className="mt-2 text-sm"
-                                style={{ color: palette.softPurple }}
-                              >
+                              <p className="mt-2 text-sm text-(--palette-soft-purple)">
                                 This rental will automatically terminate on{" "}
                                 {formatNoticeDate(
                                   contract.terminationEffectiveDate,
@@ -833,24 +799,15 @@ function MyRentalsPage() {
                             </div>
 
                             <div className="min-w-0">
-                              <p
-                                className="text-xs font-semibold uppercase tracking-wide"
-                                style={{ color: palette.softPurple }}
-                              >
+                              <p className="text-xs font-semibold uppercase tracking-wide text-(--palette-soft-purple)">
                                 Owner Info
                               </p>
-                              <p
-                                className="truncate text-base font-semibold"
-                                style={{ color: palette.deep }}
-                              >
+                              <p className="truncate text-base font-semibold text-(--palette-deep)">
                                 {owner?.name ||
                                   owner?.email ||
                                   "Property Owner"}
                               </p>
-                              <p
-                                className="truncate text-sm"
-                                style={{ color: palette.softPurple }}
-                              >
+                              <p className="truncate text-sm text-(--palette-soft-purple)">
                                 {owner?.email || "Contact available in chat"}
                               </p>
                             </div>

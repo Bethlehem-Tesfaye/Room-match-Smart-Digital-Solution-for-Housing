@@ -7,8 +7,10 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  Moon,
   Search,
   Settings,
+  Sun,
   User,
   Users,
   X,
@@ -28,13 +30,13 @@ import {
 } from "../../message/hooks/useMessageHooks";
 import { useTenantRentalUnreadCountsContext } from "../../rentals/context/TenantRentalUnreadCountsContext";
 import { setTenantRentalUnreadCounts } from "../../rentals/hooks/useTenantRentalUnreadHooks";
+import { useThemePreference } from "../../setting/hooks/useSettingHooks";
 
 const baseNavItems = [
   { to: "/properties", label: "Find Place", icon: Search },
-  { to: "/properties/saved", label: "Saved Property", icon: Heart },
+  { to: "/properties/saved", label: "Saved", icon: Heart },
   { to: "/roommate", label: "Find Roommate", icon: Users },
-  { to: "/message", label: "Message", icon: MessageCircle },
-  // { to: "/dashboard", label: "My Listings", icon: LayoutDashboard },
+  { to: "/message", label: "Messages", icon: MessageCircle },
 ];
 
 function LandingNavbar() {
@@ -49,17 +51,18 @@ function LandingNavbar() {
   const unreadCountsQuery = useUnreadMessageCounts(isAuthenticated);
   const tenantRentalUnread = useTenantRentalUnreadCountsContext();
   const logoutMutation = useLogout();
+  const { theme, setTheme } = useThemePreference();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const isDark = useIsDark();
+
   const navItems = useMemo(() => {
     const tenantNavItem =
       isAuthenticated && profile?.role !== "admin"
         ? [{ to: "/my-rentals", label: "My Rentals", icon: KeyRound }]
         : [];
-
     return [
       ...baseNavItems.slice(0, 4),
       ...tenantNavItem,
@@ -85,14 +88,10 @@ function LandingNavbar() {
       byType?: Record<string, number>;
     }>(["notifications", "unread-counts"], (previous) => {
       const byType = previous?.byType ?? {};
-
       return {
         total: (previous?.total ?? 0) + 1,
         byConversation: previous?.byConversation ?? {},
-        byType: {
-          ...byType,
-          Message: (byType.Message ?? 0) + 1,
-        },
+        byType: { ...byType, Message: (byType.Message ?? 0) + 1 },
       };
     });
   };
@@ -100,16 +99,12 @@ function LandingNavbar() {
   useMessageSocket({
     enabled: isAuthenticated,
     onReceiveNotification: (notification) => {
-      if (notification.type === "Message") {
-        bumpUnreadMessageCount();
-      }
-
+      if (notification.type === "Message") bumpUnreadMessageCount();
       if (notification.type === "ListingUpdate") {
         void queryClient.invalidateQueries({
           queryKey: ["contracts", "tenant", "unread-counts"],
         });
       }
-
       void queryClient.invalidateQueries({
         queryKey: ["notifications", "unread-counts"],
       });
@@ -121,24 +116,15 @@ function LandingNavbar() {
 
   useEffect(() => {
     if (!isDropdownOpen && !isMobileMenuOpen) return;
-
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-
-      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target))
         setIsDropdownOpen(false);
-      }
-
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target))
         setIsMobileMenuOpen(false);
-      }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDropdownOpen, isMobileMenuOpen]);
 
   useEffect(() => {
@@ -147,103 +133,134 @@ function LandingNavbar() {
   }, [location.pathname]);
 
   const toggleProfileMenu = () => {
-    setIsDropdownOpen((previous) => {
-      const next = !previous;
-
-      if (next) {
-        setIsMobileMenuOpen(false);
-      }
-
-      return next;
+    setIsDropdownOpen((prev) => {
+      if (!prev) setIsMobileMenuOpen(false);
+      return !prev;
     });
   };
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen((previous) => {
-      const next = !previous;
-
-      if (next) {
-        setIsDropdownOpen(false);
-      }
-
-      return next;
+    setIsMobileMenuOpen((prev) => {
+      if (!prev) setIsDropdownOpen(false);
+      return !prev;
     });
+  };
+
+  const handleThemeToggle = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  // ── Derived style tokens ──────────────────────────────────────────────────
+  const navBg = isDark ? "#17112e" : "#ffffff";
+  const navBorder = isDark ? "#3a2d5c" : "#e5d9f9";
+  const deepColor = isDark ? "#ede9f8" : "#2e1f4a";
+  const mutedColor = isDark ? "#9b78d4" : "#a98fd4";
+  const chipBg = isDark ? "#251c42" : "#ede7fd";
+  const dropdownBg = isDark ? "#17112e" : "#ffffff";
+  const dropdownBorder = isDark ? "#3a2d5c" : "#e5d9f9";
+  const hoverBg = isDark ? "rgba(255,255,255,0.05)" : "#f5f1ff";
+  const iconBtnStyle = {
+    borderColor: navBorder,
+    color: mutedColor,
+    backgroundColor: "transparent",
   };
 
   return (
     <header
-      className={`fixed left-0 right-0 top-0 z-500 border-b  bg-white/95 px-4 backdrop-blur ${isMobileMenuOpen ? " border-b " : ""}`}
+      className="fixed left-0 right-0 top-0 z-50"
       style={{
-        backgroundColor: palette.skeleton,
-        // borderColor: palette.border,
+        backgroundColor: navBg,
+        borderBottom: `1px solid ${navBorder}`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 py-2 lg:gap-6">
-        <Link to="/" aria-label="Go to home" className="cursor-pointer">
+      <div className="mx-auto flex h-14 max-w-7xl items-center px-4 lg:px-6">
+        {/* ── Logo ─────────────────────────────────────────────────────── */}
+        <Link to="/" aria-label="Go to home" className="shrink-0">
           <Logo className="flex-row gap-2" />
         </Link>
 
-        <div className="ml-auto flex items-center gap-2">
-          <nav className="hidden items-center gap-2 lg:flex">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const showMessageUnreadBadge =
-                item.to === "/message" &&
-                totalUnread > 0 &&
-                !isConversationOpen;
-              const showMyRentalsUnreadBadge =
-                item.to === "/my-rentals" && tenantRentalTotalUnread > 0;
-              const itemUnreadCount =
-                item.to === "/message"
-                  ? totalUnread
-                  : item.to === "/my-rentals"
-                    ? tenantRentalTotalUnread
-                    : 0;
+        {/* ── Desktop nav — centered ────────────────────────────────────── */}
+        <nav className="mx-auto hidden items-center gap-1 lg:flex">
+          {navItems.map((item) => {
+            const showMessageBadge =
+              item.to === "/message" && totalUnread > 0 && !isConversationOpen;
+            const showRentalsBadge =
+              item.to === "/my-rentals" && tenantRentalTotalUnread > 0;
+            const badgeCount =
+              item.to === "/message"
+                ? totalUnread
+                : item.to === "/my-rentals"
+                  ? tenantRentalTotalUnread
+                  : 0;
 
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/properties"}
-                  className={`group ${
-                    showMessageUnreadBadge || showMyRentalsUnreadBadge
-                      ? "relative"
-                      : ""
-                  } inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors`}
-                  style={({ isActive }) => ({
-                    color: isActive ? palette.purple : palette.deep,
-                  })}
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon size={13} style={{ color: palette.softPurple }} />
-                      {item.label}
-                      {showMessageUnreadBadge || showMyRentalsUnreadBadge ? (
-                        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                          {itemUnreadCount > 99 ? "99+" : itemUnreadCount}
-                        </span>
-                      ) : null}
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/properties"}
+                className="relative inline-flex items-center px-3 py-1.5 text-sm transition-colors duration-150"
+                style={({ isActive }) => ({
+                  color: isActive ? "#8b64c8" : deepColor,
+                  fontWeight: isActive ? 600 : 450,
+                  opacity: isActive ? 1 : 0.75,
+                })}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span>{item.label}</span>
+
+                    {/* Active pill underline */}
+                    <span
+                      className="absolute -bottom-px left-1/2 h-0.5 -translate-x-1/2 rounded-full transition-all duration-200"
+                      style={{
+                        backgroundColor: "#8b64c8",
+                        width: isActive ? "16px" : "0px",
+                      }}
+                    />
+
+                    {/* Unread badge */}
+                    {(showMessageBadge || showRentalsBadge) && (
                       <span
-                        className={`absolute -bottom-0.5 left-0 h-0.5 w-full origin-left bg-current transition-transform duration-300 ${
-                          isActive
-                            ? "scale-x-100"
-                            : "scale-x-0 group-hover:scale-x-100"
-                        }`}
-                      />
-                    </>
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
+                        className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                        style={{ backgroundColor: "#8b64c8" }}
+                      >
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
 
+        {/* ── Right side actions ────────────────────────────────────────── */}
+        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          {/* Theme toggle — desktop */}
+          <button
+            type="button"
+            onClick={handleThemeToggle}
+            className="hidden h-9 w-9 items-center justify-center rounded-full border transition-colors lg:inline-flex"
+            style={iconBtnStyle}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+
+          {/* ── Authenticated ── */}
           {isAuthenticated ? (
-            <div ref={profileMenuRef} className="relative ml-3">
+            <div ref={profileMenuRef} className="relative">
+              {/* Profile pill */}
               <button
                 type="button"
                 onClick={toggleProfileMenu}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full px-2 py-2 text-md font-semibold sm:rounded-lg sm:px-3"
-                style={{ color: palette.purple }}
+                className="inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors duration-150"
+                style={{
+                  borderColor: navBorder,
+                  backgroundColor: isDropdownOpen ? chipBg : "transparent",
+                }}
                 aria-haspopup="menu"
                 aria-expanded={isDropdownOpen}
               >
@@ -251,176 +268,220 @@ function LandingNavbar() {
                   <img
                     src={profilePictureUrl}
                     alt={profileName}
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-7 w-7 rounded-full object-cover"
                   />
                 ) : (
                   <span
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
-                    style={{
-                      backgroundColor: palette.softPurple,
-                      color: "#FFFFFF",
-                    }}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
+                    style={{ backgroundColor: "#8b64c8" }}
                   >
                     {profileName.charAt(0).toUpperCase()}
                   </span>
                 )}
 
-                <div className="hidden flex-col items-start xl:flex">
-                  <span className="max-w-36 truncate text-sm font-semibold">
-                    {isSessionPending ? "Loading..." : profileName}
-                  </span>
+                <span
+                  className="hidden max-w-28 truncate text-sm xl:block"
+                  style={{ color: deepColor, fontWeight: 500 }}
+                >
+                  {isSessionPending ? "…" : profileName}
+                </span>
 
-                  <span
-                    className="text-xs font-medium opacity-70"
-                    style={{ color: palette.purple }}
-                  >
-                    Tenant View
-                  </span>
-                </div>
-
-                <ChevronDown size={16} />
+                <ChevronDown
+                  size={13}
+                  style={{
+                    color: mutedColor,
+                    transform: isDropdownOpen
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
+                    transition: "transform 150ms ease",
+                  }}
+                />
               </button>
 
-              {isDropdownOpen ? (
+              {/* Dropdown */}
+              {isDropdownOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-12 z-100 w-80 overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-zinc-900"
+                  className="absolute right-0 top-12 z-50 overflow-hidden rounded-xl shadow-lg"
                   style={{
-                    backgroundColor: palette.pageBg,
-                    borderColor: palette.border,
+                    width: "272px",
+                    backgroundColor: dropdownBg,
+                    border: `1px solid ${dropdownBorder}`,
+                    boxShadow: "0 8px 24px rgba(46,31,74,0.1)",
                   }}
                 >
+                  {/* User info */}
                   <div
-                    className="border-b px-4 py-4"
-                    style={{ borderColor: "#E4E4E7" }}
+                    className="px-4 py-3"
+                    style={{ borderBottom: `1px solid ${dropdownBorder}` }}
                   >
                     <p
-                      className="truncate text-md leading-none"
-                      style={{ color: palette.deep }}
+                      className="truncate text-sm font-semibold"
+                      style={{ color: deepColor }}
                     >
                       {profileName}
                     </p>
                     <p
-                      className="mt-2 truncate text-md"
-                      style={{ color: "#64748B" }}
+                      className="mt-0.5 truncate text-xs"
+                      style={{ color: mutedColor }}
                     >
                       {profileEmail}
                     </p>
                   </div>
 
-                  <Link
-                    to="/profile"
-                    role="menuitem"
-                    className={`flex w-full cursor-pointer items-center gap-3 px-2 py-2 text-left text-md ${
-                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                    }`}
-                    style={{ color: palette.deep }}
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <User size={16} />
-                    Profile
-                  </Link>
+                  {/* Nav links */}
+                  <div className="p-1.5">
+                    {[
+                      { to: "/profile", icon: User, label: "Profile" },
+                      { to: "/setting", icon: Settings, label: "Settings" },
+                    ].map(({ to, icon: Icon, label }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        role="menuitem"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
+                        style={{ color: deepColor }}
+                        onMouseEnter={(e) =>
+                          ((
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = hoverBg)
+                        }
+                        onMouseLeave={(e) =>
+                          ((
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = "transparent")
+                        }
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <Icon size={14} style={{ color: mutedColor }} />
+                        {label}
+                      </Link>
+                    ))}
 
-                  <Link
-                    to="/setting"
-                    role="menuitem"
-                    className={`flex w-full cursor-pointer items-center gap-3 px-2 py-2 text-left text-md ${
-                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                    }`}
-                    style={{ color: palette.deep, borderColor: "#E4E4E7" }}
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <Settings size={16} />
-                    Settings
-                  </Link>
+                    {showOwnerDashboardSwitch && (
+                      <Link
+                        to="/dashboard"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
+                        style={{ color: deepColor }}
+                        onMouseEnter={(e) =>
+                          ((
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = hoverBg)
+                        }
+                        onMouseLeave={(e) =>
+                          ((
+                            e.currentTarget as HTMLElement
+                          ).style.backgroundColor = "transparent")
+                        }
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <LayoutDashboard
+                          size={14}
+                          style={{ color: mutedColor }}
+                        />
+                        Owner dashboard
+                      </Link>
+                    )}
+                  </div>
 
-                  {showOwnerDashboardSwitch ? (
-                    <Link
-                      to="/dashboard"
+                  {/* Sign out */}
+                  <div
+                    className="p-1.5"
+                    style={{ borderTop: `1px solid ${dropdownBorder}` }}
+                  >
+                    <button
+                      type="button"
                       role="menuitem"
-                      className={`flex w-full cursor-pointer items-center gap-3 border-t px-2 py-2 text-left text-md ${
-                        isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                      }`}
-                      style={{ color: palette.deep, borderColor: "#E4E4E7" }}
-                      onClick={() => setIsDropdownOpen(false)}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
+                      style={{ color: "#dc2626" }}
+                      onMouseEnter={(e) =>
+                        ((
+                          e.currentTarget as HTMLElement
+                        ).style.backgroundColor = "rgba(220,38,38,0.06)")
+                      }
+                      onMouseLeave={(e) =>
+                        ((
+                          e.currentTarget as HTMLElement
+                        ).style.backgroundColor = "transparent")
+                      }
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        logoutMutation.mutate();
+                      }}
+                      disabled={logoutMutation.isPending}
                     >
-                      <LayoutDashboard size={16} />
-                      Switch to Owner Dashboard
-                    </Link>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="flex w-full cursor-pointer items-center gap-3 border-t px-3 py-3 text-left text-md hover:bg-red-200"
-                    style={{ color: "#E11D48", borderColor: "#E4E4E7" }}
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      logoutMutation.mutate();
-                    }}
-                    disabled={logoutMutation.isPending}
-                  >
-                    <LogOut size={16} />
-                    {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
-                  </button>
+                      <LogOut size={14} />
+                      {logoutMutation.isPending ? "Signing out…" : "Sign out"}
+                    </button>
+                  </div>
                 </div>
-              ) : null}
+              )}
             </div>
           ) : (
+            /* ── Login button ── */
             <Link
               to="/login"
-              className="ml-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-md font-semibold sm:px-4"
+              className="inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
               style={{
-                borderColor: palette.lightPurple,
-                color: palette.purple,
+                borderColor: "#c8b4ec",
+                color: "#8b64c8",
+                backgroundColor: "transparent",
               }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor =
+                  "#ede7fd")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor =
+                  "transparent")
+              }
             >
-              <LogIn size={16} />
-              <span className="hidden sm:inline">Login</span>
+              <LogIn size={14} />
+              Login
             </Link>
           )}
 
+          {/* ── Mobile hamburger ── */}
           <div ref={mobileMenuRef} className="relative lg:hidden">
             <button
               type="button"
               onClick={toggleMobileMenu}
-              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition-colors"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors"
               style={{
-                backgroundColor: isMobileMenuOpen
-                  ? palette.lightPurple
-                  : "transparent",
-                color: palette.deep,
+                borderColor: navBorder,
+                color: deepColor,
+                backgroundColor: isMobileMenuOpen ? chipBg : "transparent",
               }}
-              aria-label={
-                isMobileMenuOpen
-                  ? "Close navigation menu"
-                  : "Open navigation menu"
-              }
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-controls="landing-mobile-navigation"
               aria-expanded={isMobileMenuOpen}
             >
-              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
             </button>
 
             {isMobileMenuOpen && (
               <div
                 id="landing-mobile-navigation"
-                className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden border shadow-lg"
+                className="absolute right-0 top-full mt-2 overflow-hidden rounded-xl"
                 style={{
-                  backgroundColor: palette.skeleton,
-                  borderColor: palette.border,
+                  width: "min(20rem, calc(100vw - 2rem))",
+                  backgroundColor: dropdownBg,
+                  border: `1px solid ${dropdownBorder}`,
+                  boxShadow: "0 8px 24px rgba(46,31,74,0.1)",
                 }}
               >
-                <nav className="flex flex-col p-2">
+                {/* Nav links */}
+                <nav className="flex flex-col p-1.5">
                   {navItems.map((item) => {
                     const Icon = item.icon;
-                    const showMessageUnreadBadge =
+                    const showMessageBadge =
                       item.to === "/message" &&
                       totalUnread > 0 &&
                       !isConversationOpen;
-                    const showMyRentalsUnreadBadge =
+                    const showRentalsBadge =
                       item.to === "/my-rentals" && tenantRentalTotalUnread > 0;
-                    const itemUnreadCount =
+                    const badgeCount =
                       item.to === "/message"
                         ? totalUnread
                         : item.to === "/my-rentals"
@@ -433,36 +494,79 @@ function LandingNavbar() {
                         to={item.to}
                         end={item.to === "/properties"}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className={({ isActive }) =>
-                          `flex ${
-                            showMessageUnreadBadge || showMyRentalsUnreadBadge
-                              ? "relative"
-                              : ""
-                          } items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
-                            isActive
-                              ? isDark
-                                ? "bg-gray-700 text-purple-300"
-                                : "bg-gray-100 text-purple-700"
-                              : isDark
-                                ? "text-zinc-100 hover:bg-gray-600"
-                                : "text-zinc-900 hover:bg-gray-100"
-                          }`
-                        }
-                        style={{
-                          color: palette.purple,
+                        className="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors"
+                        style={({ isActive }) => ({
+                          color: isActive ? "#8b64c8" : deepColor,
+                          backgroundColor: isActive ? chipBg : "transparent",
+                          fontWeight: isActive ? 600 : 400,
+                        })}
+                        onMouseEnter={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.backgroundColor = hoverBg;
+                        }}
+                        onMouseLeave={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          // keep chipBg if active — react-router sets style via style prop
+                          // so just clear; the style prop will re-apply on next render
+                          el.style.backgroundColor = "";
                         }}
                       >
-                        <Icon size={18} />
-                        <span>{item.label}</span>
-                        {showMessageUnreadBadge || showMyRentalsUnreadBadge ? (
-                          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--palette-purple) px-1 text-[10px] font-bold text-white">
-                            {itemUnreadCount > 99 ? "99+" : itemUnreadCount}
-                          </span>
-                        ) : null}
+                        {({ isActive }) => (
+                          <>
+                            <Icon
+                              size={15}
+                              style={{
+                                color: isActive ? "#8b64c8" : mutedColor,
+                              }}
+                            />
+                            <span>{item.label}</span>
+                            {(showMessageBadge || showRentalsBadge) && (
+                              <span
+                                className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                                style={{ backgroundColor: "#8b64c8" }}
+                              >
+                                {badgeCount > 99 ? "99+" : badgeCount}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </NavLink>
                     );
                   })}
                 </nav>
+
+                {/* Mobile theme toggle row */}
+                <div
+                  className="p-1.5"
+                  style={{ borderTop: `1px solid ${dropdownBorder}` }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleThemeToggle();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors"
+                    style={{ color: deepColor }}
+                    onMouseEnter={(e) =>
+                      ((e.currentTarget as HTMLElement).style.backgroundColor =
+                        hoverBg)
+                    }
+                    onMouseLeave={(e) =>
+                      ((e.currentTarget as HTMLElement).style.backgroundColor =
+                        "transparent")
+                    }
+                  >
+                    {isDark ? (
+                      <Sun size={15} style={{ color: mutedColor }} />
+                    ) : (
+                      <Moon size={15} style={{ color: mutedColor }} />
+                    )}
+                    <span>
+                      {isDark ? "Switch to light mode" : "Switch to dark mode"}
+                    </span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

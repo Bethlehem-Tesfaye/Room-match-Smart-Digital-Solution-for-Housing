@@ -36,9 +36,9 @@ const SegGroup = ({
         key={o.value}
         type="button"
         onClick={() => onChange(o.value)}
-        className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+        className={`flex-1 rounded-xl px-3 py-2 text-sm transition ${
           value === o.value
-            ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+            ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
             : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
         }`}
       >
@@ -63,10 +63,10 @@ const SliderRow = ({
 }) => (
   <div className="mb-4">
     <div className="mb-1.5 flex items-center justify-between">
-      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+      <span className="text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
         {label}
       </span>
-      <span className="text-sm font-semibold text-(--palette-purple)">
+      <span className="text-sm font-bold text-(--palette-purple)">
         {value}
       </span>
     </div>
@@ -106,10 +106,10 @@ const PrefCard = ({
 }) => (
   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
     <div className="mb-3 flex items-center justify-between">
-      <span className="text-sm font-semibold text-(--palette-deep)">
+      <span className="font-serif text-sm font-bold text-(--palette-deep)">
         {label}
       </span>
-      <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-xs font-semibold text-(--palette-purple)">
+      <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-[12px] text-(--palette-purple)">
         Importance {importanceValue}
       </span>
     </div>
@@ -147,10 +147,10 @@ const PolicyCard = ({
 }) => (
   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
     <div className="mb-3 flex items-center justify-between">
-      <span className="text-sm font-semibold text-(--palette-deep)">
+      <span className="font-serif text-sm font-bold text-(--palette-deep)">
         {title}
       </span>
-      <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-xs font-semibold text-(--palette-purple)">
+      <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-[12px] text-(--palette-purple)">
         Importance {importance}
       </span>
     </div>
@@ -160,9 +160,9 @@ const PolicyCard = ({
           key={o.value}
           type="button"
           onClick={() => onPolicyChange(o.value)}
-          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+          className={`rounded-xl px-4 py-2.5 text-sm transition ${
             value === o.value
-              ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm border border-(--palette-border)"
+              ? "border border-(--palette-border) bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
               : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
           }`}
         >
@@ -171,7 +171,7 @@ const PolicyCard = ({
       ))}
     </div>
     <div>
-      <div className="mb-1 flex justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+      <div className="mb-1 flex justify-between text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
         <span>Importance</span>
         <span>{importance}</span>
       </div>
@@ -212,7 +212,7 @@ export const RoommateWizard: React.FC<Props> = ({
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
             Current status
           </label>
           <SegGroup
@@ -227,7 +227,7 @@ export const RoommateWizard: React.FC<Props> = ({
           />
         </div>
         <div>
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
             Lifestyle
           </label>
           <SegGroup
@@ -244,7 +244,7 @@ export const RoommateWizard: React.FC<Props> = ({
       </div>
 
       <div>
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Occupation / field of study
         </label>
         <input
@@ -257,7 +257,7 @@ export const RoommateWizard: React.FC<Props> = ({
       </div>
 
       <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
-        <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Lifestyle traits
         </p>
         <SliderRow
@@ -313,7 +313,7 @@ export const RoommateWizard: React.FC<Props> = ({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
             Do you smoke?
           </label>
           <SegGroup
@@ -326,7 +326,7 @@ export const RoommateWizard: React.FC<Props> = ({
           />
         </div>
         <div>
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
             Do you have pets?
           </label>
           <SegGroup
@@ -339,7 +339,7 @@ export const RoommateWizard: React.FC<Props> = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
             Do you drink alcohol?
           </label>
           <SegGroup
@@ -355,7 +355,7 @@ export const RoommateWizard: React.FC<Props> = ({
       </div>
 
       <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
-        <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Monthly budget range
         </label>
         <div className="flex items-center gap-3">
@@ -494,12 +494,12 @@ export const RoommateWizard: React.FC<Props> = ({
       </div>
 
       <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
-        <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Hard limits
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
               Accept a smoker?
             </label>
             <SegGroup
@@ -512,7 +512,7 @@ export const RoommateWizard: React.FC<Props> = ({
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
               Accept pets?
             </label>
             <SegGroup
@@ -525,7 +525,7 @@ export const RoommateWizard: React.FC<Props> = ({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
               Accept frequent guests?
             </label>
             <SegGroup
@@ -546,7 +546,7 @@ export const RoommateWizard: React.FC<Props> = ({
   const renderStep4 = () => (
     <div className="space-y-5">
       <div>
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Preferred roommate type
         </label>
         <SegGroup
@@ -570,7 +570,7 @@ export const RoommateWizard: React.FC<Props> = ({
       />
 
       <div>
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Minimum stay duration
         </label>
         <SegGroup
@@ -588,10 +588,10 @@ export const RoommateWizard: React.FC<Props> = ({
       <div className="flex items-center gap-3 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
         <Sparkles className="h-5 w-5 flex-shrink-0 text-(--palette-purple)" />
         <div>
-          <p className="text-sm font-semibold text-(--palette-deep)">
+          <p className="font-serif text-sm font-bold text-(--palette-deep)">
             Ready to find matches
           </p>
-          <p className="text-xs text-(--palette-soft-purple)">
+          <p className="text-[12px] leading-relaxed text-(--palette-soft-purple)">
             Click "Save & Find Matches" to compute mutual compatibility scores.
           </p>
         </div>
@@ -623,20 +623,20 @@ export const RoommateWizard: React.FC<Props> = ({
               }`}
             >
               <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs transition ${
                   isDone
-                    ? "bg-green-500 text-white"
+                    ? "bg-green-500 font-bold text-white"
                     : isActive
-                      ? "bg-(--palette-purple) text-white"
+                      ? "bg-(--palette-purple) font-bold text-white"
                       : "border border-(--palette-border) bg-(--palette-section-bg) text-(--palette-soft-purple)"
                 }`}
               >
                 {isDone ? <Check className="h-3 w-3" /> : n}
               </div>
               <span
-                className={`hidden text-[11px] font-semibold sm:block ${
+                className={`hidden text-[11px] sm:block ${
                   isActive
-                    ? "text-(--palette-deep)"
+                    ? "font-bold text-(--palette-deep)"
                     : "text-(--palette-soft-purple)"
                 }`}
               >
@@ -677,7 +677,7 @@ export const RoommateWizard: React.FC<Props> = ({
               onClick={() =>
                 setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3 | 4)
               }
-              className="rounded-xl border border-(--palette-border) px-4 py-2 text-sm font-semibold text-(--palette-deep) transition hover:bg-(--palette-section-bg)"
+              className="rounded-xl border border-(--palette-border) px-4 py-2 text-sm font-bold text-(--palette-deep) transition hover:bg-(--palette-section-bg)"
             >
               Back
             </button>
@@ -686,7 +686,7 @@ export const RoommateWizard: React.FC<Props> = ({
             type="button"
             onClick={onSave}
             disabled={isSaving}
-            className="rounded-xl bg-(--palette-chip-bg) px-4 py-2 text-sm font-semibold text-(--palette-deep) transition hover:opacity-80 disabled:opacity-50"
+            className="rounded-xl bg-(--palette-chip-bg) px-4 py-2 text-sm font-bold text-(--palette-deep) transition hover:opacity-80 disabled:opacity-50"
           >
             Save
           </button>
@@ -695,7 +695,7 @@ export const RoommateWizard: React.FC<Props> = ({
               type="button"
               onClick={onSaveAndRecompute}
               disabled={isSaving || isComputing}
-              className="rounded-xl bg-(--palette-purple) px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-(--palette-purple) px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {isComputing ? "Finding matches…" : "Save & Find Matches"}
             </button>
@@ -705,7 +705,7 @@ export const RoommateWizard: React.FC<Props> = ({
               onClick={() =>
                 setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)
               }
-              className="rounded-xl bg-(--palette-purple) px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              className="rounded-xl bg-(--palette-purple) px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
             >
               Next
             </button>

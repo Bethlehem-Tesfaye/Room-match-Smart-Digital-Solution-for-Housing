@@ -45,10 +45,10 @@ const TypePicker: React.FC<TypePickerProps> = ({
     <LandingNavbar />
     <div className="flex min-h-[80vh] items-center justify-center bg-(--palette-page-bg) px-4">
       <div className="w-full max-w-2xl">
-        <h1 className="mb-2 text-center text-3xl font-bold text-(--palette-deep)">
+        <h1 className="mb-2 text-center font-serif text-3xl font-bold text-(--palette-deep)">
           Welcome! How can we help you?
         </h1>
-        <p className="mb-8 text-center text-sm text-(--palette-soft-purple)">
+        <p className="mb-8 text-center text-[15px] leading-relaxed text-(--palette-soft-purple)">
           Choose your situation to get started. This helps us find the right
           matches for you.
         </p>
@@ -67,14 +67,14 @@ const TypePicker: React.FC<TypePickerProps> = ({
             disabled={isSaving || !canChooseTypeA}
           >
             <div className="mb-3 text-3xl">🏠</div>
-            <h2 className="mb-1 text-lg font-bold text-(--palette-deep)">
+            <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
               I have a rented place
             </h2>
-            <p className="text-sm text-(--palette-soft-purple)">
+            <p className="text-sm leading-relaxed text-(--app-text)">
               I'm already renting and looking for someone to share it with.
             </p>
             {!canChooseTypeA && typeABlockedMessage ? (
-              <p className="mt-3 text-xs font-semibold text-rose-600">
+              <p className="mt-3 text-[12px] leading-relaxed text-(--palette-purple)">
                 {typeABlockedMessage}
               </p>
             ) : null}
@@ -86,16 +86,16 @@ const TypePicker: React.FC<TypePickerProps> = ({
             className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
           >
             <div className="mb-3 text-3xl">🔍</div>
-            <h2 className="mb-1 text-lg font-bold text-(--palette-deep)">
+            <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
               I'm looking for a place
             </h2>
-            <p className="text-sm text-(--palette-soft-purple)">
+            <p className="text-sm leading-relaxed text-(--app-text)">
               I don't have a place yet and want to find a roommate to rent with.
             </p>
           </button>
         </div>
         {isSaving && (
-          <p className="mt-6 animate-pulse text-center text-sm text-(--palette-soft-purple)">
+          <p className="mt-6 animate-pulse text-center text-[12px] leading-relaxed text-(--palette-soft-purple)">
             Saving your choice...
           </p>
         )}
@@ -430,7 +430,7 @@ const RoommatePage: React.FC = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4">
         <div className="text-center">
-          <p className="text-lg text-red-500">
+          <p className="text-[15px] leading-relaxed text-(--app-text)">
             Error: {error || formError || rentalError}
           </p>
           <button
@@ -440,7 +440,7 @@ const RoommatePage: React.FC = () => {
               void preferencesQuery.refetch();
               void rentalsQuery.refetch();
             }}
-            className="mt-4 rounded-lg bg-(--palette-purple) px-4 py-2 text-white transition hover:opacity-90"
+            className="mt-4 rounded-lg bg-(--palette-purple) px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
           >
             Try Again
           </button>
@@ -451,7 +451,7 @@ const RoommatePage: React.FC = () => {
 
   if (formsLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4 text-(--palette-soft-purple)">
+      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4 text-[15px] leading-relaxed text-(--palette-soft-purple)">
         Loading...
       </div>
     );
@@ -473,7 +473,7 @@ const RoommatePage: React.FC = () => {
 
   if (!localPreferences) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4 text-(--palette-soft-purple)">
+      <div className="flex min-h-screen items-center justify-center bg-(--palette-page-bg) px-4 text-[15px] leading-relaxed text-(--palette-soft-purple)">
         Loading preferences...
       </div>
     );
@@ -485,13 +485,13 @@ const RoommatePage: React.FC = () => {
       <LandingNavbar />
       <div className="bg-(--palette-page-bg) py-8">
         <div className="mx-auto max-w-6xl px-4">
-          <h1 className="mb-6 text-center text-3xl font-bold text-(--palette-deep)">
-            Find a Roommate
+          <h1 className="mb-6 text-center font-serif text-3xl font-bold text-(--palette-deep)">
+            Find a roommate
           </h1>
 
           {/* Type badge */}
           <div className="mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm font-semibold text-(--palette-purple) shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-(--palette-border) bg-(--palette-card-bg) px-5 py-2 text-sm text-(--palette-purple) shadow-sm">
               {roommateType === "TYPE_A" ? (
                 <span className="flex items-center gap-1.5">
                   <Home className="h-4 w-4" /> I have a rented place
@@ -521,20 +521,20 @@ const RoommatePage: React.FC = () => {
             <button
               type="button"
               onClick={() => setActivePanel("find-match")}
-              className={`pb-3 text-base font-medium transition ${
+              className={`pb-3 text-sm transition ${
                 activePanel === "find-match"
-                  ? "border-b-2 border-(--palette-purple) text-(--palette-deep)"
+                  ? "border-b-2 border-(--palette-purple) font-bold text-(--palette-deep)"
                   : "border-b-2 border-transparent text-(--palette-soft-purple) hover:text-(--palette-deep)"
               }`}
             >
-              Find Match
+              Find match
             </button>
             <button
               type="button"
               onClick={() => setActivePanel("matches")}
-              className={`pb-3 text-base font-medium transition ${
+              className={`pb-3 text-sm transition ${
                 activePanel === "matches"
-                  ? "border-b-2 border-(--palette-purple) text-(--palette-deep)"
+                  ? "border-b-2 border-(--palette-purple) font-bold text-(--palette-deep)"
                   : "border-b-2 border-transparent text-(--palette-soft-purple) hover:text-(--palette-deep)"
               }`}
             >
@@ -549,7 +549,7 @@ const RoommatePage: React.FC = () => {
               {roommateType === "TYPE_A" &&
                 (hasEligibleRoommateRental ? (
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-4">
-                    <p className="mb-2 text-sm font-semibold text-(--palette-deep)">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                       Select rented room
                     </p>
                     <select
@@ -579,40 +579,40 @@ const RoommatePage: React.FC = () => {
                   </div>
                 ) : hasRentedRoom ? (
                   <div className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) px-6 py-10 text-center shadow-sm">
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--palette-soft-purple)">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                       Roommate matching is not allowed for your rental
                     </p>
-                    <h2 className="mt-3 text-2xl font-bold text-(--palette-deep)">
+                    <h2 className="mt-3 font-serif text-2xl font-bold text-(--palette-deep)">
                       The property owner has disabled roommate sharing for your
                       current rental.
                     </h2>
-                    <p className="mx-auto mt-3 max-w-md text-sm text-(--palette-soft-purple)">
+                    <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-(--palette-soft-purple)">
                       Browse roommate-friendly properties if you want to switch
                       to a shared-home setup.
                     </p>
                     <button
                       type="button"
                       onClick={() => navigate("/properties")}
-                      className="mt-6 rounded-full bg-(--palette-purple) px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                      className="mt-6 rounded-full bg-(--palette-purple) px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
                     >
                       Browse roommate-friendly properties
                     </button>
                   </div>
                 ) : (
                   <div className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) px-6 py-10 text-center shadow-sm">
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--palette-soft-purple)">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                       No room rented
                     </p>
-                    <h2 className="mt-3 text-2xl font-bold text-(--palette-deep)">
+                    <h2 className="mt-3 font-serif text-2xl font-bold text-(--palette-deep)">
                       You need an active rental first.
                     </h2>
-                    <p className="mx-auto mt-3 max-w-md text-sm text-(--palette-soft-purple)">
+                    <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-(--palette-soft-purple)">
                       Browse properties and sign a lease to use this flow.
                     </p>
                     <button
                       type="button"
                       onClick={() => navigate("/properties")}
-                      className="mt-6 rounded-full bg-(--palette-purple) px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                      className="mt-6 rounded-full bg-(--palette-purple) px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
                     >
                       Find a place
                     </button>
@@ -647,18 +647,18 @@ const RoommatePage: React.FC = () => {
           {pendingTypeChange && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
               <div className="w-full max-w-lg rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-6 shadow-2xl">
-                <h2 className="text-2xl font-bold text-(--palette-deep)">
+                <h2 className="font-serif text-2xl font-bold text-(--palette-deep)">
                   Change roommate type?
                 </h2>
-                <p className="mt-3 text-sm text-(--palette-soft-purple)">
+                <p className="mt-3 text-[15px] leading-relaxed text-(--palette-soft-purple)">
                   Changing your roommate type will:
                 </p>
-                <ul className="mt-3 space-y-2 text-sm text-(--palette-soft-purple)">
+                <ul className="mt-3 space-y-2 text-sm leading-relaxed text-(--app-text)">
                   <li>• remove your current roommate matches</li>
                   <li>• recompute new compatible matches</li>
                   <li>• reset your rented property selection if needed</li>
                 </ul>
-                <p className="mt-4 rounded-2xl bg-(--palette-page-bg) px-4 py-3 text-sm text-(--palette-deep)">
+                <p className="mt-4 rounded-2xl bg-(--palette-page-bg) px-4 py-3 text-sm leading-relaxed text-(--app-text)">
                   {pendingTypeChange === "TYPE_A"
                     ? "You will switch to: I have a rented place"
                     : "You will switch to: I'm looking for a place"}
@@ -668,7 +668,7 @@ const RoommatePage: React.FC = () => {
                     type="button"
                     onClick={() => setPendingTypeChange(null)}
                     disabled={isSaving}
-                    className="rounded-full border border-(--palette-border) px-4 py-2 text-sm font-semibold text-(--palette-deep) transition hover:bg-(--palette-page-bg) disabled:opacity-60"
+                    className="rounded-full border border-(--palette-border) px-4 py-2 text-sm font-bold text-(--palette-deep) transition hover:bg-(--palette-page-bg) disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -676,7 +676,7 @@ const RoommatePage: React.FC = () => {
                     type="button"
                     onClick={() => void confirmTypeChange()}
                     disabled={isSaving}
-                    className="rounded-full bg-(--palette-purple) px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    className="rounded-full bg-(--palette-purple) px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
                   >
                     {isSaving ? "Changing..." : "Yes, change type"}
                   </button>

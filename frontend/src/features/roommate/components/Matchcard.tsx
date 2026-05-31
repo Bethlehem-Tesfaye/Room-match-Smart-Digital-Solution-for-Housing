@@ -41,7 +41,7 @@ const ScoreRing = ({ score }: { score: number }) => {
         />
       </svg>
       <div
-        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
+        className="absolute inset-0 flex items-center justify-center text-sm font-bold"
         style={{ color }}
       >
         {Math.round(score)}%
@@ -72,7 +72,7 @@ const BreakdownBar = ({ label, value }: { label: string; value: number }) => {
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className="w-7 text-right text-[11px] font-semibold text-(--palette-soft-purple)">
+      <span className="w-7 text-right text-[11px] text-(--palette-soft-purple)">
         {Math.round(value)}%
       </span>
     </div>
@@ -112,14 +112,14 @@ export const MatchCard: React.FC<Props> = ({
             className="h-12 w-12 flex-shrink-0 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-(--palette-chip-bg) text-sm font-semibold text-(--palette-purple)">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-(--palette-chip-bg) text-sm font-bold text-(--palette-purple)">
             {initials}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-(--palette-deep)">{name}</p>
+          <p className="truncate font-serif font-bold text-(--palette-deep)">{name}</p>
           {leaseInfo && (
-            <p className="text-xs text-(--palette-soft-purple)">
+            <p className="text-[12px] leading-relaxed text-(--palette-soft-purple)">
               {leaseInfo.remainingDays} days left on lease
             </p>
           )}
@@ -129,7 +129,7 @@ export const MatchCard: React.FC<Props> = ({
 
       {/* Score breakdown */}
       <div className="space-y-2 border-t border-(--palette-border) px-5 py-4">
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Compatibility breakdown
         </p>
         <BreakdownBar label="Your view" value={scoreAtoB} />
@@ -143,13 +143,13 @@ export const MatchCard: React.FC<Props> = ({
           type="button"
           onClick={() => onStartConversation(match)}
           disabled={isStartingConversation}
-          className="flex-1 rounded-xl bg-(--palette-purple) py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          className="flex-1 rounded-xl bg-(--palette-purple) py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {isStartingConversation ? "Opening…" : "Message"}
         </button>
         <button
           type="button"
-          className="rounded-xl border border-(--palette-border) px-4 py-2.5 text-sm font-semibold text-(--palette-deep) transition hover:bg-(--palette-section-bg)"
+          className="rounded-xl border border-(--palette-border) px-4 py-2.5 text-sm font-bold text-(--palette-deep) transition hover:bg-(--palette-section-bg)"
         >
           View profile
         </button>

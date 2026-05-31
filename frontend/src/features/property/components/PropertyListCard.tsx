@@ -1,4 +1,4 @@
-import { Heart, MapPin, RefreshCw } from "lucide-react";
+import { Bath, BedDouble, Heart, MapPin, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
@@ -41,10 +41,19 @@ function PropertyListCard({
 
   const statusLabel =
     property.status === "Reserved"
-      ? "RESERVED"
+      ? "Reserved"
       : property.status === "Rented"
-        ? "RENTED"
-        : null;
+        ? "Rented"
+        : property.status === "Active"
+          ? "Available"
+          : null;
+
+  const statusDotColor =
+    property.status === "Reserved"
+      ? "#f59e0b"
+      : property.status === "Rented"
+        ? "#ef4444"
+        : "#22c55e";
 
   const handleFavoriteClick = async () => {
     if (favoriteLoading || isPending) return;
@@ -74,15 +83,19 @@ function PropertyListCard({
 
   return (
     <>
-      <Link to={`/properties/${property._id}`} className="block">
+      <Link to={`/properties/${property._id}`} className="block min-w-[280px]">
         <article
-          className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
-            isUnavailable ? "opacity-70 saturate-0" : ""
+          className={`group flex min-h-[340px] flex-col overflow-hidden rounded-xl border transition-transform duration-200 hover:-translate-y-0.5 ${
+            isUnavailable ? "opacity-70 saturate-[0.85]" : ""
           }`}
-          style={{ borderColor: palette.border }}
+          style={{
+            borderColor: palette.border,
+            backgroundColor: palette.cardBg,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
         >
           <div
-            className="relative h-48 w-full overflow-hidden"
+            className="relative min-h-0 flex-[0.57] overflow-hidden rounded-t-xl"
             style={{ backgroundColor: palette.cardMutedBg }}
           >
             {primaryImage ? (
@@ -93,7 +106,7 @@ function PropertyListCard({
               />
             ) : (
               <div
-                className="flex h-full items-center justify-center text-sm"
+                className="flex h-full min-h-[170px] items-center justify-center text-sm"
                 style={{ color: palette.softPurple }}
               >
                 No image
@@ -101,73 +114,88 @@ function PropertyListCard({
             )}
 
             {statusLabel ? (
-              <span className="absolute left-3 top-3 rounded-full bg-rose-600 px-3 py-1 text-xs font-bold tracking-wide text-white">
+              <span
+                className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] backdrop-blur-sm"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.88)",
+                  color: "var(--palette-deep)",
+                  border: `1px solid ${palette.border}`,
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: statusDotColor }}
+                />
                 {statusLabel}
               </span>
             ) : null}
-
-            <button
-              type="button"
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90"
-              aria-label={
-                property.isSaved ? "Remove from favorites" : "Save property"
-              }
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void handleFavoriteClick();
-              }}
-              disabled={favoriteLoading}
-            >
-              {favoriteLoading ? (
-                <RefreshCw
-                  size={15}
-                  className="animate-spin"
-                  style={{ color: palette.purple }}
-                />
-              ) : (
-                <Heart
-                  size={15}
-                  fill={property.isSaved ? palette.purple : "transparent"}
-                  style={{ color: palette.purple }}
-                />
-              )}
-            </button>
           </div>
 
-          <div className="p-4">
+          <div className="flex flex-[0.43] flex-col p-4">
             <h3
-              className="line-clamp-1 text-lg font-bold"
-              style={{ color: palette.deep }}
+              className="line-clamp-1 text-sm font-bold"
+              style={{ color: "var(--palette-deep)" }}
             >
               {property.title}
             </h3>
 
             <p
-              className="mt-2 flex items-center gap-1 text-sm"
-              style={{ color: palette.purple }}
-            >
-              <MapPin size={14} />
-              {property.city}
-            </p>
-
-            <p
-              className="mt-1 line-clamp-1 text-sm"
+              className="mt-1 flex items-center gap-1 text-xs leading-relaxed"
               style={{ color: palette.softPurple }}
             >
-              {property.address}
+              <MapPin size={12} />
+              {property.city}
+              {property.address ? ` · ${property.address}` : ""}
             </p>
 
-            <div className="mt-4 flex items-end justify-between">
+            <div
+              className="mt-2 flex items-center gap-3 text-[12px]"
+              style={{ color: palette.softPurple }}
+            >
+              <span className="inline-flex items-center gap-1">
+                <BedDouble size={12} />
+                {property.numberOfBedrooms} beds
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Bath size={12} />
+                {property.numberOfBathrooms} baths
+              </span>
+            </div>
+
+            <div className="mt-auto flex items-center justify-between pt-3">
               <p
-                className="text-2xl font-extrabold"
+                className="text-base font-bold"
                 style={{ color: palette.purple }}
               >
                 {formatCurrency(property.price, property.currency)}
               </p>
-              <p className="text-xs" style={{ color: palette.softPurple }}>
-                {property.numberOfBedrooms} bd | {property.numberOfBathrooms} ba
-              </p>
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors"
+                aria-label={
+                  property.isSaved ? "Remove from favorites" : "Save property"
+                }
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void handleFavoriteClick();
+                }}
+                disabled={favoriteLoading}
+              >
+                {favoriteLoading ? (
+                  <RefreshCw
+                    size={16}
+                    className="animate-spin"
+                    style={{ color: palette.purple }}
+                  />
+                ) : (
+                  <Heart
+                    size={16}
+                    fill={property.isSaved ? palette.purple : "transparent"}
+                    style={{ color: palette.purple }}
+                  />
+                )}
+              </button>
             </div>
           </div>
         </article>

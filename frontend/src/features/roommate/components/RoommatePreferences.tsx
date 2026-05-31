@@ -185,7 +185,7 @@ export const RoommatePreferences: React.FC<Props> = ({
 }) => {
   if (loading) {
     return (
-      <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 text-center text-(--palette-soft-purple)">
+      <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 text-center text-[15px] leading-relaxed text-(--palette-soft-purple)">
         Loading preferences...
       </div>
     );
@@ -193,7 +193,7 @@ export const RoommatePreferences: React.FC<Props> = ({
 
   if (!preferences) {
     return (
-      <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 text-center text-red-500">
+      <div className="rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-6 text-center text-[15px] leading-relaxed text-(--app-text)">
         Failed to load preferences
       </div>
     );
@@ -250,14 +250,14 @@ export const RoommatePreferences: React.FC<Props> = ({
             <section className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-2 text-(--palette-deep)">
                 <Sparkles className="h-4 w-4 text-(--palette-purple)" />
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-serif text-lg font-bold text-(--palette-deep)">
                   YOUR PROFILE (Tell us about yourself)
                 </h3>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     1) What is your current status?
                   </label>
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5">
@@ -278,9 +278,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                             onClick={() => {
                               onUpdate("currentStatus", option);
                             }}
-                            className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                            className={`rounded-xl px-4 py-3 text-sm transition ${
                               active
-                                ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                                ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                                 : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                             }`}
                           >
@@ -293,7 +293,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     2) What is your occupation or field of study?
                   </label>
                   <input
@@ -309,7 +309,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div className="lg:col-span-2">
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     3) How would you describe your general lifestyle?
                   </label>
                   <div className="grid grid-cols-2 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5 sm:grid-cols-4">
@@ -329,9 +329,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                           onClick={() => {
                             onUpdate("lifestyleType", option);
                           }}
-                          className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
                             active
-                              ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                              ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                               : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                           }`}
                         >
@@ -393,10 +393,10 @@ export const RoommatePreferences: React.FC<Props> = ({
                   return (
                     <div key={item.key}>
                       <div className="mb-2 flex items-center justify-between gap-3">
-                        <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                           {item.label}
                         </label>
-                        <span className="text-sm font-semibold text-(--palette-purple)">
+                        <span className="text-sm font-bold text-(--palette-purple)">
                           {value}
                         </span>
                       </div>
@@ -423,7 +423,7 @@ export const RoommatePreferences: React.FC<Props> = ({
 
               <div className="mt-7 grid gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     11) Do you smoke?
                   </label>
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5">
@@ -435,9 +435,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                             key={option}
                             type="button"
                             onClick={() => onUpdate("smoking", option)}
-                            className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                            className={`rounded-xl px-4 py-3 text-sm transition ${
                               active
-                                ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                                ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                                 : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                             }`}
                           >
@@ -450,7 +450,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     13) Do you have pets?
                   </label>
                   <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5">
@@ -462,9 +462,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                             key={option}
                             type="button"
                             onClick={() => onUpdate("pets", option)}
-                            className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                            className={`rounded-xl px-4 py-3 text-sm transition ${
                               active
-                                ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                                ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                                 : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                             }`}
                           >
@@ -477,7 +477,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     12) Do you drink alcohol?
                   </label>
                   <div className="grid grid-cols-3 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5">
@@ -494,9 +494,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                           key={value}
                           type="button"
                           onClick={() => onUpdate("drinking", value)}
-                          className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
                             active
-                              ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                              ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                               : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                           }`}
                         >
@@ -512,14 +512,14 @@ export const RoommatePreferences: React.FC<Props> = ({
             <section className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-2 text-(--palette-deep)">
                 <Wallet className="h-4 w-4 text-(--palette-purple)" />
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-serif text-lg font-bold text-(--palette-deep)">
                   14) What is your monthly budget range?
                 </h3>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     Minimum budget
                   </label>
                   <input
@@ -542,7 +542,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     Maximum budget
                   </label>
                   <input
@@ -569,7 +569,7 @@ export const RoommatePreferences: React.FC<Props> = ({
             <section className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-2 text-(--palette-deep)">
                 <Sparkles className="h-4 w-4 text-(--palette-purple)" />
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-serif text-lg font-bold text-(--palette-deep)">
                   ROOMMATE PREFERENCES (What are you looking for?)
                 </h3>
               </div>
@@ -607,21 +607,21 @@ export const RoommatePreferences: React.FC<Props> = ({
                     >
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-(--palette-deep)">
+                          <p className="font-serif text-sm font-bold text-(--palette-deep)">
                             {question.label}
                           </p>
-                          <p className="mt-1 text-xs text-(--palette-soft-purple)">
+                          <p className="mt-1 text-[12px] leading-relaxed text-(--palette-soft-purple)">
                             Scale 1 to 5
                           </p>
                         </div>
-                        <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-xs font-semibold text-(--palette-purple)">
+                        <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-[12px] text-(--palette-purple)">
                           Importance {importance}
                         </span>
                       </div>
 
                       <div className="space-y-5">
                         <div>
-                          <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+                          <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                             <span>Scale</span>
                             <span>{currentValue}</span>
                           </div>
@@ -649,7 +649,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                         </div>
 
                         <div>
-                          <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+                          <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                             <span>Importance</span>
                             <span>{importance}</span>
                           </div>
@@ -684,7 +684,7 @@ export const RoommatePreferences: React.FC<Props> = ({
             <section className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-2 text-(--palette-deep)">
                 <Wallet className="h-4 w-4 text-(--palette-purple)" />
-                <h3 className="text-lg font-semibold">7) Home policies</h3>
+                <h3 className="font-serif text-lg font-bold text-(--palette-deep)">7) Home policies</h3>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
@@ -730,14 +730,14 @@ export const RoommatePreferences: React.FC<Props> = ({
                     >
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-(--palette-deep)">
+                          <p className="font-serif text-sm font-bold text-(--palette-deep)">
                             {policy.label}
                           </p>
-                          <p className="mt-1 text-xs text-(--palette-soft-purple)">
+                          <p className="mt-1 text-[12px] leading-relaxed text-(--palette-soft-purple)">
                             Choose one
                           </p>
                         </div>
-                        <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-xs font-semibold text-(--palette-purple)">
+                        <span className="rounded-full bg-(--palette-chip-bg) px-3 py-1 text-[12px] text-(--palette-purple)">
                           Importance {importance}
                         </span>
                       </div>
@@ -752,9 +752,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                               onClick={() => {
                                 onUpdate(policy.key, value);
                               }}
-                              className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                              className={`rounded-xl px-4 py-3 text-sm transition ${
                                 active
-                                  ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                                  ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                                   : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                               }`}
                             >
@@ -765,7 +765,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                       </div>
 
                       <div className="mt-4">
-                        <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-(--palette-soft-purple)">
+                        <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                           <span>Importance</span>
                           <span>{importance}</span>
                         </div>
@@ -792,12 +792,12 @@ export const RoommatePreferences: React.FC<Props> = ({
             <section className="rounded-3xl border border-(--palette-border) bg-(--palette-card-bg) p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-2 text-(--palette-deep)">
                 <UserRound className="h-4 w-4 text-(--palette-purple)" />
-                <h3 className="text-lg font-semibold">10-15) Roommate fit</h3>
+                <h3 className="font-serif text-lg font-bold text-(--palette-deep)">10-15) Roommate fit</h3>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     10) What type of roommate do you prefer?
                   </label>
                   <div className="grid grid-cols-2 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5 sm:grid-cols-4">
@@ -817,9 +817,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                           onClick={() => {
                             onUpdate("roommateType", option);
                           }}
-                          className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
                             active
-                              ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                              ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                               : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                           }`}
                         >
@@ -831,10 +831,10 @@ export const RoommatePreferences: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     11) How strict are you about roommate behavior?
                   </label>
-                  <div className="mb-2 flex items-center justify-between text-xs font-semibold text-(--palette-soft-purple)">
+                  <div className="mb-2 flex items-center justify-between text-[12px] text-(--palette-soft-purple)">
                     <span>Very flexible</span>
                     <span>{preferenceDraft.behaviorStrictness}/5</span>
                     <span>Very strict</span>
@@ -883,7 +883,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                     key={item.key}
                     className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4"
                   >
-                    <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                    <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                       {item.label}
                     </label>
                     <div className="grid grid-cols-2 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-1.5">
@@ -896,9 +896,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                             onClick={() => {
                               onUpdate(item.key, option);
                             }}
-                            className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                            className={`rounded-xl px-4 py-3 text-sm transition ${
                               active
-                                ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                                ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                                 : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                             }`}
                           >
@@ -911,7 +911,7 @@ export const RoommatePreferences: React.FC<Props> = ({
                 ))}
 
                 <div className="md:col-span-2 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
                     15) Minimum expected stay duration
                   </label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -931,9 +931,9 @@ export const RoommatePreferences: React.FC<Props> = ({
                           onClick={() => {
                             onUpdate("minimumStayMonths", months);
                           }}
-                          className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
                             active
-                              ? "bg-(--palette-card-bg) text-(--palette-purple) shadow-sm"
+                              ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
                               : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
                           }`}
                         >

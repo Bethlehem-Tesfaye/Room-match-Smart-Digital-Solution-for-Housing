@@ -19,13 +19,13 @@ function PropertyPagination({
   );
 
   return (
-    <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+    <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
       <button
         type="button"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ borderColor: "#E7E1FA", color: palette.deep }}
+        className="min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ borderColor: palette.border, color: "var(--palette-deep)" }}
       >
         Previous
       </button>
@@ -38,11 +38,11 @@ function PropertyPagination({
             key={pageNumber}
             type="button"
             onClick={() => onPageChange(pageNumber)}
-            className="h-9 min-w-9 rounded-lg border px-3 text-sm font-semibold"
+            className="h-11 min-w-11 rounded-lg border px-3 text-sm font-bold"
             style={{
-              borderColor: isActive ? palette.purple : "#E7E1FA",
-              backgroundColor: isActive ? palette.purple : "#FFFFFF",
-              color: isActive ? "#FFFFFF" : palette.deep,
+              borderColor: isActive ? palette.purple : palette.border,
+              backgroundColor: isActive ? palette.purple : palette.cardBg,
+              color: isActive ? "#FFFFFF" : "var(--palette-deep)",
             }}
           >
             {pageNumber}
@@ -54,8 +54,8 @@ function PropertyPagination({
         type="button"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ borderColor: "#E7E1FA", color: palette.deep }}
+        className="min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ borderColor: palette.border, color: "var(--palette-deep)" }}
       >
         Next
       </button>

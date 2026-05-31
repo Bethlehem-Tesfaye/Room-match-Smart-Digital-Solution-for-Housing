@@ -4,7 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import ConversationList from "../../features/message/components/ConversationList";
-import MessageInbox from "../../features/message/components/MessageInbox";
+import MessageInbox, {
+  ContextPanel,
+} from "../../features/message/components/MessageInbox";
 import {
   useAcceptRentRequest,
   useCompleteRentPayment,
@@ -297,7 +299,7 @@ function MessagePageDashboard() {
     <main className="min-h-screen pt-18 ">
       <DashboardNavbar activeTab={null} />
       <div className="relative mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-(--palette-border) bg-(--palette-card-bg)">
-        <div className="relative grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
+        <div className="relative grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[280px_1fr_300px]">
           {isConversationListOpen ? (
             <button
               type="button"
@@ -328,6 +330,7 @@ function MessagePageDashboard() {
           <section className="relative z-10 h-full min-h-0">
             <MessageInbox
               conversationId={selectedConversationId}
+              isRoommateChat={selectedConversation?.isRoommateChat ?? false}
               conversationLabel={
                 selectedPartner?.name || selectedPartner?.email || "Inbox"
               }
@@ -356,6 +359,27 @@ function MessagePageDashboard() {
               hasMore={messagesState.hasMore}
               onLoadOlder={messagesState.loadOlder}
               onSendMessage={handleSendMessage}
+            />
+          </section>
+
+          <section className="hidden h-full min-h-0 lg:block">
+            <ContextPanel
+              conversationListing={selectedConversation?.listing}
+              rentRequest={rentRequestQuery.data}
+              isListingUnavailable={isSelectedListingRented}
+              isOwnerView={isOwnerView}
+              isRentRequestLoading={rentRequestQuery.isLoading}
+              isRentActionPending={
+                createRentRequest.isPending ||
+                acceptRentRequest.isPending ||
+                completeRentPayment.isPending ||
+                rejectRentRequest.isPending
+              }
+              onRequestToRent={handleRequestToRent}
+              onCompletePayment={handleCompletePayment}
+              onAcceptRentRequest={handleAcceptRentRequest}
+              onRejectRentRequest={handleRejectRentRequest}
+              isRoommateChat={selectedConversation?.isRoommateChat ?? false}
             />
           </section>
         </div>
