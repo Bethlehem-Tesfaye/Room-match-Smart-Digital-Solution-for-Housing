@@ -7,8 +7,8 @@ import {
   type FormEvent,
 } from "react";
 import { Link } from "react-router-dom";
+import { Building2, Menu } from "lucide-react";
 import type { ConversationListing, Message, RentRequest } from "../types/type";
-import { Building2 } from "lucide-react";
 
 interface MessageInboxProps {
   conversationId?: string;
@@ -26,6 +26,7 @@ interface MessageInboxProps {
   onRejectRentRequest?: () => Promise<void>;
   resolveSenderName?: (sender: Message["senderId"]) => string | undefined;
   isPartnerLoading?: boolean;
+  onOpenConversationList?: () => void;
   messages: Message[];
   isLoading: boolean;
   isSending: boolean;
@@ -55,6 +56,7 @@ function MessageInbox({
   onRejectRentRequest,
   resolveSenderName,
   isPartnerLoading = false,
+  onOpenConversationList,
   messages,
   isLoading,
   isSending,
@@ -139,70 +141,93 @@ function MessageInbox({
     onLoadOlder();
   };
 
+  const mobileHeader = onOpenConversationList ? (
+    <div className="flex items-center gap-3 border-b border-(--palette-border) px-4 py-3 md:hidden">
+      <button
+        type="button"
+        onClick={onOpenConversationList}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-(--palette-border) bg-(--palette-card-bg) text-(--palette-deep)"
+        aria-label="Open conversations"
+      >
+        <Menu size={18} />
+      </button>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-(--palette-soft-purple)">
+          Conversations
+        </p>
+        <p className="truncate text-sm text-(--palette-deep)">
+          Tap the menu to switch chats
+        </p>
+      </div>
+    </div>
+  ) : null;
+
   if (!conversationId) {
     return (
-      <div className="flex h-full min-h-0 flex-col items-center justify-center bg-(--palette-card-muted-alt-bg) px-6 text-center text-(--palette-soft-purple)">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-(--palette-chip-bg) text-(--palette-soft-purple)">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.8"
-            stroke="currentColor"
-            className="h-9 w-9"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8.625 9.75a3.375 3.375 0 0 1 6.75 0c0 1.585-1.023 2.768-2.313 3.42-.54.273-.937.806-.937 1.41v.17M12 17.25h.008v.008H12v-.008Z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 0 1-4.93-1.47L3 20.25l.72-3.6A8.96 8.96 0 0 1 3 12c0-4.97 4.03-9 9-9s9 4.03 9 9Z"
-            />
-          </svg>
+      <div className="flex h-full min-h-0 flex-col bg-(--palette-card-muted-alt-bg)">
+        {mobileHeader}
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-(--palette-soft-purple)">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-(--palette-chip-bg) text-(--palette-soft-purple)">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.8"
+              stroke="currentColor"
+              className="h-9 w-9"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.625 9.75a3.375 3.375 0 0 1 6.75 0c0 1.585-1.023 2.768-2.313 3.42-.54.273-.937.806-.937 1.41v.17M12 17.25h.008v.008H12v-.008Z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 0 1-4.93-1.47L3 20.25l.72-3.6A8.96 8.96 0 0 1 3 12c0-4.97 4.03-9 9-9s9 4.03 9 9Z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-4xl font-semibold text-(--palette-deep)">
+            Select a conversation
+          </h3>
+          <p className="mt-3 text-xl text-(--palette-soft-purple)">
+            Choose a conversation from the list to start chatting
+          </p>
         </div>
-        <h3 className="text-4xl font-semibold text-(--palette-deep)">
-          Select a conversation
-        </h3>
-        <p className="mt-3 text-xl text-(--palette-soft-purple)">
-          Choose a conversation from the list to start chatting
-        </p>
       </div>
     );
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-(--palette-card-bg)">
+      {mobileHeader}
       <div className="border-b border-(--palette-border) px-5 py-3">
-        {/* Name + roommate badge row */}
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-(--palette-deep)">
             {conversationLabel}
           </h2>
-          {isRoommateChat && ( // NEW
+          {isRoommateChat ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
-              🏠 Roommate
+              Roommate
             </span>
-          )}
+          ) : null}
         </div>
 
-        {/* Listing link — only for non-roommate chats */}
-        {!isRoommateChat && conversationListing ? ( // CHANGED: added !isRoommateChat
-          <p className="mt-1 truncate text-xs text-(--palette-soft-purple) underline flex gap-2">
+        {!isRoommateChat && conversationListing ? (
+          <p className="mt-1 flex gap-2 truncate text-xs text-(--palette-soft-purple) underline">
             <Building2 size={19} />
-            <div className="flex item-center justify-center text-blue-500">
+            <span className="flex items-center gap-1 text-sm text-blue-500">
               <Link
                 to={`/properties/${conversationListing._id}`}
-                className="font-semibold hover:underline flex items-center text-sm"
+                className="font-semibold hover:underline"
               >
                 {conversationListing.title}
                 {conversationListing.city
                   ? ` • ${conversationListing.city}`
                   : ""}
               </Link>
-            </div>
+            </span>
             {isListingUnavailable ? (
               <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white no-underline">
                 RENTED
@@ -211,7 +236,6 @@ function MessageInbox({
           </p>
         ) : null}
 
-        {/* All rent request UI — entirely hidden for roommate chats */}
         {!isRoommateChat &&
         conversationListing &&
         !isOwnerView &&

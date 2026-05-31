@@ -45,6 +45,7 @@ function MessagePageDashboard() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | undefined
   >(() => searchParams.get("conversationId") || undefined);
+  const [isConversationListOpen, setIsConversationListOpen] = useState(false);
 
   const conversationsQuery = useConversations();
   const unreadCountsQuery = useUnreadMessageCounts();
@@ -94,6 +95,11 @@ function MessagePageDashboard() {
     const partner = partnerByConversationId[conversationId];
     if (!partner) return undefined;
     return partner.name || partner.email || undefined;
+  };
+
+  const handleSelectConversation = (conversationId: string) => {
+    setConversation(conversationId);
+    setIsConversationListOpen(false);
   };
 
   const resolveSenderName = (sender: Message["senderId"]) => {
@@ -290,21 +296,36 @@ function MessagePageDashboard() {
   return (
     <main className="min-h-screen pt-18 ">
       <DashboardNavbar activeTab={null} />
-      <div className="mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-(--palette-border) bg-(--palette-card-bg)">
-        <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
-          <aside className="h-full min-h-0">
+      <div className="relative mx-auto flex h-[calc(100vh-96px)] max-w-7xl flex-col overflow-hidden rounded-2xl border border-(--palette-border) bg-(--palette-card-bg)">
+        <div className="relative grid flex-1 min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
+          {isConversationListOpen ? (
+            <button
+              type="button"
+              className="absolute inset-0 z-30 bg-black/40 md:hidden"
+              onClick={() => setIsConversationListOpen(false)}
+              aria-label="Close conversations"
+            />
+          ) : null}
+
+          <aside
+            className={`absolute inset-y-0 left-0 z-40 h-full w-[min(88vw,20rem)] min-h-0 border-r border-(--palette-border) bg-(--palette-card-bg) shadow-2xl transition-transform duration-200 md:static md:z-auto md:w-auto md:translate-x-0 md:shadow-none ${
+              isConversationListOpen
+                ? "translate-x-0"
+                : "-translate-x-full md:translate-x-0"
+            }`}
+          >
             <ConversationList
               conversations={conversations}
               selectedConversationId={selectedConversationId}
               isLoading={conversationsQuery.isLoading}
               isPartnerLoading={isPartnersLoading}
               getConversationLabel={getConversationLabel}
-              onSelectConversation={setConversation}
+              onSelectConversation={handleSelectConversation}
               unreadByConversation={unreadCountsQuery.data?.byConversation}
             />
           </aside>
 
-          <section className="h-full min-h-0">
+          <section className="relative z-10 h-full min-h-0">
             <MessageInbox
               conversationId={selectedConversationId}
               conversationLabel={
@@ -328,6 +349,7 @@ function MessagePageDashboard() {
               onRejectRentRequest={handleRejectRentRequest}
               resolveSenderName={resolveSenderName}
               isPartnerLoading={isPartnersLoading}
+              onOpenConversationList={() => setIsConversationListOpen(true)}
               messages={messagesState.messages}
               isLoading={messagesState.isLoading || messagesState.isFetching}
               isSending={sendHttpMessage.isPending}
