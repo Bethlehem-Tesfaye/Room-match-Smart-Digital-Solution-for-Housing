@@ -3,44 +3,50 @@
 
 :root {
   color-scheme: light;
-  --app-bg: #f7f5ff;
-  --app-text: #1f2937;
+
+  --app-bg: #faf7ff;
+  --app-text: #1f1635;
   --app-surface: #ffffff;
-  --app-surface-border: #c4bbf0;
-  --palette-deep: #363b4e;
-  --palette-purple: #4f3b78;
-  --palette-soft-purple: #927fbf;
-  --palette-light-purple: #c4bbf0;
-  --palette-page-bg: #f7f5ff;
-  --palette-section-bg: #f6f5fc;
+  --app-surface-border: #c8b4ec;
+
+  --palette-deep: #2e1f4a;
+  --palette-purple: #8b64c8;
+  --palette-soft-purple: #a98fd4;
+  --palette-light-purple: #c8b4ec;
+
+  --palette-page-bg: #faf7ff;
+  --palette-section-bg: #f5f1ff;
   --palette-card-bg: #ffffff;
-  --palette-card-muted-bg: #f4f1fe;
-  --palette-card-muted-alt-bg: #f9f7ff;
-  --palette-border: #e7e1fa;
-  --palette-chip-bg: #f1ecff;
+  --palette-card-muted-bg: #f0ebff;
+  --palette-card-muted-alt-bg: #f7f4ff;
+  --palette-border: #e5d9f9;
+  --palette-chip-bg: #ede7fd;
   --palette-input-bg: #ffffff;
-  --palette-skeleton: #e6e0f8;
+  --palette-skeleton: #e2d9f7;
 }
 
 html.dark {
   color-scheme: dark;
-  --app-bg: #0f172a;
-  --app-text: #e2e8f0;
-  --app-surface: #111827;
-  --app-surface-border: #334155;
-  --palette-deep: #e5e7eb;
-  --palette-purple: #c4b5fd;
-  --palette-soft-purple: #a78bfa;
-  --palette-light-purple: #334155;
-  --palette-page-bg: #020617;
-  --palette-section-bg: #0b1220;
-  --palette-card-bg: #111827;
-  --palette-card-muted-bg: #1f2937;
-  --palette-card-muted-alt-bg: #1b2433;
-  --palette-border: #334155;
-  --palette-chip-bg: #1e293b;
-  --palette-input-bg: #0b1220;
-  --palette-skeleton: #1f2937;
+
+  --app-bg: #0e0b1a;
+  --app-text: #ede9f8;
+  --app-surface: #17112e;
+  --app-surface-border: #3a2d5c;
+
+  --palette-deep: #ede9f8;
+  --palette-purple: #b08ee0;
+  --palette-soft-purple: #9b78d4;
+  --palette-light-purple: #3a2d5c;
+
+  --palette-page-bg: #080612;
+  --palette-section-bg: #100d1f;
+  --palette-card-bg: #17112e;
+  --palette-card-muted-bg: #1f1838;
+  --palette-card-muted-alt-bg: #1b1530;
+  --palette-border: #3a2d5c;
+  --palette-chip-bg: #251c42;
+  --palette-input-bg: #100d1f;
+  --palette-skeleton: #1f1838;
 }
 
 html,

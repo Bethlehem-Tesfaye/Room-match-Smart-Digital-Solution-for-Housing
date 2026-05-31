@@ -1,9 +1,11 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import FavoriteAuthModal from "../../features/property/components/FavoriteAuthModal";
-import PropertyDetailsView from "../../features/property/components/PropertyDetailsView";
+import PropertyDetailsView, {
+  PropertyDetailsSkeleton,
+} from "../../features/property/components/PropertyDetailsView";
 import {
   useBrowserPropertyDetails,
   useRemoveFavorite,
@@ -13,49 +15,18 @@ import type { Property } from "../../features/property/types/type";
 import { palette } from "../../theme/palette";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 
-function PropertyDetailsSkeleton() {
-  return (
-    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <div className="space-y-4">
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="skeleton h-72 rounded-2xl sm:col-span-2" />
-          <div className="grid gap-2">
-            {Array.from({ length: 3 }).map((_, idx) => (
-              <div key={idx} className="skeleton h-22 rounded-xl" />
-            ))}
-          </div>
-        </div>
-
-        <div
-          className="skeleton h-72 rounded-2xl border"
-          style={{ borderColor: palette.border }}
-        />
-
-        {Array.from({ length: 3 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="skeleton h-40 rounded-2xl border"
-            style={{ borderColor: palette.border }}
-          />
-        ))}
-      </div>
-
-      <aside>
-        <div
-          className="skeleton h-64 rounded-2xl border"
-          style={{ borderColor: palette.border }}
-        />
-      </aside>
-    </div>
-  );
-}
-
 function PropertyPreviewPage() {
   const { id } = useParams<{ id: string }>();
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { data: property, isLoading, isError } = useBrowserPropertyDetails(id);
+  const {
+    data: property,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useBrowserPropertyDetails(id);
   const { isPending, isAuthenticated } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
@@ -82,32 +53,71 @@ function PropertyPreviewPage() {
   };
 
   return (
-    <main className="">
+    <main style={{ backgroundColor: palette.pageBg }}>
       <DashboardNavbar activeTab={"dashboard"} />
 
-      <section
-        className="flex-1 px-4 py-10 pt-24"
-        style={{ backgroundColor: palette.sectionBg }}
-      >
+      <section className="flex-1 px-4 py-10 pt-24">
         <div className="mx-auto max-w-6xl">
           <Link
             to="/dashboard/my-properties"
-            className="mb-4 inline-flex items-center gap-2 text-sm font-semibold"
-            style={{ color: palette.deep }}
+            className="mb-4 inline-flex items-center gap-2 text-sm font-bold"
+            style={{ color: "var(--palette-deep)" }}
           >
             <ArrowLeft size={16} />
-            Back to Listings
+            Back to listings
           </Link>
-          <div className="text-2xl mb-6">See what Potential Tenants See</div>
+          <p
+            className="mb-6 text-2xl font-bold"
+            style={{ color: "var(--palette-deep)" }}
+          >
+            See what potential tenants see
+          </p>
 
           {isLoading ? (
             <PropertyDetailsSkeleton />
-          ) : isError || !property ? (
-            <div
-              className="rounded-2xl border p-6 text-sm"
-              style={{ borderColor: "#E1D8FA", color: palette.purple }}
-            >
-              Couldn&apos;t load property details.
+          ) : isError ? (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+              <RefreshCw
+                size={64}
+                className="mb-5"
+                style={{ color: palette.softPurple }}
+              />
+              <p
+                className="text-xl font-bold"
+                style={{ color: "var(--palette-deep)" }}
+              >
+                Couldn&apos;t load this listing
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                className="mt-6 min-h-[44px] rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                style={{ backgroundColor: palette.purple }}
+              >
+                {isFetching ? "Retrying..." : "Try again"}
+              </button>
+            </div>
+          ) : !property ? (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+              <Home
+                size={64}
+                className="mb-5"
+                style={{ color: palette.softPurple }}
+              />
+              <p
+                className="text-xl font-bold"
+                style={{ color: "var(--palette-deep)" }}
+              >
+                This listing isn&apos;t available
+              </p>
+              <Link
+                to="/dashboard/my-properties"
+                className="mt-6 inline-flex min-h-[44px] items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                style={{ backgroundColor: palette.purple }}
+              >
+                Back to my properties
+              </Link>
             </div>
           ) : (
             <PropertyDetailsView

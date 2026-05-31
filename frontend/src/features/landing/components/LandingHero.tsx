@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import type { FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { palette } from "../../../theme/palette";
 
 interface LandingHeroProps {
@@ -20,47 +21,75 @@ function LandingHero({
 
   return (
     <section
-      className="relative overflow-hidden px-4 py-18 md:py-24 -mt-10"
-      style={{
-        background: `linear-gradient(135deg, ${palette.deep} 0%, ${palette.purple} 55%, ${palette.softPurple} 100%)`,
-      }}
+      className="relative flex min-h-[100vh] items-center overflow-hidden px-4 py-20 md:min-h-[85vh] md:py-24"
+      style={{ backgroundColor: palette.pageBg }}
     >
-      <div className="mx-auto max-w-5xl text-center text-white">
-        <span
-          className="inline-block rounded-full px-4 py-1 text-xs font-semibold"
-          style={{
-            backgroundColor: "rgba(196, 187, 240, 0.2)",
-            color: "#FFFFFF",
-          }}
-        >
-          The smarter way to find your next home
-        </span>
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60"
+        style={{
+          background: `radial-gradient(circle, ${palette.cardMutedBg} 0%, transparent 70%)`,
+        }}
+        aria-hidden="true"
+      />
 
-        <h1 className="mt-6 text-4xl font-extrabold leading-tight md:text-6xl">
-          Find Your Perfect
+      <div className="relative mx-auto w-full max-w-3xl text-center">
+        <h1
+          className="font-serif text-[2.5rem] font-bold leading-tight md:text-[4rem]"
+          style={{ color: "var(--palette-deep)" }}
+        >
+          Find your perfect
           <br />
-          <span style={{ color: palette.lightPurple }}>Place & Roommate</span>
+          <span style={{ color: palette.purple }}>place & roommate</span>
         </h1>
 
-        <p className="mx-auto mt-5 max-w-2xl text-sm text-white/85 md:text-base">
+        <p
+          className="mx-auto mt-5 max-w-[480px] text-sm leading-relaxed md:text-base"
+          style={{ color: palette.softPurple }}
+        >
           Discover rental properties and connect with compatible roommates. Your
           ideal living situation is just a few clicks away.
         </p>
 
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            to="/properties"
+            className="inline-flex min-h-11 min-w-[140px] items-center justify-center rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: palette.purple }}
+          >
+            Browse properties
+          </Link>
+          <Link
+            to="/roommate"
+            className="inline-flex min-h-11 min-w-[140px] items-center justify-center rounded-lg border px-6 py-2.5 text-sm font-bold transition-colors"
+            style={{
+              borderColor: palette.border,
+              color: "var(--palette-deep)",
+            }}
+          >
+            Find a roommate
+          </Link>
+        </div>
+
         <form
-          className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-white/15 p-2 backdrop-blur-md"
+          className="mx-auto mt-10 flex w-full max-w-2xl flex-col items-stretch gap-2 rounded-full border p-2 sm:flex-row sm:items-center"
+          style={{
+            backgroundColor: palette.cardBg,
+            borderColor: palette.border,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
           onSubmit={handleSubmit}
         >
           <input
             type="text"
             placeholder="Enter city, neighborhood, or zip code..."
-            className="h-11 flex-1 rounded-xl border-0 bg-white px-4 text-sm text-slate-800 outline-none"
+            className="h-11 min-h-[44px] flex-1 rounded-full border-0 bg-transparent px-4 text-sm outline-none"
+            style={{ color: "var(--app-text)" }}
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
           />
           <button
             type="submit"
-            className="inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex h-11 min-h-[44px] items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: palette.purple }}
           >
             <Search size={16} />

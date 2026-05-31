@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -6,7 +6,9 @@ import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import { useSendPropertyMessage } from "../../features/message/hooks/useMessageHooks";
 import FavoriteAuthModal from "../../features/property/components/FavoriteAuthModal";
-import PropertyDetailsView from "../../features/property/components/PropertyDetailsView";
+import PropertyDetailsView, {
+  PropertyDetailsSkeleton,
+} from "../../features/property/components/PropertyDetailsView";
 import {
   useBrowserPropertyDetails,
   useRemoveFavorite,
@@ -15,50 +17,19 @@ import {
 import type { Property } from "../../features/property/types/type";
 import { palette } from "../../theme/palette";
 
-function PropertyDetailsSkeleton() {
-  return (
-    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <div className="space-y-4">
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="skeleton h-72 rounded-2xl sm:col-span-2" />
-          <div className="grid gap-2">
-            {Array.from({ length: 3 }).map((_, idx) => (
-              <div key={idx} className="skeleton h-22 rounded-xl" />
-            ))}
-          </div>
-        </div>
-
-        <div
-          className="skeleton h-72 rounded-2xl border"
-          style={{ borderColor: palette.border }}
-        />
-
-        {Array.from({ length: 3 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="skeleton h-40 rounded-2xl border"
-            style={{ borderColor: palette.border }}
-          />
-        ))}
-      </div>
-
-      <aside>
-        <div
-          className="skeleton h-64 rounded-2xl border"
-          style={{ borderColor: palette.border }}
-        />
-      </aside>
-    </div>
-  );
-}
-
 function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { data: property, isLoading, isError } = useBrowserPropertyDetails(id);
+  const {
+    data: property,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useBrowserPropertyDetails(id);
   const { isPending, isAuthenticated, user } = useCurrentUser();
   const saveFavorite = useSaveFavorite();
   const removeFavorite = useRemoveFavorite();
@@ -128,31 +99,81 @@ function PropertyDetailsPage() {
   };
 
   return (
-    <main className="pt-24">
+    <main
+      className="min-h-screen pb-8"
+      style={{ backgroundColor: palette.pageBg }}
+    >
       <LandingNavbar />
 
-      <section
-        className="px-4 py-8"
-        style={{ backgroundColor: palette.sectionBg }}
-      >
+      <section className="px-4 py-8 pt-24">
         <div className="mx-auto max-w-6xl">
           <Link
             to="/properties"
-            className="mb-4 inline-flex items-center gap-2 text-sm font-semibold"
-            style={{ color: palette.deep }}
+            className="mb-6 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold md:hidden"
+            style={{ color: "var(--palette-deep)" }}
           >
-            <ArrowLeft size={16} />
-            Back to Listings
+            <ArrowLeft size={18} />
+            Back
           </Link>
 
           {isLoading ? (
             <PropertyDetailsSkeleton />
-          ) : isError || !property ? (
-            <div
-              className="rounded-2xl border p-6 text-sm"
-              style={{ borderColor: "#E1D8FA", color: palette.purple }}
-            >
-              Couldn&apos;t load property details.
+          ) : isError ? (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+              <RefreshCw
+                size={64}
+                className="mb-5"
+                style={{ color: palette.softPurple }}
+              />
+              <p
+                className="text-xl font-bold"
+                style={{ color: "var(--palette-deep)" }}
+              >
+                Couldn&apos;t load this listing
+              </p>
+              <p
+                className="mt-2 max-w-md text-sm leading-relaxed"
+                style={{ color: palette.softPurple }}
+              >
+                Something went wrong while fetching this property. Please try
+                again.
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                className="mt-6 min-h-[44px] rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: palette.purple }}
+              >
+                {isFetching ? "Retrying..." : "Try again"}
+              </button>
+            </div>
+          ) : !property ? (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+              <Home
+                size={64}
+                className="mb-5"
+                style={{ color: palette.softPurple }}
+              />
+              <p
+                className="text-xl font-bold"
+                style={{ color: "var(--palette-deep)" }}
+              >
+                This listing isn&apos;t available
+              </p>
+              <p
+                className="mt-2 max-w-md text-sm leading-relaxed"
+                style={{ color: palette.softPurple }}
+              >
+                It may have been removed or the link is incorrect.
+              </p>
+              <Link
+                to="/properties"
+                className="mt-6 inline-flex min-h-[44px] items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                style={{ backgroundColor: palette.purple }}
+              >
+                Browse properties
+              </Link>
             </div>
           ) : (
             <PropertyDetailsView
