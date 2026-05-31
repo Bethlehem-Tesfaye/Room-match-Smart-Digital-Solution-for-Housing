@@ -10,10 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  useDeleteCreatorProperty,
-  useUpdateCreatorProperty,
-} from "../../addListing/hooks/useCreatorPropertyHooks";
+import { useDeleteCreatorProperty } from "../../addListing/hooks/useCreatorPropertyHooks";
 import PropertyPagination from "../../property/components/PropertyPagination";
 import {
   useCreateTerminationRequest,
@@ -55,11 +52,11 @@ function DeleteTerminationModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h3 className="text-xl font-bold" style={{ color: palette.deep }}>
-          Send termination request first
+          Send termination notice first
         </h3>
         <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-          To delete {propertyTitle}, you must send a contract termination
-          request to the rented tenant first.
+          To delete {propertyTitle}, you must send a contract termination notice
+          to the rented tenant first.
         </p>
 
         <div className="mt-6 flex gap-3">
@@ -78,7 +75,7 @@ function DeleteTerminationModal({
             className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             style={{ backgroundColor: palette.purple }}
           >
-            {isSubmitting ? "Sending..." : "Send Termination Request"}
+            {isSubmitting ? "Sending..." : "Send Termination Notice"}
           </button>
         </div>
       </div>
@@ -89,13 +86,9 @@ function DeleteTerminationModal({
 function MyPropertyList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const updateProperty = useUpdateCreatorProperty();
   const deleteProperty = useDeleteCreatorProperty();
   const createTerminationRequest = useCreateTerminationRequest();
   const [page, setPage] = useState(1);
-  const [markingRentedPropertyId, setMarkingRentedPropertyId] = useState<
-    string | null
-  >(null);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(
     null,
   );
@@ -169,41 +162,6 @@ function MyPropertyList() {
     };
   }, []);
 
-  const handleMarkAsRented = async (propertyId: string, status?: string) => {
-    if (status === "Rented") {
-      toast.info("This listing is already marked as rented.");
-      setOpenMenuPropertyId(null);
-      return;
-    }
-
-    setMarkingRentedPropertyId(propertyId);
-
-    try {
-      await updateProperty.mutateAsync({
-        propertyId,
-        payload: { status: "Rented" },
-      });
-
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard", "my-properties-overview"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard", "listing-counts"],
-        }),
-      ]);
-
-      toast.success("Listing marked as rented.");
-      setOpenMenuPropertyId(null);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update listing";
-      toast.error(message);
-    } finally {
-      setMarkingRentedPropertyId(null);
-    }
-  };
-
   const handleDeleteProperty = async (propertyId: string) => {
     setDeletingPropertyId(propertyId);
 
@@ -263,14 +221,14 @@ function MyPropertyList() {
         }),
       ]);
 
-      toast.success("Termination request sent.");
+      toast.success("Termination notice sent.");
       setTerminationProperty(null);
       setOpenMenuPropertyId(null);
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Failed to send termination request";
+          : "Failed to send termination notice";
       toast.error(message);
     }
   };
@@ -427,8 +385,8 @@ function MyPropertyList() {
                           >
                             <CircleCheck size={16} />
                             {terminationRequestByPropertyId.has(property._id)
-                              ? "Termination Pending"
-                              : "Send Termination Request"}
+                              ? "Termination Notice Active"
+                              : "Create Termination Notice"}
                           </button>
                         )}
 

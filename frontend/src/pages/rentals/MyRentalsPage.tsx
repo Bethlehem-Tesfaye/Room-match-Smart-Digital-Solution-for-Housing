@@ -13,11 +13,10 @@ import { api } from "../../lib/axios";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import {
-  useAcceptTerminationRequest,
   useCancelRentRequest,
-  useCreateTerminationRequest,
+  useCreateTerminationNotice,
   useMarkRentalNotificationsRead,
-  useRejectTerminationRequest,
+  useWithdrawTerminationNotice,
   useTenantRentalContracts,
 } from "../../features/message/hooks/useMessageHooks";
 import type {
@@ -77,7 +76,7 @@ const getStatusMeta = (status: ContractStatus) => {
       };
     case "TERMINATION_PENDING":
       return {
-        label: "Termination Pending",
+        label: "Termination Notice Active",
         className: "bg-orange-100 text-orange-700",
       };
     case "TERMINATED":
@@ -145,6 +144,35 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
   return `${minutes}m left`;
 };
 
+const formatNoticeCountdown = (effectiveDate?: string | null) => {
+  if (!effectiveDate) return null;
+
+  const remainingMs = new Date(effectiveDate).getTime() - Date.now();
+  if (Number.isNaN(remainingMs)) return null;
+
+  if (remainingMs <= 0) return "Terminates today";
+
+  const totalDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+
+  if (totalDays === 30) return "30 days remaining";
+  if (totalDays === 1) return "1 day remaining";
+
+  return `${totalDays} days remaining`;
+};
+
+const formatNoticeDate = (value?: string | null) => {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+};
+
 const getErrorMessage = (error: unknown) => {
   if (typeof error === "object" && error !== null && "response" in error) {
     const maybeResponse = error as {
@@ -179,9 +207,8 @@ function MyRentalsPage() {
   const rentalsQuery = useTenantRentalContracts();
   const markRentalNotificationsRead = useMarkRentalNotificationsRead();
   const cancelRentRequest = useCancelRentRequest();
-  const createTerminationRequest = useCreateTerminationRequest();
-  const acceptTerminationRequest = useAcceptTerminationRequest();
-  const rejectTerminationRequest = useRejectTerminationRequest();
+  const createTerminationNotice = useCreateTerminationNotice();
+  const withdrawTerminationNotice = useWithdrawTerminationNotice();
 
   useEffect(() => {
     if (!user || rentalNotificationsMarkedRef.current) return;
@@ -263,7 +290,10 @@ function MyRentalsPage() {
   );
 
   const rentedContracts = useMemo(
-    () => contracts.filter((contract) => contract.status === "ACTIVE"),
+    () =>
+      contracts.filter((contract) =>
+        ["ACTIVE", "TERMINATION_PENDING"].includes(contract.status),
+      ),
     [contracts],
   );
 
@@ -347,42 +377,28 @@ function MyRentalsPage() {
 
   const handleSendTerminationRequest = async (contractId: string) => {
     try {
-      await createTerminationRequest.mutateAsync({ contractId });
+      await createTerminationNotice.mutateAsync({ contractId });
       await rentalsQuery.refetch();
-      toast.success("Termination request sent");
+      toast.success("Termination notice created");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Failed to send termination request";
+          : "Failed to create termination notice";
       toast.error(message);
     }
   };
 
-  const handleAcceptTermination = async (contractId: string) => {
+  const handleWithdrawTermination = async (contractId: string) => {
     try {
-      await acceptTerminationRequest.mutateAsync({ contractId });
+      await withdrawTerminationNotice.mutateAsync({ contractId });
       await rentalsQuery.refetch();
-      toast.success("Termination accepted");
+      toast.success("Termination notice withdrawn");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Failed to accept termination request";
-      toast.error(message);
-    }
-  };
-
-  const handleRejectTermination = async (contractId: string) => {
-    try {
-      await rejectTerminationRequest.mutateAsync({ contractId });
-      await rentalsQuery.refetch();
-      toast.success("Termination rejected");
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to reject termination request";
+          : "Failed to withdraw termination notice";
       toast.error(message);
     }
   };
@@ -547,6 +563,13 @@ function MyRentalsPage() {
               const owner = getParty(contract.ownerId);
               const statusMeta = getStatusMeta(contract.status);
               const listingStateMeta = getListingStateMeta(listing);
+              const isNoticeActive = contract.status === "TERMINATION_PENDING";
+              const noticeInitiator = getTerminationRequester(
+                contract.terminationRequestedBy,
+              );
+              const noticeCountdown = formatNoticeCountdown(
+                contract.terminationEffectiveDate,
+              );
               const canCompletePayment =
                 contract.status === "RESERVED" &&
                 contract.paymentDueAt &&
@@ -638,9 +661,11 @@ function MyRentalsPage() {
                                 ? "Payment is pending. The request will disappear automatically if payment is not completed in time."
                                 : "Your request is recorded and waiting for owner response."
                               : activeTab === "rented"
-                                ? "Your rental is active and tracked here."
+                                ? isNoticeActive
+                                  ? "This rental is currently in its 30-day notice period."
+                                  : "Your rental is active and tracked here."
                                 : activeTab === "termination"
-                                  ? "A termination decision is waiting for the other party."
+                                  ? "This rental is waiting for the notice period to end or be withdrawn."
                                   : contract.status === "REJECTED"
                                     ? "This request was rejected by the owner, and you can send a new request later."
                                     : contract.status === "CANCELLED"
@@ -670,25 +695,71 @@ function MyRentalsPage() {
                                 color: palette.deep,
                               }}
                             >
-                              {isTerminationRequester(contract)
-                                ? "Waiting for the other party"
-                                : "Your response is requireda"}
+                              Termination Notice Active
                             </div>
                           ) : null}
 
-                          {activeTab === "termination" ? (
-                            <p
-                              className="mt-2 text-xs"
-                              style={{ color: palette.softPurple }}
+                          {isNoticeActive ? (
+                            <div
+                              className="mt-4 rounded-2xl border p-4"
+                              style={{
+                                borderColor: "#F5D487",
+                                backgroundColor: "#FFF8E7",
+                              }}
                             >
-                              Requested by{" "}
-                              {getTerminationRequester(
-                                contract.terminationRequestedBy,
-                              )?.name ??
-                                (isTerminationRequester(contract)
-                                  ? "you"
-                                  : "the other party")}
-                            </p>
+                              <p
+                                className="text-sm font-semibold"
+                                style={{ color: palette.deep }}
+                              >
+                                Termination Notice Active
+                              </p>
+                              <p
+                                className="mt-2 text-sm"
+                                style={{ color: palette.deep }}
+                              >
+                                Requested by:{" "}
+                                {noticeInitiator?.name ||
+                                  noticeInitiator?.email ||
+                                  (isTerminationRequester(contract)
+                                    ? "you"
+                                    : "the other party")}
+                              </p>
+                              <p
+                                className="mt-1 text-sm"
+                                style={{ color: palette.deep }}
+                              >
+                                Notice Submitted:{" "}
+                                {formatNoticeDate(
+                                  contract.terminationRequestedAt,
+                                )}
+                              </p>
+                              <p
+                                className="mt-1 text-sm"
+                                style={{ color: palette.deep }}
+                              >
+                                Rental Ends:{" "}
+                                {formatNoticeDate(
+                                  contract.terminationEffectiveDate,
+                                )}
+                              </p>
+                              <p
+                                className="mt-1 text-sm font-semibold"
+                                style={{ color: palette.purple }}
+                              >
+                                {noticeCountdown || "Notice period active"}
+                              </p>
+                              <p
+                                className="mt-2 text-sm"
+                                style={{ color: palette.softPurple }}
+                              >
+                                This rental will automatically terminate on{" "}
+                                {formatNoticeDate(
+                                  contract.terminationEffectiveDate,
+                                )}{" "}
+                                unless the initiator withdraws the notice before
+                                that date.
+                              </p>
+                            </div>
                           ) : null}
                         </div>
 
@@ -776,49 +847,47 @@ function MyRentalsPage() {
                             : "Delete Request"}
                         </button>
                       ) : activeTab === "rented" ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void handleSendTerminationRequest(contract._id)
-                          }
-                          disabled={createTerminationRequest.isPending}
-                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                          style={{ backgroundColor: palette.softPurple }}
-                        >
-                          Send Termination Request
-                        </button>
-                      ) : activeTab === "termination" ? (
-                        isTerminationRequester(contract) ? null : (
-                          <>
+                        contract.status === "TERMINATION_PENDING" ? (
+                          isTerminationRequester(contract) ? (
                             <button
                               type="button"
                               onClick={() =>
-                                void handleAcceptTermination(contract._id)
+                                void handleWithdrawTermination(contract._id)
                               }
-                              disabled={acceptTerminationRequest.isPending}
-                              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                              disabled={withdrawTerminationNotice.isPending}
+                              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                              style={{ backgroundColor: palette.softPurple }}
                             >
-                              Accept
+                              Withdraw Notice
                             </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void handleRejectTermination(contract._id)
-                              }
-                              disabled={rejectTerminationRequest.isPending}
-                              className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                            >
-                              Reject
-                            </button>
-                            <p
-                              className="mt-2 text-xs"
-                              style={{ color: palette.softPurple }}
-                            >
-                              If you do not respond within 30 days the request
-                              will be automatically accepted.
-                            </p>
-                          </>
+                          ) : null
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleSendTerminationRequest(contract._id)
+                            }
+                            disabled={createTerminationNotice.isPending}
+                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            style={{ backgroundColor: palette.softPurple }}
+                          >
+                            Create Termination Notice
+                          </button>
                         )
+                      ) : activeTab === "termination" ? (
+                        isTerminationRequester(contract) ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleWithdrawTermination(contract._id)
+                            }
+                            disabled={withdrawTerminationNotice.isPending}
+                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            style={{ backgroundColor: palette.softPurple }}
+                          >
+                            Withdraw Notice
+                          </button>
+                        ) : null
                       ) : null}
 
                       {listing?._id ? (

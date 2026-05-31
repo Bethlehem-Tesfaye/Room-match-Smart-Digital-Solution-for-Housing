@@ -3,7 +3,6 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validate.js";
 import {
   acceptRequest,
-  acceptTerminationRequestHandler,
   cancelRequest,
   completePayment,
   fetchConversationRentRequest,
@@ -12,9 +11,9 @@ import {
   fetchOwnerTerminationRequests,
   fetchOwnerPendingRequests,
   fetchTenantRentals,
-  rejectTerminationRequestHandler,
   rejectRequest,
-  requestTermination,
+  createTerminationNoticeHandler,
+  withdrawTerminationNoticeHandler,
   requestToRent
 } from "./contract.controller.js";
 import {
@@ -50,7 +49,7 @@ contractRouter.get(
 contractRouter.get("/owner/active", authMiddleware, fetchOwnerActiveRequests);
 
 contractRouter.get(
-  "/owner/termination-requests",
+  "/owner/termination-notices",
   authMiddleware,
   fetchOwnerTerminationRequests
 );
@@ -79,24 +78,17 @@ contractRouter.delete(
 );
 
 contractRouter.post(
-  "/:id/termination-request",
+  "/:id/terminate",
   authMiddleware,
   validate(contractParamsSchema, "params"),
-  requestTermination
+  createTerminationNoticeHandler
 );
 
-contractRouter.patch(
-  "/:id/termination-request/accept",
+contractRouter.post(
+  "/:id/withdraw-termination",
   authMiddleware,
   validate(contractParamsSchema, "params"),
-  acceptTerminationRequestHandler
-);
-
-contractRouter.patch(
-  "/:id/termination-request/reject",
-  authMiddleware,
-  validate(contractParamsSchema, "params"),
-  rejectTerminationRequestHandler
+  withdrawTerminationNoticeHandler
 );
 
 contractRouter.patch(

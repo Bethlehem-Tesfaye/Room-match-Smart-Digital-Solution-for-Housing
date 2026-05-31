@@ -42,6 +42,7 @@ export interface RentRequest {
   acceptedAt?: string | null;
   paymentDueAt?: string | null;
   terminationRequestedAt?: string | null;
+  terminationEffectiveDate?: string | null;
   terminationResolvedAt?: string | null;
 }
 

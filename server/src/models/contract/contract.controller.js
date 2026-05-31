@@ -1,18 +1,18 @@
 import {
   acceptRentRequest,
-  acceptTerminationRequest,
-  getOwnerActiveRentRequests,
-  getOwnerAcceptedRentRequests,
-  getOwnerTerminationRequests,
   cancelRentRequest,
   completeContractPayment,
-  createTerminationRequest,
   createRentRequest,
+  createTerminationNotice,
   getConversationRentRequest,
+  getOwnerActiveRentRequests,
+  getOwnerAcceptedRentRequests,
   getOwnerPendingRentRequests,
+  getOwnerTerminationRequests,
   getTenantRentalContracts,
-  rejectTerminationRequest,
-  rejectRentRequest
+  rejectRentRequest,
+  sweepExpiredTerminationNotices,
+  withdrawTerminationNotice
 } from "./contract.service.js";
 
 // POST /contracts/request
@@ -95,12 +95,12 @@ export const cancelRequest = async (req, res, next) => {
   }
 };
 
-// POST /contracts/:id/termination-request
-export const requestTermination = async (req, res, next) => {
+// POST /contracts/:id/terminate
+export const createTerminationNoticeHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const contract = await createTerminationRequest({
+    const contract = await createTerminationNotice({
       contractId: id,
       requesterUserId: req.userId
     });
@@ -111,28 +111,12 @@ export const requestTermination = async (req, res, next) => {
   }
 };
 
-// PATCH /contracts/:id/termination-request/accept
-export const acceptTerminationRequestHandler = async (req, res, next) => {
+// POST /contracts/:id/withdraw-termination
+export const withdrawTerminationNoticeHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const contract = await acceptTerminationRequest({
-      contractId: id,
-      requesterUserId: req.userId
-    });
-
-    return res.status(200).json({ contract });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// PATCH /contracts/:id/termination-request/reject
-export const rejectTerminationRequestHandler = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const contract = await rejectTerminationRequest({
+    const contract = await withdrawTerminationNotice({
       contractId: id,
       requesterUserId: req.userId
     });
@@ -222,4 +206,8 @@ export const fetchTenantRentals = async (req, res, next) => {
   } catch (err) {
     return next(err);
   }
+};
+
+export const runTerminationNoticeSweep = async () => {
+  return sweepExpiredTerminationNotices();
 };

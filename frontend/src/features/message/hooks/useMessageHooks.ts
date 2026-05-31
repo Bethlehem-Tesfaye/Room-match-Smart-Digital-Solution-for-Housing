@@ -712,7 +712,7 @@ export const useCancelRentRequest = (): UseMutationResult<
   });
 };
 
-export const useCreateTerminationRequest = (): UseMutationResult<
+export const useCreateTerminationNotice = (): UseMutationResult<
   RentRequest,
   Error,
   { contractId: string }
@@ -723,7 +723,7 @@ export const useCreateTerminationRequest = (): UseMutationResult<
     mutationFn: async ({ contractId }) => {
       try {
         const response = await api.post<{ contract: RentRequest }>(
-          `/api/contracts/${contractId}/termination-request`,
+          `/api/contracts/${contractId}/terminate`,
         );
 
         return response.data.contract;
@@ -755,7 +755,7 @@ export const useCreateTerminationRequest = (): UseMutationResult<
   });
 };
 
-export const useAcceptTerminationRequest = (): UseMutationResult<
+export const useWithdrawTerminationNotice = (): UseMutationResult<
   RentRequest,
   Error,
   { contractId: string }
@@ -765,8 +765,8 @@ export const useAcceptTerminationRequest = (): UseMutationResult<
   return useMutation<RentRequest, Error, { contractId: string }>({
     mutationFn: async ({ contractId }) => {
       try {
-        const response = await api.patch<{ contract: RentRequest }>(
-          `/api/contracts/${contractId}/termination-request/accept`,
+        const response = await api.post<{ contract: RentRequest }>(
+          `/api/contracts/${contractId}/withdraw-termination`,
         );
 
         return response.data.contract;
@@ -798,48 +798,9 @@ export const useAcceptTerminationRequest = (): UseMutationResult<
   });
 };
 
-export const useRejectTerminationRequest = (): UseMutationResult<
-  RentRequest,
-  Error,
-  { contractId: string }
-> => {
-  const queryClient = useQueryClient();
-
-  return useMutation<RentRequest, Error, { contractId: string }>({
-    mutationFn: async ({ contractId }) => {
-      try {
-        const response = await api.patch<{ contract: RentRequest }>(
-          `/api/contracts/${contractId}/termination-request/reject`,
-        );
-
-        return response.data.contract;
-      } catch (error) {
-        throw new Error(getErrorMessage(error));
-      }
-    },
-    onSuccess: (contract) => {
-      queryClient.setQueryData(
-        messageQueryKeys.rentRequestByConversation(contract.conversationId),
-        contract,
-      );
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.tenantRentalContracts,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.ownerPendingRentRequests,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.ownerTerminationRequests,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.conversationList,
-      });
-    },
-  });
-};
+export const useCreateTerminationRequest = useCreateTerminationNotice;
+export const useAcceptTerminationRequest = useWithdrawTerminationNotice;
+export const useRejectTerminationRequest = useWithdrawTerminationNotice;
 
 export const useCompleteRentPayment = (): UseMutationResult<
   void,
@@ -942,7 +903,7 @@ export const useOwnerTerminationRequests = (): UseQueryResult<
     queryFn: async () => {
       try {
         const response = await api.get<{ contracts: RentRequest[] }>(
-          "/api/contracts/owner/termination-requests",
+          "/api/contracts/owner/termination-notices",
         );
 
         return response.data.contracts ?? [];

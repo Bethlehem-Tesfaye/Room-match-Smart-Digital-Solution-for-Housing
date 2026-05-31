@@ -6,6 +6,7 @@ import { logger } from "./config/logger.js";
 import connectDB from "./config/db.js";
 import { env } from "./config/evnironments.js";
 import { initSocket } from "./config/socket.js";
+import { runTerminationNoticeSweep } from "./jobs/termination.js";
 import {
   purgeExpiredReservations,
   purgeExpiredLeases
@@ -30,6 +31,10 @@ const startServer = async () => {
       logger.error({ error }, "Expired lease sweep failed on startup");
     });
 
+    void runTerminationNoticeSweep().catch((error) => {
+      logger.error({ error }, "Termination notice sweep failed on startup");
+    });
+
     const reservationSweep = setInterval(
       () => {
         void purgeExpiredReservations().catch((error) => {
@@ -48,9 +53,20 @@ const startServer = async () => {
       60 * 60 * 1000
     );
 
+    const terminationNoticeSweep = setInterval(
+      () => {
+        void runTerminationNoticeSweep().catch((error) => {
+          logger.error({ error }, "Termination notice sweep failed");
+        });
+      },
+      24 * 60 * 60 * 1000
+    );
+
     leaseSweep.unref?.();
 
     reservationSweep.unref?.();
+
+    terminationNoticeSweep.unref?.();
 
     httpServer.listen(PORT, () => {
       logger.info(`Server running on port: ${PORT}`);

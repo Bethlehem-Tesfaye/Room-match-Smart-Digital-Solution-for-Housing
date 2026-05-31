@@ -62,6 +62,11 @@ const contractSchema = new Schema(
       type: Date,
       default: null
     },
+    terminationEffectiveDate: {
+      type: Date,
+      default: null,
+      index: true
+    },
     startDate: { type: Date, default: null, index: true },
     endDate: { type: Date, default: null, index: true },
     terminationResolvedAt: {
