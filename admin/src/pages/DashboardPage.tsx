@@ -71,8 +71,7 @@ function DashboardPage() {
       { label: "Owners", value: statsData.owners },
       { label: "Tenants", value: statsData.tenants },
       { label: "Properties", value: statsData.properties },
-      { label: "Active Listings", value: statsData.activeListings },
-      { label: "Roommate Profiles", value: statsData.roommateProfiles }
+      { label: "Active Listings", value: statsData.activeListings }
     ],
     [statsData]
   );
@@ -201,7 +200,6 @@ function DashboardPage() {
             <button className={`tab ${activeUserTab === "users" ? "active" : ""}`} onClick={() => setActiveUserTab("users")}>Users ({loading ? "..." : normalUsers.length})</button>
             <button className={`tab ${activeUserTab === "admins" ? "active" : ""}`} onClick={() => setActiveUserTab("admins")}>Admins ({loading ? "..." : adminUsers.length})</button>
             <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link>{notificationCounts.propertyNotifications > 0 && <span className="tab-badge">{notificationCounts.propertyNotifications}</span>}</button>
-            <button className="tab">Roommates ({loading ? "..." : statsData.roommateProfiles})</button>
             <button className="tab"><Link to="/dashboard/reports">Reports</Link>{notificationCounts.reportNotifications > 0 && <span className="tab-badge">{notificationCounts.reportNotifications}</span>}</button>
           </div>
 
