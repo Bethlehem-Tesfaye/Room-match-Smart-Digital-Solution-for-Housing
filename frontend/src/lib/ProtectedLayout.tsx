@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useCurrentUser } from "../features/auth/hooks/useCurrentUser";
-import { useMyProfile, useRequestUnblock } from "../features/profile/hooks/useProfileHooks";
+import {
+  useMyProfile,
+  useRequestUnblock,
+} from "../features/profile/hooks/useProfileHooks";
 import { useThemePreference } from "../features/setting/hooks/useSettingHooks";
 
 export function ProtectedLayout() {
@@ -21,7 +24,9 @@ export function ProtectedLayout() {
     /blocked/i.test(profileQuery.error.message);
 
   if (isAuthenticationLoading) {
-    return <div className="min-h-screen flex items-center justify-center"></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center"></div>
+    );
   }
 
   if (!user) {
@@ -47,7 +52,8 @@ export function ProtectedLayout() {
                 {profileError?.message ?? "Your account has been blocked."}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                If you believe this block was applied in error, submit a request below and our admin team will review it.
+                If you believe this block was applied in error, submit a request
+                below and our admin team will review it.
               </p>
             </div>
             <button
@@ -58,7 +64,9 @@ export function ProtectedLayout() {
             </button>
           </div>
 
-          <label className="block mb-2 font-medium text-slate-900 dark:text-slate-100">Request Unblock Reason (optional)</label>
+          <label className="block mb-2 font-medium text-slate-900 dark:text-slate-100">
+            Request Unblock Reason (optional)
+          </label>
           <textarea
             rows={4}
             className="w-full rounded-2xl border border-base-300 bg-base-100 p-3 text-slate-900 outline-none focus:border-primary focus:outline-none dark:bg-slate-800 dark:text-slate-100"
@@ -75,7 +83,8 @@ export function ProtectedLayout() {
 
           {unblockMutation.isSuccess && (
             <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/40 dark:text-green-200">
-              {unblockMutation.data?.message ?? "Your unblock request has been submitted."}
+              {unblockMutation.data?.message ??
+                "Your unblock request has been submitted."}
             </div>
           )}
 
@@ -83,9 +92,15 @@ export function ProtectedLayout() {
             <button
               className="btn btn-primary w-full sm:w-auto"
               disabled={unblockMutation.status === "pending"}
-              onClick={() => unblockMutation.mutate({ reason: requestReason.trim() || undefined })}
+              onClick={() =>
+                unblockMutation.mutate({
+                  reason: requestReason.trim() || undefined,
+                })
+              }
             >
-              {unblockMutation.status === "pending" ? "Sending request..." : "Request Unblock"}
+              {unblockMutation.status === "pending"
+                ? "Sending request..."
+                : "Request Unblock"}
             </button>
             <button
               className="btn btn-ghost w-full sm:w-auto"
@@ -103,8 +118,12 @@ export function ProtectedLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-xl rounded-3xl border border-base-300 bg-white p-8 shadow-lg dark:bg-slate-900">
-          <h1 className="text-2xl font-semibold mb-3">Unable to load account</h1>
-          <p className="text-base-content/80">{profileError?.message ?? "Unable to load profile."}</p>
+          <h1 className="text-2xl font-semibold mb-3">
+            Unable to load account
+          </h1>
+          <p className="text-base-content/80">
+            {profileError?.message ?? "Unable to load profile."}
+          </p>
         </div>
       </div>
     );
@@ -118,10 +137,13 @@ export function ProtectedLayout() {
             <div>
               <h1 className="text-3xl font-semibold mb-3">Account Blocked</h1>
               <p className="mb-2 text-slate-700 dark:text-slate-300">
-                {profileError?.message ?? "Your account has been blocked."}
+                {profileQuery.error instanceof Error
+                  ? profileQuery.error.message
+                  : "Your account has been blocked."}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                If you believe this block was applied in error, submit a request below and our admin team will review it.
+                If you believe this block was applied in error, submit a request
+                below and our admin team will review it.
               </p>
             </div>
             <button
@@ -132,7 +154,9 @@ export function ProtectedLayout() {
             </button>
           </div>
 
-          <label className="block mb-2 font-medium text-slate-900 dark:text-slate-100">Request Unblock Reason (optional)</label>
+          <label className="block mb-2 font-medium text-slate-900 dark:text-slate-100">
+            Request Unblock Reason (optional)
+          </label>
           <textarea
             rows={4}
             className="w-full rounded-2xl border border-base-300 bg-base-100 p-3 text-slate-900 outline-none focus:border-primary focus:outline-none dark:bg-slate-800 dark:text-slate-100"
@@ -149,7 +173,8 @@ export function ProtectedLayout() {
 
           {unblockMutation.isSuccess && (
             <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/40 dark:text-green-200">
-              {unblockMutation.data?.message ?? "Your unblock request has been submitted."}
+              {unblockMutation.data?.message ??
+                "Your unblock request has been submitted."}
             </div>
           )}
 
@@ -157,9 +182,15 @@ export function ProtectedLayout() {
             <button
               className="btn btn-primary w-full sm:w-auto"
               disabled={unblockMutation.status === "pending"}
-              onClick={() => unblockMutation.mutate({ reason: requestReason.trim() || undefined })}
+              onClick={() =>
+                unblockMutation.mutate({
+                  reason: requestReason.trim() || undefined,
+                })
+              }
             >
-              {unblockMutation.status === "pending" ? "Sending request..." : "Request Unblock"}
+              {unblockMutation.status === "pending"
+                ? "Sending request..."
+                : "Request Unblock"}
             </button>
             <button
               className="btn btn-ghost w-full sm:w-auto"
@@ -175,12 +206,13 @@ export function ProtectedLayout() {
 
   if (profileQuery.isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-xl rounded-3xl border border-base-300 bg-white p-8 shadow-lg dark:bg-slate-900">
-          <h1 className="text-2xl font-semibold mb-3">Unable to load account</h1>
-          <p className="text-base-content/80">{profileError?.message ?? "Unable to load profile."}</p>
-        </div>
-      </div>
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: `${location.pathname}${location.search}${location.hash}`,
+        }}
+      />
     );
   }
 
