@@ -41,6 +41,8 @@ const messageQueryKeys = {
   tenantRentalContracts: ["contracts", "tenant", "my-rentals"] as const,
 };
 
+const pendingPaymentStorageKey = "pending_rental_payment_contract_id";
+
 const getErrorMessage = (error: unknown): string => {
   if (
     typeof error === "object" &&
@@ -840,41 +842,29 @@ export const useRejectTerminationRequest = (): UseMutationResult<
 };
 
 export const useCompleteRentPayment = (): UseMutationResult<
-  RentRequest,
+  void,
   Error,
   { contractId: string }
 > => {
-  const queryClient = useQueryClient();
-
-  return useMutation<RentRequest, Error, { contractId: string }>({
+  return useMutation<void, Error, { contractId: string }>({
     mutationFn: async ({ contractId }) => {
       try {
-        const response = await api.patch<{ contract: RentRequest }>(
-          `/api/contracts/${contractId}/complete-payment`,
+        const response = await api.post<{ checkout_url: string }>(
+          "/api/payments/initialize",
+          { contractId },
         );
 
-        return response.data.contract;
+        const checkoutUrl = response.data.checkout_url;
+
+        if (!checkoutUrl) {
+          throw new Error("Missing checkout URL");
+        }
+
+        window.localStorage.setItem(pendingPaymentStorageKey, contractId);
+        window.location.href = checkoutUrl;
       } catch (error) {
         throw new Error(getErrorMessage(error));
       }
-    },
-    onSuccess: (contract) => {
-      queryClient.setQueryData(
-        messageQueryKeys.rentRequestByConversation(contract.conversationId),
-        contract,
-      );
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.tenantRentalContracts,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.ownerPendingRentRequests,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
-      });
-      queryClient.invalidateQueries({
-        queryKey: messageQueryKeys.conversationList,
-      });
     },
   });
 };

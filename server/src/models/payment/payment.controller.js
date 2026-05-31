@@ -1,6 +1,7 @@
 import { logger } from "../../config/logger.js";
 import {
   confirmContractPayment,
+  getContractPaymentReceipt,
   handlePaymentWebhook,
   initializeContractPayment
 } from "./payment.service.js";
@@ -41,6 +42,19 @@ export const confirmPayment = async (req, res, next) => {
     });
 
     return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const fetchReceipt = async (req, res, next) => {
+  try {
+    const receipt = await getContractPaymentReceipt({
+      contractId: req.params.contractId,
+      viewerUserId: req.userId
+    });
+
+    return res.status(200).json({ receipt });
   } catch (error) {
     return next(error);
   }

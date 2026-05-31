@@ -8,6 +8,7 @@ import {
   useAcceptRentRequest,
   useAcceptTerminationRequest,
   useCancelRentRequest,
+  useOwnerActiveRentRequests,
   useOwnerAcceptedRentRequests,
   useOwnerTerminationRequests,
   useOwnerPendingRentRequests,
@@ -18,7 +19,7 @@ import {
 import type { RentRequest } from "../../features/message/types/type";
 import { palette } from "../../theme/palette";
 
-type RequestsTab = "incoming" | "accepted" | "termination";
+type RequestsTab = "active" | "incoming" | "accepted" | "termination";
 
 const getPartyName = (party: RentRequest["tenantId"]) => {
   if (typeof party === "string") return party;
@@ -28,6 +29,10 @@ const getPartyName = (party: RentRequest["tenantId"]) => {
 const getListingTitle = (listing: RentRequest["listingId"]) => {
   if (typeof listing === "string") return "Listing";
   return listing.title || "Listing";
+};
+
+const getListing = (listing: RentRequest["listingId"]) => {
+  return typeof listing === "string" ? null : listing;
 };
 
 const getListingId = (listing: RentRequest["listingId"]) => {
@@ -62,10 +67,11 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
 };
 
 function RentalRequestsPage() {
-  const [activeTab, setActiveTab] = useState<RequestsTab>("incoming");
+  const [activeTab, setActiveTab] = useState<RequestsTab>("active");
   const [nowTick, setNowTick] = useState(() => Date.now());
   const rentalNotificationsMarkedRef = useRef(false);
   const { user } = useCurrentUser();
+  const activeRequestsQuery = useOwnerActiveRentRequests();
   const requestsQuery = useOwnerPendingRentRequests();
   const acceptedRequestsQuery = useOwnerAcceptedRentRequests();
   const terminationRequestsQuery = useOwnerTerminationRequests();
@@ -83,6 +89,7 @@ function RentalRequestsPage() {
     markRentalNotificationsRead.mutate();
   }, [markRentalNotificationsRead, user]);
 
+  const activeRequests = activeRequestsQuery.data || [];
   const requests = requestsQuery.data || [];
   const acceptedRequests = (acceptedRequestsQuery.data || []).filter(
     (request) =>
@@ -169,17 +176,21 @@ function RentalRequestsPage() {
   };
 
   const visibleRequests =
-    activeTab === "incoming"
-      ? requests
-      : activeTab === "accepted"
-        ? acceptedRequests
-        : terminationRequests;
+    activeTab === "active"
+      ? activeRequests
+      : activeTab === "incoming"
+        ? requests
+        : activeTab === "accepted"
+          ? acceptedRequests
+          : terminationRequests;
   const isLoading =
-    activeTab === "incoming"
-      ? requestsQuery.isLoading
-      : activeTab === "accepted"
-        ? acceptedRequestsQuery.isLoading
-        : terminationRequestsQuery.isLoading;
+    activeTab === "active"
+      ? activeRequestsQuery.isLoading
+      : activeTab === "incoming"
+        ? requestsQuery.isLoading
+        : activeTab === "accepted"
+          ? acceptedRequestsQuery.isLoading
+          : terminationRequestsQuery.isLoading;
 
   return (
     <div
@@ -195,15 +206,27 @@ function RentalRequestsPage() {
               className="text-3xl font-extrabold"
               style={{ color: palette.deep }}
             >
-              Rental Requests
+              Rental Management
             </h1>
             <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-              Review incoming requests and accepted requests waiting for
-              payment.
+              Review active rentals, incoming requests, and termination cases.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("active")}
+              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  activeTab === "active" ? palette.purple : palette.cardBg,
+                color: activeTab === "active" ? palette.pageBg : palette.deep,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Active Rentals ({activeRequests.length})
+            </button>
             <button
               type="button"
               onClick={() => setActiveTab("incoming")}
@@ -259,17 +282,20 @@ function RentalRequestsPage() {
               className="rounded-2xl border p-6 text-sm"
               style={{ borderColor: palette.border, color: palette.softPurple }}
             >
-              {activeTab === "incoming"
-                ? "No pending rental requests."
-                : activeTab === "accepted"
-                  ? "No accepted requests waiting for payment."
-                  : "No termination requests right now."}
+              {activeTab === "active"
+                ? "No active rentals right now."
+                : activeTab === "incoming"
+                  ? "No pending rental requests."
+                  : activeTab === "accepted"
+                    ? "No accepted requests waiting for payment."
+                    : "No termination requests right now."}
             </div>
           ) : (
             <div className="space-y-4">
               {visibleRequests.map((request) => {
                 const listingId = getListingId(request.listingId);
                 const listingTitle = getListingTitle(request.listingId);
+                const listing = getListing(request.listingId);
                 const tenantName = getPartyName(request.tenantId);
                 const requesterId = getRequesterId(request);
                 const requesterIsCurrentUser = requesterId === user?.id;
@@ -280,7 +306,99 @@ function RentalRequestsPage() {
                   acceptTerminationRequest.isPending ||
                   rejectTerminationRequest.isPending;
 
-                return (
+                return activeTab === "active" ? (
+                  <article
+                    key={request._id}
+                    className="rounded-2xl border p-5"
+                    style={{
+                      borderColor: palette.border,
+                      backgroundColor: palette.cardBg,
+                    }}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <p
+                          className="text-xs font-semibold"
+                          style={{ color: palette.softPurple }}
+                        >
+                          Property title
+                        </p>
+                        <Link
+                          to={`/properties/${listingId}`}
+                          className="text-xl font-bold hover:underline"
+                          style={{ color: palette.deep }}
+                        >
+                          {listingTitle}
+                        </Link>
+
+                        <p
+                          className="mt-3 text-xs font-semibold"
+                          style={{ color: palette.softPurple }}
+                        >
+                          Property location
+                        </p>
+                        <p className="text-sm" style={{ color: palette.deep }}>
+                          {[listing?.city, listing?.address]
+                            .filter(Boolean)
+                            .join(", ") || "Location not available"}
+                        </p>
+
+                        <p
+                          className="mt-3 text-xs font-semibold"
+                          style={{ color: palette.softPurple }}
+                        >
+                          Monthly rent
+                        </p>
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ color: palette.deep }}
+                        >
+                          {listing?.price != null
+                            ? `${new Intl.NumberFormat().format(listing.price)} ${listing.currency || "ETB"}/mo`
+                            : "Price not available"}
+                        </p>
+
+                        <div
+                          className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                          style={{
+                            backgroundColor: "#E8F8F0",
+                            color: "#0F7A4A",
+                          }}
+                        >
+                          Active Rental
+                        </div>
+
+                        <p
+                          className="mt-4 text-xs font-semibold"
+                          style={{ color: palette.softPurple }}
+                        >
+                          Tenant name
+                        </p>
+                        <p
+                          className="text-base font-semibold"
+                          style={{ color: palette.deep }}
+                        >
+                          {tenantName}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={`/dashboard/message?conversationId=${request.conversationId}`}
+                          className="rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          Open Chat
+                        </Link>
+                        <Link
+                          to={`/dashboard/receipts/${request._id}`}
+                          className="rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          View Receipt
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                ) : (
                   <article
                     key={request._id}
                     className="rounded-2xl border p-5"

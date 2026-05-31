@@ -285,9 +285,6 @@ function MessagePage() {
 
     try {
       await completeRentPayment.mutateAsync({ contractId });
-      toast.success("Mock payment completed");
-      rentRequestQuery.refetch();
-      conversationsQuery.refetch();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to complete payment";

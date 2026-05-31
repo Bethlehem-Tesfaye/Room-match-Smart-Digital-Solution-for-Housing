@@ -167,7 +167,7 @@ const getErrorMessage = (error: unknown) => {
 };
 
 function MyRentalsPage() {
-  const [activeTab, setActiveTab] = useState<RentalsTab>("requested");
+  const [activeTab, setActiveTab] = useState<RentalsTab>("rented");
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [searchParams, setSearchParams] = useSearchParams();
   const [pendingPaymentContractId, setPendingPaymentContractId] = useState<
@@ -281,7 +281,7 @@ function MyRentalsPage() {
     [contracts],
   );
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (
       !rentalsQuery.isLoading &&
       activeTab === "requested" &&
@@ -295,7 +295,7 @@ function MyRentalsPage() {
     rentalsQuery.isLoading,
     requestContracts.length,
     rentedContracts.length,
-  ]);
+  ]); */
 
   const visibleContracts =
     activeTab === "requested"
@@ -426,16 +426,15 @@ function MyRentalsPage() {
                 className="text-xs font-semibold"
                 style={{ color: palette.softPurple }}
               >
-                Requested
+                Rented
               </p>
               <p
                 className="mt-2 text-3xl font-bold"
                 style={{ color: palette.deep }}
               >
-                {rentalsQuery.isLoading ? "..." : requestContracts.length}
+                {rentalsQuery.isLoading ? "..." : rentedContracts.length}
               </p>
             </div>
-
             <div
               className="rounded-2xl border p-4"
               style={{
@@ -447,33 +446,19 @@ function MyRentalsPage() {
                 className="text-xs font-semibold"
                 style={{ color: palette.softPurple }}
               >
-                Rented
+                Requested
               </p>
               <p
                 className="mt-2 text-3xl font-bold"
                 style={{ color: palette.deep }}
               >
-                {rentalsQuery.isLoading ? "..." : rentedContracts.length}
+                {rentalsQuery.isLoading ? "..." : requestContracts.length}
               </p>
             </div>
           </div>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("requested")}
-            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
-            style={{
-              backgroundColor:
-                activeTab === "requested" ? palette.purple : palette.cardBg,
-              color: activeTab === "requested" ? palette.pageBg : palette.deep,
-              border: `1px solid ${palette.border}`,
-            }}
-          >
-            Requested ({requestContracts.length})
-          </button>
-
           <button
             type="button"
             onClick={() => setActiveTab("rented")}
@@ -486,6 +471,19 @@ function MyRentalsPage() {
             }}
           >
             Rented ({rentedContracts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("requested")}
+            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor:
+                activeTab === "requested" ? palette.purple : palette.cardBg,
+              color: activeTab === "requested" ? palette.pageBg : palette.deep,
+              border: `1px solid ${palette.border}`,
+            }}
+          >
+            Requested ({requestContracts.length})
           </button>
 
           <button

@@ -1,5 +1,6 @@
 import CustomError from "../../lib/errors.js";
 import { env } from "../../config/evnironments.js";
+import { User } from "../auth/schema.js";
 import { Contract } from "../contract/schema.js";
 import { Property } from "../property/schema.js";
 import { UserProfile } from "../profile/schema.js";
@@ -102,6 +103,18 @@ const applySuccessfulPayment = async (payment) => {
       status: "Rented"
     }
   });
+};
+
+const toIdString = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object" && value._id) {
+    return String(value._id);
+  }
+
+  return String(value);
 };
 
 export const initializeContractPayment = async ({
@@ -350,4 +363,60 @@ export const confirmContractPayment = async ({ contractId, tenantUserId }) => {
   await applySuccessfulPayment(updatedPayment || payment);
 
   return { status: "success" };
+};
+
+export const getContractPaymentReceipt = async ({
+  contractId,
+  viewerUserId
+}) => {
+  const payment = await Payment.findOne({ contractId })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "contractId",
+      model: Contract,
+      populate: [
+        {
+          path: "tenantId",
+          model: User,
+          select: "_id name email image"
+        },
+        {
+          path: "ownerId",
+          model: User,
+          select: "_id name email image"
+        },
+        {
+          path: "listingId",
+          model: Property,
+          select: "_id title city address price currency status"
+        }
+      ]
+    })
+    .lean();
+
+  if (!payment) {
+    throw new CustomError("Receipt not found", 404);
+  }
+
+  const contract = payment.contractId;
+
+  if (!contract) {
+    throw new CustomError("Receipt not found", 404);
+  }
+
+  const tenantId = toIdString(contract.tenantId);
+  const ownerId = toIdString(contract.ownerId);
+  const viewerId = String(viewerUserId);
+
+  if (viewerId !== tenantId && viewerId !== ownerId) {
+    throw new CustomError("You are not allowed to view this receipt", 403);
+  }
+
+  return {
+    payment,
+    contract,
+    listing: contract.listingId,
+    tenant: contract.tenantId,
+    owner: contract.ownerId
+  };
 };

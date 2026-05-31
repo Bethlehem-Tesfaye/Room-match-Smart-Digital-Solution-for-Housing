@@ -24,6 +24,7 @@ import SettingPageDashboard from "../pages/setting/SettingPageDashboard";
 import RoommatePage from "../pages/roommate/RoommatePage";
 import MessagePageDashboard from "../pages/message/MessagePageDashboard";
 import RentalRequestsPage from "../pages/dashboard/RentalRequestsPage";
+import ReceiptPage from "../pages/dashboard/ReceiptPage";
 import MyRentalsPage from "../pages/rentals/MyRentalsPage";
 
 export const router = createBrowserRouter([
@@ -136,6 +137,10 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard/rental-requests",
         element: <RentalRequestsPage />,
+      },
+      {
+        path: "/dashboard/receipts/:contractId",
+        element: <ReceiptPage />,
       },
     ],
   },
