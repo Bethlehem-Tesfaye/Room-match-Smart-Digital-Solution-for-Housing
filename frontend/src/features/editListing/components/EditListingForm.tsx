@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ImageIcon,
   MapPin,
+  Loader2,
   Sparkles,
   Upload,
 } from "lucide-react";
@@ -121,6 +122,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   const [draft, setDraft] = useState<EditListingDraft | null>(null);
   const [bankInfo, setBankInfo] = useState<BankInfoDraft>(initialBankInfoDraft);
   const [attemptedSave, setAttemptedSave] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedBankName = useMemo(() => {
     return (
       banks.find((bank) => bank.id === bankInfo.bankCode)?.name ??
@@ -360,6 +362,8 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       await api.post("/api/profile/setup-bank", {
         accountName: bankInfo.accountName.trim(),
@@ -448,6 +452,8 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
           ? submitError.message
           : "Failed to update listing";
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1223,14 +1229,20 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
             onClick={() => {
               void submitUpdate();
             }}
-            disabled={updateMutation.isPending || isRentedProperty}
-            className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            disabled={
+              isSubmitting || updateMutation.isPending || isRentedProperty
+            }
+            className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             style={{ backgroundColor: palette.purple, color: palette.pageBg }}
           >
-            <CheckCircle2 size={16} />
+            {isSubmitting || updateMutation.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={16} />
+            )}
             {isRentedProperty
               ? "Editing Locked"
-              : updateMutation.isPending
+              : isSubmitting || updateMutation.isPending
                 ? "Saving..."
                 : "Save Changes"}
           </button>
