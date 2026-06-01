@@ -1,12 +1,14 @@
 import CreatePropertyForm from "../../features/addListing/components/CreatePropertyForm";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
-import { palette } from "../../theme/palette";
 
 function AddListingsPage() {
   return (
-    <main className="min-h-screen" style={{ backgroundColor: palette.pageBg }}>
+    <main
+      className="min-h-screen"
+      style={{ backgroundColor: "var(--palette-page-bg)" }}
+    >
       <DashboardNavbar activeTab="add-listing" />
-      <section className="flex-1 px-4 py-10 pt-16">
+      <section className="flex-1 px-4 pt-20">
         <CreatePropertyForm />
       </section>
     </main>

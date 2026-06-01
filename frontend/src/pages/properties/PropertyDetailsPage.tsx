@@ -1,7 +1,7 @@
 import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import { useSendPropertyMessage } from "../../features/message/hooks/useMessageHooks";
@@ -20,6 +20,7 @@ import { palette } from "../../theme/palette";
 function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -39,7 +40,11 @@ function PropertyDetailsPage() {
     if (isPending) return;
 
     if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
+      navigate("/login", {
+        state: {
+          from: `${location.pathname}${location.search}${location.hash}`,
+        },
+      });
       return;
     }
 
@@ -67,7 +72,11 @@ function PropertyDetailsPage() {
     if (isPending) return;
 
     if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
+      navigate("/login", {
+        state: {
+          from: `${location.pathname}${location.search}${location.hash}`,
+        },
+      });
       return;
     }
 
@@ -109,7 +118,7 @@ function PropertyDetailsPage() {
         <div className="mx-auto max-w-6xl">
           <Link
             to="/properties"
-            className="mb-6 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold md:hidden"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold md:hidden"
             style={{ color: "var(--palette-deep)" }}
           >
             <ArrowLeft size={18} />
@@ -142,7 +151,7 @@ function PropertyDetailsPage() {
                 type="button"
                 onClick={() => void refetch()}
                 disabled={isFetching}
-                className="mt-6 min-h-[44px] rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="mt-6 min-h-11 rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ backgroundColor: palette.purple }}
               >
                 {isFetching ? "Retrying..." : "Try again"}
@@ -169,7 +178,7 @@ function PropertyDetailsPage() {
               </p>
               <Link
                 to="/properties"
-                className="mt-6 inline-flex min-h-[44px] items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                className="mt-6 inline-flex min-h-11 items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
                 style={{ backgroundColor: palette.purple }}
               >
                 Browse properties

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Building2,
   CircleCheck,
   EllipsisVertical,
   Eye,
+  Home,
   MapPin,
   Pencil,
   Trash2,
@@ -18,7 +20,6 @@ import {
   useOwnerTerminationRequests,
 } from "../../message/hooks/useMessageHooks";
 import { useMyPropertiesOverview } from "../hooks/useDashboardHooks";
-import { palette } from "../../../theme/palette";
 import useIsDark from "../../../lib/useTheme";
 
 type PropertyFilterTab = "all" | "rented";
@@ -26,45 +27,118 @@ type PropertyFilterTab = "all" | "rented";
 const getListingId = (listing: { _id: string } | string) =>
   typeof listing === "string" ? listing : listing._id;
 
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS_COLORS: Record<
+  string,
+  { bg: string; color: string; border: string }
+> = {
+  Active: { bg: "#e6f9f0", color: "#166534", border: "#bbf7d0" },
+  Rented: { bg: "#f0ebff", color: "#8b64c8", border: "#ddd6fe" },
+  Reserved: { bg: "#fef9ec", color: "#92400e", border: "#fde68a" },
+};
+
+const DARK_STATUS_COLORS: Record<
+  string,
+  { bg: string; color: string; border: string }
+> = {
+  Active: {
+    bg: "rgba(74,222,128,0.1)",
+    color: "#4ade80",
+    border: "rgba(74,222,128,0.2)",
+  },
+  Rented: {
+    bg: "rgba(176,142,224,0.1)",
+    color: "#b08ee0",
+    border: "rgba(176,142,224,0.2)",
+  },
+  Reserved: {
+    bg: "rgba(252,211,77,0.1)",
+    color: "#fcd34d",
+    border: "rgba(252,211,77,0.2)",
+  },
+};
+
+// ── Termination modal ─────────────────────────────────────────────────────────
 function DeleteTerminationModal({
   isOpen,
   propertyTitle,
   isSubmitting,
   onClose,
   onSendTerminationRequest,
+  isDark,
 }: {
   isOpen: boolean;
   propertyTitle: string;
   isSubmitting: boolean;
   onClose: () => void;
   onSendTerminationRequest: () => void;
+  isDark: boolean;
 }) {
   if (!isOpen) return null;
 
+  const cardBg = isDark ? "#17112e" : "#ffffff";
+  const border = isDark ? "#3a2d5c" : "#e5d9f9";
+  const deep = isDark ? "#ede9f8" : "#2e1f4a";
+  const muted = isDark ? "#9b78d4" : "#a98fd4";
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{
+        backgroundColor: "rgba(0,0,0,0.45)",
+        backdropFilter: "blur(4px)",
+      }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-xl"
-        style={{ borderColor: "#E7E1FA" }}
-        onClick={(event) => event.stopPropagation()}
+        className="w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl"
+        style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-xl font-bold" style={{ color: palette.deep }}>
-          Send termination notice first
-        </h3>
-        <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-          To delete {propertyTitle}, you must send a contract termination notice
-          to the rented tenant first.
-        </p>
+        {/* Header strip */}
+        <div
+          className="border-b px-5 py-4"
+          style={{
+            borderColor: border,
+            backgroundColor: isDark ? "#1f1838" : "#f7f4ff",
+          }}
+        >
+          <p
+            className="font-mono text-[10px] uppercase tracking-widest"
+            style={{ color: muted }}
+          >
+            Action required
+          </p>
+          <h3 className="mt-1 text-base font-semibold" style={{ color: deep }}>
+            Send termination notice first
+          </h3>
+        </div>
 
-        <div className="mt-6 flex gap-3">
+        {/* Body */}
+        <div className="px-5 py-4">
+          <p className="text-sm leading-relaxed" style={{ color: muted }}>
+            To delete{" "}
+            <span className="font-medium" style={{ color: deep }}>
+              {propertyTitle}
+            </span>
+            , you must first notify the current tenant via a termination notice.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex gap-2 border-t px-5 py-4"
+          style={{ borderColor: border }}
+        >
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-semibold"
-            style={{ borderColor: palette.border, color: palette.deep }}
+            className="flex-1 rounded-xl border py-2.5 text-sm font-medium transition-opacity hover:opacity-75"
+            style={{
+              borderColor: border,
+              color: deep,
+              backgroundColor: "transparent",
+            }}
           >
             Cancel
           </button>
@@ -72,10 +146,10 @@ function DeleteTerminationModal({
             type="button"
             onClick={onSendTerminationRequest}
             disabled={isSubmitting}
-            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ backgroundColor: palette.purple }}
+            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "#8b64c8" }}
           >
-            {isSubmitting ? "Sending..." : "Send Termination Notice"}
+            {isSubmitting ? "Sending…" : "Send notice"}
           </button>
         </div>
       </div>
@@ -83,6 +157,44 @@ function DeleteTerminationModal({
   );
 }
 
+// ── Menu button ───────────────────────────────────────────────────────────────
+function MenuBtn({
+  icon,
+  label,
+  color,
+  hoverBg,
+  disabled = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  color: string;
+  hoverBg: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors disabled:opacity-40"
+      style={{ color }}
+      onMouseEnter={(e) => {
+        if (!disabled)
+          (e.currentTarget as HTMLElement).style.backgroundColor = hoverBg;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+      }}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 function MyPropertyList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -100,74 +212,65 @@ function MyPropertyList() {
     null,
   );
   const [activeTab, setActiveTab] = useState<PropertyFilterTab>("all");
+  const isDark = useIsDark();
 
   const { data, isLoading, isError } = useMyPropertiesOverview({
     page,
     limit: 20,
   });
-
   const properties = data?.properties ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
-  const isDark = useIsDark();
+
   const activeRentalsQuery = useOwnerActiveRentRequests();
   const terminationRequestsQuery = useOwnerTerminationRequests();
 
-  const activeRentalByPropertyId = useMemo(() => {
-    return new Map(
-      (activeRentalsQuery.data ?? []).map((contract) => [
-        getListingId(contract.listingId),
-        contract,
-      ]),
-    );
-  }, [activeRentalsQuery.data]);
+  const activeRentalByPropertyId = useMemo(
+    () =>
+      new Map(
+        (activeRentalsQuery.data ?? []).map((c) => [
+          getListingId(c.listingId),
+          c,
+        ]),
+      ),
+    [activeRentalsQuery.data],
+  );
 
-  const terminationRequestByPropertyId = useMemo(() => {
-    return new Map(
-      (terminationRequestsQuery.data ?? []).map((contract) => [
-        getListingId(contract.listingId),
-        contract,
-      ]),
-    );
-  }, [terminationRequestsQuery.data]);
+  const terminationRequestByPropertyId = useMemo(
+    () =>
+      new Map(
+        (terminationRequestsQuery.data ?? []).map((c) => [
+          getListingId(c.listingId),
+          c,
+        ]),
+      ),
+    [terminationRequestsQuery.data],
+  );
 
-  const visibleProperties = useMemo(() => {
-    if (activeTab === "rented") {
-      return properties.filter((property) => property.status === "Rented");
-    }
-
-    return properties;
-  }, [activeTab, properties]);
+  const visibleProperties = useMemo(
+    () =>
+      activeTab === "rented"
+        ? properties.filter((p) => p.status === "Rented")
+        : properties,
+    [activeTab, properties],
+  );
 
   useEffect(() => {
-    if (totalPages > 0 && page > totalPages) {
-      setPage(totalPages);
-    }
+    if (totalPages > 0 && page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-
-      if (target?.closest("[data-my-property-menu-root]")) {
-        return;
-      }
-
-      setOpenMenuPropertyId(null);
+    const handle = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement)?.closest("[data-my-property-menu-root]"))
+        setOpenMenuPropertyId(null);
     };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
   }, []);
 
   const handleDeleteProperty = async (propertyId: string) => {
     setDeletingPropertyId(propertyId);
-
     try {
       await deleteProperty.mutateAsync({ propertyId });
-
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["dashboard", "my-properties-overview"],
@@ -176,13 +279,12 @@ function MyPropertyList() {
           queryKey: ["dashboard", "listing-counts"],
         }),
       ]);
-
       toast.success("Listing deleted successfully.");
       setOpenMenuPropertyId(null);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete listing";
-      toast.error(message);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete listing",
+      );
     } finally {
       setDeletingPropertyId(null);
     }
@@ -190,28 +292,21 @@ function MyPropertyList() {
 
   const handleSendTerminationRequest = async (propertyId: string) => {
     const activeContract = activeRentalByPropertyId.get(propertyId);
-
     if (!activeContract) {
-      const pendingContract = terminationRequestByPropertyId.get(propertyId);
-
-      if (pendingContract) {
-        toast.info(
-          "A termination request is already pending for this property.",
-        );
-      } else {
-        toast.error("No active rental contract found for this property.");
-      }
-
+      const pending = terminationRequestByPropertyId.get(propertyId);
+      toast[pending ? "info" : "error"](
+        pending
+          ? "A termination request is already pending."
+          : "No active rental contract found.",
+      );
       setTerminationProperty(null);
       setOpenMenuPropertyId(null);
       return;
     }
-
     try {
       await createTerminationRequest.mutateAsync({
         contractId: activeContract._id,
       });
-
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["dashboard", "my-properties-overview"],
@@ -220,157 +315,308 @@ function MyPropertyList() {
           queryKey: ["dashboard", "listing-counts"],
         }),
       ]);
-
       toast.success("Termination notice sent.");
       setTerminationProperty(null);
       setOpenMenuPropertyId(null);
     } catch (error) {
-      const message =
+      toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to send termination notice";
-      toast.error(message);
+          : "Failed to send termination notice",
+      );
     }
   };
 
+  // ── Style tokens ──────────────────────────────────────────────────────────
+  const deep = isDark ? "#ede9f8" : "#2e1f4a";
+  const muted = isDark ? "#9b78d4" : "#a98fd4";
+  const border = isDark ? "#3a2d5c" : "#e5d9f9";
+  const cardBg = isDark ? "#17112e" : "#ffffff";
+  const mutedBg = isDark ? "#1f1838" : "#f7f4ff";
+  const chipBg = isDark ? "#251c42" : "#ede7fd";
+  const menuBg = isDark ? "#1f1838" : "#ffffff";
+  const hoverBg = isDark ? "rgba(255,255,255,0.05)" : "#f5f1ff";
+  const accent = "#8b64c8";
+
+  const statusMap = isDark ? DARK_STATUS_COLORS : STATUS_COLORS;
+
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="animate-pulse overflow-hidden rounded-2xl border"
+            style={{ backgroundColor: cardBg, borderColor: border }}
+          >
+            <div
+              className="flex items-center justify-between border-b px-4 py-2.5"
+              style={{ borderColor: border, backgroundColor: mutedBg }}
+            >
+              <div className="skeleton h-2.5 w-20 rounded" />
+              <div className="skeleton h-4 w-14 rounded-md" />
+            </div>
+            <div className="skeleton h-44 w-full" />
+            <div className="flex flex-col gap-2 p-4">
+              <div className="skeleton h-4 w-3/4 rounded" />
+              <div className="skeleton h-3 w-1/2 rounded" />
+            </div>
+            <div
+              className="flex items-center justify-between border-t px-4 py-3"
+              style={{ borderColor: border }}
+            >
+              <div className="skeleton h-5 w-24 rounded" />
+              <div className="skeleton h-8 w-8 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── Error ─────────────────────────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div
+        className="rounded-2xl border px-5 py-8 text-center text-sm"
+        style={{ borderColor: border, color: muted }}
+      >
+        Couldn't load your properties right now.
+      </div>
+    );
+  }
+
+  // ── Empty ─────────────────────────────────────────────────────────────────
+  if (properties.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center rounded-2xl border py-16"
+        style={{ borderColor: border, backgroundColor: cardBg }}
+      >
+        <Home
+          size={32}
+          style={{ color: muted }}
+          strokeWidth={1.5}
+          className="mb-3"
+        />
+        <p className="text-sm font-medium" style={{ color: deep }}>
+          No listings yet
+        </p>
+        <p className="mt-0.5 text-xs" style={{ color: muted }}>
+          Properties you add will appear here
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
-      {isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, idx) => (
-            <div key={idx} className="skeleton h-80 rounded-2xl" />
-          ))}
-        </div>
-      ) : isError ? (
-        <div
-          className="rounded-2xl border p-6 text-sm"
-          style={{ borderColor: "#E1D8FA", color: palette.purple }}
-        >
-          Couldn&apos;t load your properties right now.
-        </div>
-      ) : properties.length === 0 ? (
-        <div
-          className="rounded-2xl border p-6 text-sm"
-          style={{ borderColor: "#E1D8FA", color: palette.purple }}
-        >
-          No properties found.
-        </div>
-      ) : (
-        <>
-          <div className="mb-4 flex flex-wrap gap-3">
+      {/* Filter tabs */}
+      <div className="mb-5 flex items-center gap-2">
+        {(["all", "rented"] as PropertyFilterTab[]).map((tab) => {
+          const isActive = activeTab === tab;
+          return (
             <button
+              key={tab}
               type="button"
-              onClick={() => setActiveTab("all")}
-              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              onClick={() => setActiveTab(tab)}
+              className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
               style={{
-                backgroundColor:
-                  activeTab === "all" ? palette.purple : palette.cardBg,
-                color: activeTab === "all" ? palette.pageBg : palette.deep,
-                border: `1px solid ${palette.border}`,
+                backgroundColor: isActive ? accent : cardBg,
+                color: isActive ? "#ffffff" : deep,
+                border: `1px solid ${isActive ? accent : border}`,
               }}
             >
-              All
+              {tab === "all" ? "All listings" : "Rented"}
             </button>
+          );
+        })}
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("rented")}
-              className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+        <span
+          className="ml-auto font-mono text-[10px] uppercase tracking-widest"
+          style={{ color: muted }}
+        >
+          {visibleProperties.length} total
+        </span>
+      </div>
+
+      {/* Bento grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {visibleProperties.map((property) => {
+          const primaryImage =
+            property.images.find((img) => img.isPrimary) ?? property.images[0];
+          const sc = statusMap[property.status] ?? {
+            bg: chipBg,
+            color: deep,
+            border,
+          };
+          const isMenuOpen = openMenuPropertyId === property._id;
+
+          return (
+            <article
+              key={property._id}
+              className="group relative flex flex-col overflow-visible rounded-2xl border transition-shadow duration-200"
               style={{
-                backgroundColor:
-                  activeTab === "rented" ? palette.purple : palette.cardBg,
-                color: activeTab === "rented" ? palette.pageBg : palette.deep,
-                border: `1px solid ${palette.border}`,
+                backgroundColor: cardBg,
+                borderColor: border,
+                boxShadow: isDark
+                  ? "0 1px 4px rgba(0,0,0,0.3)"
+                  : "0 1px 4px rgba(46,31,74,0.06)",
               }}
             >
-              Rented
-            </button>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleProperties.map((property) => {
-              const primaryImage =
-                property.images.find((image) => image.isPrimary) ??
-                property.images[0];
-
-              return (
-                <article
-                  key={property._id}
-                  className="relative overflow-visible rounded-2xl border bg-white shadow-sm"
-                  style={{ borderColor: palette.border }}
+              {/* ── Bento header strip ── */}
+              <div
+                className="flex items-center justify-between border-b px-4 py-2.5"
+                style={{ borderColor: border, backgroundColor: mutedBg }}
+              >
+                <span
+                  className="font-mono text-[10px] uppercase tracking-widest"
+                  style={{ color: muted }}
                 >
-                  <div
-                    className="absolute right-3 top-3 z-30"
-                    data-my-property-menu-root
-                  >
-                    <button
-                      type="button"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white/90"
-                      style={{
-                        borderColor: palette.border,
-                        color: palette.deep,
-                        backgroundColor: palette.pageBg,
-                      }}
-                      onClick={() =>
-                        setOpenMenuPropertyId((prev) =>
-                          prev === property._id ? null : property._id,
-                        )
-                      }
-                      aria-label="Open listing actions"
-                    >
-                      <EllipsisVertical size={18} />
-                    </button>
+                  #{property._id.slice(-4).toUpperCase()}
+                </span>
+                <span
+                  className="rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: sc.bg,
+                    color: sc.color,
+                    borderColor: sc.border,
+                  }}
+                >
+                  {property.status}
+                </span>
+              </div>
 
-                    {openMenuPropertyId === property._id ? (
-                      <div
-                        className="absolute right-0 mt-2 z-30 w-52 rounded-xl border p-2 shadow-sm"
-                        style={{
-                          borderColor: palette.border,
-                          backgroundColor: palette.cardBg,
-                        }}
-                      >
-                        <button
-                          type="button"
+              {/* ── Image ── */}
+              <div
+                className="h-44 w-full overflow-hidden"
+                style={{ backgroundColor: isDark ? "#1f1838" : "#f0ebff" }}
+              >
+                {primaryImage ? (
+                  <img
+                    src={primaryImage.imageUrl}
+                    alt={property.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <div
+                    className="flex h-full flex-col items-center justify-center gap-2"
+                    style={{ color: muted }}
+                  >
+                    <Building2 size={24} strokeWidth={1.5} />
+                    <span className="font-mono text-xs uppercase tracking-wider">
+                      No image
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Body ── */}
+              <div className="flex flex-1 flex-col gap-1 p-4">
+                <h3
+                  className="line-clamp-1 text-sm font-semibold leading-snug"
+                  style={{ color: deep }}
+                >
+                  {property.title}
+                </h3>
+                <p
+                  className="flex items-center gap-1 text-xs"
+                  style={{ color: muted }}
+                >
+                  <MapPin size={11} />
+                  {property.city}
+                </p>
+                <p
+                  className="line-clamp-1 text-xs"
+                  style={{ color: muted, opacity: 0.7 }}
+                >
+                  {property.address}
+                </p>
+              </div>
+
+              {/* ── Bento footer strip ── */}
+              <div
+                className="flex items-center justify-between border-t px-4 py-3"
+                style={{ borderColor: border }}
+              >
+                <div>
+                  <p
+                    className="text-base font-bold leading-none"
+                    style={{ color: accent }}
+                  >
+                    {property.currency}{" "}
+                    {new Intl.NumberFormat().format(property.price)}
+                  </p>
+                  <p
+                    className="mt-0.5 font-mono text-[10px] uppercase tracking-wider"
+                    style={{ color: muted }}
+                  >
+                    {property.numberOfBedrooms} bd ·{" "}
+                    {property.numberOfBathrooms} ba
+                  </p>
+                </div>
+
+                {/* ── Menu ── */}
+                <div className="relative" data-my-property-menu-root>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenMenuPropertyId(isMenuOpen ? null : property._id)
+                    }
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition-colors"
+                    style={{
+                      color: muted,
+                      backgroundColor: isMenuOpen ? chipBg : "transparent",
+                      border: `1px solid ${isMenuOpen ? border : "transparent"}`,
+                    }}
+                    aria-label="Listing actions"
+                  >
+                    <EllipsisVertical size={14} />
+                  </button>
+
+                  {isMenuOpen && (
+                    <div
+                      className="absolute bottom-full right-0 z-30 mb-1.5 w-52 overflow-hidden rounded-xl shadow-xl"
+                      style={{
+                        backgroundColor: menuBg,
+                        border: `1px solid ${border}`,
+                      }}
+                    >
+                      <div className="p-1">
+                        <MenuBtn
+                          icon={<Eye size={13} />}
+                          label="Preview"
+                          color={deep}
+                          hoverBg={hoverBg}
                           onClick={() =>
                             navigate(`/properties/preview/${property._id}`)
                           }
-                          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                            isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                          }`}
-                          style={{ color: palette.deep }}
-                        >
-                          <Eye size={16} />
-                          Get Preview
-                        </button>
-
-                        <button
-                          type="button"
+                        />
+                        <MenuBtn
+                          icon={<Pencil size={13} />}
+                          label="Edit"
+                          color={property.status === "Rented" ? muted : deep}
+                          hoverBg={hoverBg}
+                          disabled={property.status === "Rented"}
                           onClick={() => {
                             if (property.status === "Rented") {
                               toast.info("Rented properties cannot be edited.");
                               return;
                             }
-
                             navigate(`/properties/${property._id}/edit`);
                           }}
-                          disabled={property.status === "Rented"}
-                          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                            isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                          }`}
-                          style={{
-                            color:
-                              property.status === "Rented"
-                                ? palette.softPurple
-                                : palette.deep,
-                          }}
-                        >
-                          <Pencil size={16} />
-                          Edit
-                        </button>
-
+                        />
                         {property.status === "Rented" && (
-                          <button
-                            type="button"
+                          <MenuBtn
+                            icon={<CircleCheck size={13} />}
+                            label={
+                              terminationRequestByPropertyId.has(property._id)
+                                ? "Notice active"
+                                : "Termination notice"
+                            }
+                            color={deep}
+                            hoverBg={hoverBg}
                             onClick={() => {
                               setTerminationProperty({
                                 id: property._id,
@@ -378,20 +624,21 @@ function MyPropertyList() {
                               });
                               setOpenMenuPropertyId(null);
                             }}
-                            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                              isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                            }`}
-                            style={{ color: palette.deep }}
-                          >
-                            <CircleCheck size={16} />
-                            {terminationRequestByPropertyId.has(property._id)
-                              ? "Termination Notice Active"
-                              : "Create Termination Notice"}
-                          </button>
+                          />
                         )}
-
-                        <button
-                          type="button"
+                      </div>
+                      <div style={{ height: 1, backgroundColor: border }} />
+                      <div className="p-1">
+                        <MenuBtn
+                          icon={<Trash2 size={13} />}
+                          label={
+                            deletingPropertyId === property._id
+                              ? "Deleting…"
+                              : "Delete"
+                          }
+                          color="#dc2626"
+                          hoverBg="rgba(220,38,38,0.07)"
+                          disabled={deletingPropertyId === property._id}
                           onClick={() => {
                             if (property.status === "Rented") {
                               setTerminationProperty({
@@ -401,96 +648,26 @@ function MyPropertyList() {
                               setOpenMenuPropertyId(null);
                               return;
                             }
-
                             void handleDeleteProperty(property._id);
                           }}
-                          disabled={deletingPropertyId === property._id}
-                          className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-200"
-                          style={{ color: "#E11D48" }}
-                        >
-                          <Trash2 size={16} />
-                          {deletingPropertyId === property._id
-                            ? "Deleting..."
-                            : property.status === "Rented"
-                              ? "Delete Property"
-                              : "Delete"}
-                        </button>
+                        />
                       </div>
-                    ) : null}
-                  </div>
-
-                  <div
-                    className="h-48 w-full overflow-hidden rounded-t-2xl"
-                    style={{ backgroundColor: palette.cardMutedBg }}
-                  >
-                    {primaryImage ? (
-                      <img
-                        src={primaryImage.imageUrl}
-                        alt={property.title}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-full items-center justify-center text-sm"
-                        style={{ color: palette.softPurple }}
-                      >
-                        No image
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4">
-                    <h3
-                      className="line-clamp-1 text-lg font-bold"
-                      style={{ color: palette.deep }}
-                    >
-                      {property.title}
-                    </h3>
-
-                    <p
-                      className="mt-2 flex items-center gap-1 text-sm"
-                      style={{ color: palette.purple }}
-                    >
-                      <MapPin size={14} />
-                      {property.city}
-                    </p>
-
-                    <p
-                      className="mt-1 line-clamp-1 text-sm"
-                      style={{ color: palette.softPurple }}
-                    >
-                      {property.address}
-                    </p>
-
-                    <div className="mt-4 flex items-end justify-between">
-                      <p
-                        className="text-2xl font-extrabold"
-                        style={{ color: palette.purple }}
-                      >
-                        {property.currency}{" "}
-                        {new Intl.NumberFormat().format(property.price)}
-                      </p>
-                      <p
-                        className="text-xs"
-                        style={{ color: palette.softPurple }}
-                      >
-                        {property.numberOfBedrooms} bd |{" "}
-                        {property.numberOfBathrooms} ba
-                      </p>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
-          <PropertyPagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </>
-      )}
+      <div className="mt-6">
+        <PropertyPagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
 
       <DeleteTerminationModal
         isOpen={terminationProperty !== null}
@@ -499,9 +676,9 @@ function MyPropertyList() {
         onClose={() => setTerminationProperty(null)}
         onSendTerminationRequest={() => {
           if (!terminationProperty) return;
-
           void handleSendTerminationRequest(terminationProperty.id);
         }}
+        isDark={isDark}
       />
     </>
   );

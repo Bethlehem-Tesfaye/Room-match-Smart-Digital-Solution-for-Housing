@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Flag,
   Heart,
   MapPin,
   RefreshCw,
@@ -94,7 +93,7 @@ export function PropertyDetailsSkeleton() {
   return (
     <div className="lg:flex lg:gap-10">
       <div className="min-w-0 flex-1 space-y-8">
-        <div className="hidden h-[480px] gap-2 md:grid md:grid-cols-5">
+        <div className="hidden h-120 gap-2 md:grid md:grid-cols-5">
           <div className="skeleton col-span-3 rounded-xl" />
           <div className="col-span-2 grid grid-cols-2 grid-rows-2 gap-2">
             {Array.from({ length: 4 }).map((_, idx) => (
@@ -124,7 +123,7 @@ export function PropertyDetailsSkeleton() {
       </div>
 
       <aside className="hidden w-[320px] shrink-0 lg:block">
-        <div className="skeleton h-[360px] rounded-xl" />
+        <div className="skeleton h-90 rounded-xl" />
       </aside>
     </div>
   );
@@ -420,7 +419,7 @@ function PropertyDetailsView({
             placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
             value={messageDraft}
             onChange={(event) => setMessageDraft(event.target.value)}
-            disabled={isUnavailable || isSendMessageLoading}
+            disabled={isSendMessageLoading || isUnavailable}
           />
           <button
             type="button"
@@ -453,7 +452,7 @@ function PropertyDetailsView({
     isLightboxOpen && currentImage
       ? createPortal(
           <div
-            className="fixed inset-0 z-[600] flex items-center justify-center px-4 py-6"
+            className="fixed inset-0 z-600 flex items-center justify-center px-4 py-6"
             style={{ backgroundColor: "rgba(0,0,0,0.88)" }}
             onClick={closeLightbox}
           >
@@ -512,7 +511,7 @@ function PropertyDetailsView({
   const amenitiesModalPortal = isAmenitiesModalOpen
     ? createPortal(
         <div
-          className="fixed inset-0 z-[600] flex items-end justify-center px-4 py-6 sm:items-center"
+          className="fixed inset-0 z-600 flex items-end justify-center px-4 py-6 sm:items-center"
           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
           onClick={() => setIsAmenitiesModalOpen(false)}
         >
@@ -564,7 +563,7 @@ function PropertyDetailsView({
           <>
             {isMessageExpanded ? (
               <div
-                className="fixed inset-0 z-[55] md:hidden"
+                className="fixed inset-0 z-55 md:hidden"
                 style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
                 onClick={() => setIsMessageExpanded(false)}
               >
@@ -622,7 +621,7 @@ function PropertyDetailsView({
                 </div>
                 <button
                   type="button"
-                  className="min-h-[44px] rounded-xl px-6 py-2.5 text-sm font-bold text-white"
+                  className="min-h-11 rounded-xl px-6 py-2.5 text-sm font-bold text-white"
                   style={{ backgroundColor: palette.purple }}
                   onClick={() => setIsMessageExpanded(true)}
                   disabled={isSendMessageLoading}
@@ -641,20 +640,46 @@ function PropertyDetailsView({
       <div className="pb-24 md:pb-0 lg:flex lg:gap-10">
         <div className="min-w-0 flex-1 space-y-8">
           <div className="relative hidden md:block">
-            <div className="grid h-[480px] grid-cols-5 gap-2">
-              {renderGalleryCell(
-                gallerySlots[0],
-                0,
-                "col-span-3 h-full rounded-xl",
-              )}
-              <div className="col-span-2 grid h-full grid-cols-2 grid-rows-2 gap-2">
-                {gallerySlots
-                  .slice(1)
-                  .map((slot, index) =>
-                    renderGalleryCell(slot, index + 1, "h-full rounded-xl"),
-                  )}
+            {totalImages > 0 ? (
+              <div className="grid h-120 grid-cols-5 gap-2">
+                {renderGalleryCell(
+                  gallerySlots[0],
+                  0,
+                  "col-span-3 h-full rounded-xl",
+                )}
+                <div className="col-span-2 grid h-full grid-cols-2 grid-rows-2 gap-2">
+                  {gallerySlots
+                    .slice(1)
+                    .map((slot, index) =>
+                      renderGalleryCell(slot, index + 1, "h-full rounded-xl"),
+                    )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex min-h-60 items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center md:min-h-120"
+                style={{
+                  backgroundColor: palette.cardMutedBg,
+                  borderColor: palette.border,
+                }}
+              >
+                <div className="max-w-sm space-y-2">
+                  <Building2 size={28} style={{ color: palette.softPurple }} />
+                  <p
+                    className="text-sm font-bold"
+                    style={{ color: "var(--palette-deep)" }}
+                  >
+                    No images available
+                  </p>
+                  <p
+                    className="text-xs leading-relaxed"
+                    style={{ color: palette.softPurple }}
+                  >
+                    The owner has not uploaded any photos for this listing yet.
+                  </p>
+                </div>
+              </div>
+            )}
             {totalImages > 0 ? (
               <button
                 type="button"
@@ -672,56 +697,73 @@ function PropertyDetailsView({
             ) : null}
           </div>
 
-          {orderedImages.length === 0 ? (
-            <div
-              className="hidden h-[480px] items-center justify-center rounded-xl md:flex"
-              style={{ backgroundColor: palette.cardMutedBg }}
-            >
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                No images available
-              </p>
-            </div>
-          ) : null}
-
-          <div className="relative md:hidden">
-            <div
-              ref={mobileGalleryRef}
-              className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2"
-              onScroll={handleMobileGalleryScroll}
-            >
-              {orderedImages.map((image, index) => (
-                <button
-                  key={image._id}
-                  type="button"
-                  onClick={() => openLightbox(index)}
-                  className="h-56 w-[85vw] shrink-0 snap-center overflow-hidden rounded-2xl"
-                  style={{ backgroundColor: palette.cardMutedBg }}
+          <div className="md:hidden">
+            {totalImages > 0 ? (
+              <div className="relative">
+                <div
+                  ref={mobileGalleryRef}
+                  className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2"
+                  onScroll={handleMobileGalleryScroll}
                 >
-                  <img
-                    src={image.imageUrl}
-                    alt={`${property.title} ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-            {orderedImages.length > 1 ? (
-              <div className="mt-3 flex justify-center gap-1.5">
-                {orderedImages.map((image, index) => (
-                  <span
-                    key={image._id}
-                    className="h-1.5 rounded-full transition-all"
-                    style={{
-                      width: mobileDotIndex === index ? 16 : 6,
-                      backgroundColor:
-                        mobileDotIndex === index
-                          ? palette.purple
-                          : palette.border,
-                    }}
-                  />
-                ))}
+                  {orderedImages.map((image, index) => (
+                    <button
+                      key={image._id}
+                      type="button"
+                      onClick={() => openLightbox(index)}
+                      className="h-56 w-[85vw] shrink-0 snap-center overflow-hidden rounded-2xl"
+                      style={{ backgroundColor: palette.cardMutedBg }}
+                    >
+                      <img
+                        src={image.imageUrl}
+                        alt={`${property.title} ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+                {orderedImages.length > 1 ? (
+                  <div className="mt-3 flex justify-center gap-1.5">
+                    {orderedImages.map((image, index) => (
+                      <span
+                        key={image._id}
+                        className="h-1.5 rounded-full transition-all"
+                        style={{
+                          width: mobileDotIndex === index ? 16 : 6,
+                          backgroundColor:
+                            mobileDotIndex === index
+                              ? palette.purple
+                              : palette.border,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            ) : (
+              <div
+                className="flex min-h-60 items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center md:min-h-120"
+                style={{
+                  backgroundColor: palette.cardMutedBg,
+                  borderColor: palette.border,
+                }}
+              >
+                <div className="max-w-sm space-y-2">
+                  <Building2 size={28} style={{ color: palette.softPurple }} />
+                  <p
+                    className="text-sm font-bold"
+                    style={{ color: "var(--palette-deep)" }}
+                  >
+                    No images available
+                  </p>
+                  <p
+                    className="text-xs leading-relaxed"
+                    style={{ color: palette.softPurple }}
+                  >
+                    The owner has not uploaded any photos for this listing yet.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="hidden items-center justify-between gap-4 md:flex">
@@ -1055,7 +1097,7 @@ function PropertyDetailsView({
                   {similarProperties.map((similarProperty) => (
                     <div
                       key={similarProperty._id}
-                      className="w-[280px] shrink-0 lg:w-auto"
+                      className="w-70 shrink-0 lg:w-auto"
                     >
                       <PropertyListCard property={similarProperty} />
                     </div>

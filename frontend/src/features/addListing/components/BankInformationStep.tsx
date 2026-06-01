@@ -1,5 +1,4 @@
 import { Landmark } from "lucide-react";
-import { palette } from "../../../theme/palette";
 import type { BankInfoDraft, BankOption } from "../types/types";
 
 interface BankInformationStepProps {
@@ -19,6 +18,33 @@ interface BankInformationStepProps {
   ) => void;
 }
 
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label
+        className="font-mono text-[10px] uppercase tracking-widest"
+        style={{ color: "var(--palette-soft-purple)" }}
+      >
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function BankInformationStep({
   bankInfo,
   banks,
@@ -27,122 +53,77 @@ function BankInformationStep({
   errors,
   onChangeField,
 }: BankInformationStepProps) {
+  const inputStyle = (hasError?: boolean) => ({
+    borderColor: hasError ? "#dc2626" : "var(--palette-border)",
+    backgroundColor: "var(--palette-input-bg)",
+    color: "var(--palette-deep)",
+  });
+
   return (
     <div className="space-y-5">
-      <div>
-        <div
-          className="mb-1 flex items-center gap-2 text-lg font-semibold"
-          style={{ color: palette.deep }}
-        >
-          <Landmark size={18} style={{ color: palette.purple }} />
-          Bank Information
-        </div>
-        <p className="text-sm" style={{ color: palette.softPurple }}>
-          Add the bank account that will receive your rental payments
+      {/* Step intro */}
+      <div className="flex items-center gap-2">
+        <Landmark size={15} style={{ color: "#8b64c8" }} />
+        <p className="text-sm" style={{ color: "var(--palette-soft-purple)" }}>
+          Add the bank account that will receive your rental payments.
         </p>
       </div>
 
-      {hasExistingBankAccount ? (
+      {hasExistingBankAccount && (
         <div
           className="rounded-xl border px-4 py-3 text-sm"
           style={{
-            borderColor: palette.border,
-            backgroundColor: palette.chipBg,
-            color: palette.deep,
+            borderColor: "var(--palette-border)",
+            backgroundColor: "var(--palette-chip-bg)",
+            color: "var(--palette-deep)",
           }}
         >
-          Is this the bank account you want to receive payments to? You can
-          still edit the details before confirming.
+          You already have a bank account on file. You can still update the
+          details before confirming.
         </div>
-      ) : null}
+      )}
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Account Name *
-        </label>
+      <Field label="Account name *" error={errors.accountName}>
         <input
           value={bankInfo.accountName}
-          onChange={(event) => onChangeField("accountName", event.target.value)}
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor: errors.accountName ? "rgb(220 38 38)" : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
+          onChange={(e) => onChangeField("accountName", e.target.value)}
           placeholder="e.g., Abebe Bekele"
+          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+          style={inputStyle(!!errors.accountName)}
         />
-        {errors.accountName ? (
-          <p className="text-sm text-red-600">{errors.accountName}</p>
-        ) : null}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Account Number *
-        </label>
+      <Field label="Account number *" error={errors.accountNumber}>
         <input
           value={bankInfo.accountNumber}
-          onChange={(event) =>
-            onChangeField(
-              "accountNumber",
-              event.target.value.replace(/[^\d]/g, ""),
-            )
+          onChange={(e) =>
+            onChangeField("accountNumber", e.target.value.replace(/[^\d]/g, ""))
           }
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor: errors.accountNumber
-              ? "rgb(220 38 38)"
-              : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
           placeholder="1234567890"
+          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+          style={inputStyle(!!errors.accountNumber)}
         />
-        {errors.accountNumber ? (
-          <p className="text-sm text-red-600">{errors.accountNumber}</p>
-        ) : null}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Bank Name *
-        </label>
+      <Field label="Bank name *" error={errors.bankCode || errors.bankName}>
         <select
           value={bankInfo.bankCode}
-          onChange={(event) => {
-            const selectedBank = banks.find(
-              (bank) => bank.id === event.target.value,
-            );
-            onChangeField("bankCode", event.target.value);
+          onChange={(e) => {
+            const selectedBank = banks.find((b) => b.id === e.target.value);
+            onChangeField("bankCode", e.target.value);
             onChangeField(
               "bankName",
               selectedBank?.name ??
-                event.currentTarget.selectedOptions[0]?.textContent?.trim() ??
+                e.currentTarget.selectedOptions[0]?.textContent?.trim() ??
                 "",
             );
           }}
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor:
-              errors.bankCode || errors.bankName
-                ? "rgb(220 38 38)"
-                : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
           disabled={isLoadingBanks}
+          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+          style={inputStyle(!!(errors.bankCode || errors.bankName))}
         >
           <option value="">
-            {isLoadingBanks ? "Loading banks..." : "Select a bank"}
+            {isLoadingBanks ? "Loading banks…" : "Select a bank"}
           </option>
           {banks.map((bank) => (
             <option key={bank.id} value={bank.id}>
@@ -150,12 +131,7 @@ function BankInformationStep({
             </option>
           ))}
         </select>
-        {errors.bankCode || errors.bankName ? (
-          <p className="text-sm text-red-600">
-            {errors.bankCode || errors.bankName}
-          </p>
-        ) : null}
-      </div>
+      </Field>
     </div>
   );
 }
