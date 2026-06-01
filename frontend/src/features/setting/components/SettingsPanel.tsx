@@ -2,7 +2,6 @@ import { AlertTriangle, KeyRound, LogOut, Moon, Sun } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useLogout } from "../../auth/hooks/useLogout";
-import { palette } from "../../../theme/palette";
 import {
   useChangePassword,
   useHasPasswordAccount,
@@ -15,7 +14,6 @@ function SettingsPanel() {
   const { data: hasPassword = false, isLoading: isPasswordModeLoading } =
     useHasPasswordAccount();
   const { theme, setTheme } = useThemePreference();
-
   const changePasswordMutation = useChangePassword();
   const setPasswordMutation = useSetPassword();
   const logoutMutation = useLogout();
@@ -38,33 +36,25 @@ function SettingsPanel() {
 
   const onSubmitPassword = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (!newPassword || !confirmPassword) {
       toast.error("Please fill all required password fields.");
       return;
     }
-
     if (newPassword !== confirmPassword) {
       toast.error("New password and confirm password must match.");
       return;
     }
-
     if (newPassword.length < 8) {
       toast.error("Password must be at least 8 characters.");
       return;
     }
-
     if (hasPassword) {
       if (!currentPassword) {
         toast.error("Current password is required.");
         return;
       }
-
       changePasswordMutation.mutate(
-        {
-          currentPassword,
-          newPassword,
-        },
+        { currentPassword, newPassword },
         {
           onSuccess: () => {
             toast.success("Password changed successfully.");
@@ -72,107 +62,134 @@ function SettingsPanel() {
             setNewPassword("");
             setConfirmPassword("");
           },
-          onError: (error) => {
-            toast.error(error.message || "Failed to change password.");
-          },
+          onError: (error) =>
+            toast.error(error.message || "Failed to change password."),
         },
       );
-
       return;
     }
-
     setPasswordMutation.mutate(
-      {
-        newPassword,
-      },
+      { newPassword },
       {
         onSuccess: () => {
           toast.success("Password added successfully.");
           setNewPassword("");
           setConfirmPassword("");
         },
-        onError: (error) => {
-          toast.error(error.message || "Failed to add password.");
-        },
+        onError: (error) =>
+          toast.error(error.message || "Failed to add password."),
       },
     );
   };
 
-  return (
-    <section className="mx-auto w-full max-w-3xl">
-      <h1 className="text-3xl font-bold" style={{ color: palette.deep }}>
-        Settings
-      </h1>
-      <p className="mt-1 text-lg" style={{ color: palette.purple }}>
-        Manage your account security and preferences.
-      </p>
+  // ── Style tokens ────────────────────────────────────────────────────────
+  const deep = "var(--palette-deep)";
+  const muted = "var(--palette-soft-purple)";
+  const border = "var(--palette-border)";
+  const cardBg = "var(--palette-card-bg)";
+  const mutedBg = "var(--palette-card-muted-alt-bg)";
+  const chipBg = "var(--palette-chip-bg)";
+  const inputBg = "var(--palette-input-bg)";
+  const accent = "#8b64c8";
 
-      <div className="mt-6 space-y-6">
-        <article
-          className="rounded-2xl border bg-white p-6 shadow-sm md:p-8"
-          //   style={{ borderColor: palette.lightPurple }}
+  const inputClass =
+    "w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition";
+  const inputStyle = {
+    borderColor: border,
+    color: deep,
+    backgroundColor: inputBg,
+  };
+
+  const labelClass =
+    "mb-1.5 block text-xs font-semibold uppercase tracking-widest";
+
+  return (
+    <section className="mx-auto w-full max-w-2xl">
+      {/* Page header */}
+      <div className="mb-6">
+        <p
+          className="mb-1 text-xs uppercase tracking-widest"
+          style={{ color: muted }}
         >
-          <div className="flex items-center gap-2">
-            <KeyRound size={20} style={{ color: palette.purple }} />
-            <h2
-              className="text-xl font-semibold"
-              style={{ color: palette.deep }}
+          Account
+        </p>
+        <h1 className="text-2xl font-semibold" style={{ color: deep }}>
+          Settings
+        </h1>
+        <p className="mt-0.5 text-sm" style={{ color: muted }}>
+          Manage your security and preferences.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {/* ── Security card ── */}
+        <article
+          className="overflow-hidden rounded-2xl border"
+          style={{ borderColor: border, backgroundColor: cardBg }}
+        >
+          {/* Card header */}
+          <div
+            className="flex items-center gap-2.5 border-b px-6 py-4"
+            style={{ borderColor: border, backgroundColor: mutedBg }}
+          >
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              style={{ backgroundColor: chipBg }}
             >
-              Account Security
-            </h2>
+              <KeyRound size={14} style={{ color: accent }} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: deep }}>
+                Account security
+              </h2>
+              <p className="text-xs" style={{ color: muted }}>
+                {isPasswordModeLoading
+                  ? "Checking authentication method…"
+                  : hasPassword
+                    ? "Change your current password."
+                    : "You signed in with Google. Add a password for email login."}
+              </p>
+            </div>
           </div>
 
-          <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-            {isPasswordModeLoading
-              ? "Checking authentication method..."
-              : hasPassword
-                ? "Change your current password."
-                : "You signed in with Google. Add a password for email login."}
-          </p>
-
-          <form onSubmit={onSubmitPassword} className="mt-5 space-y-4">
-            {hasPassword ? (
+          {/* Form */}
+          <form onSubmit={onSubmitPassword} className="space-y-4 px-6 py-5">
+            {hasPassword && (
               <div>
                 <label
                   htmlFor="currentPassword"
-                  className="mb-2 block text-sm font-semibold"
-                  style={{ color: palette.deep }}
+                  className={labelClass}
+                  style={{ color: muted }}
                 >
-                  Current Password
+                  Current password
                 </label>
                 <input
                   id="currentPassword"
                   type="password"
                   value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                  className="w-full rounded-lg border px-4 py-3 outline-none"
-                  style={{
-                    borderColor: palette.lightPurple,
-                    color: palette.deep,
-                  }}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClass}
+                  style={inputStyle}
                   placeholder="Enter current password"
                 />
               </div>
-            ) : null}
+            )}
 
             <div>
               <label
                 htmlFor="newPassword"
-                className="mb-2 block text-sm font-semibold"
-                style={{ color: palette.deep }}
+                className={labelClass}
+                style={{ color: muted }}
               >
-                {hasPassword ? "New Password" : "Add Password"}
+                {hasPassword ? "New password" : "Add password"}
               </label>
               <input
                 id="newPassword"
                 type="password"
                 value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                className="w-full rounded-lg border px-4 py-3 outline-none"
-                style={{
-                  borderColor: palette.lightPurple,
-                  color: palette.deep,
-                }}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
                 placeholder="At least 8 characters"
               />
             </div>
@@ -180,105 +197,128 @@ function SettingsPanel() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="mb-2 block text-sm font-semibold"
-                style={{ color: palette.deep }}
+                className={labelClass}
+                style={{ color: muted }}
               >
-                Confirm Password
+                Confirm password
               </label>
               <input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                className="w-full rounded-lg border px-4 py-3 outline-none"
-                style={{
-                  borderColor: palette.lightPurple,
-                  color: palette.deep,
-                }}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
                 placeholder="Re-enter password"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={isPasswordMutationPending || isPasswordModeLoading}
-              className="w-full cursor-pointer rounded-lg py-3 text-center font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-70"
-              style={{
-                background: `linear-gradient(90deg, ${palette.softPurple} 0%, ${palette.purple} 100%)`,
-              }}
+            {/* Footer */}
+            <div
+              className="-mx-6 flex items-center justify-end border-t px-6 pt-4"
+              style={{ borderColor: border }}
             >
-              {isPasswordMutationPending
-                ? hasPassword
-                  ? "Changing Password..."
-                  : "Adding Password..."
-                : hasPassword
-                  ? "Change Password"
-                  : "Add Password"}
-            </button>
+              <button
+                type="submit"
+                disabled={isPasswordMutationPending || isPasswordModeLoading}
+                className="inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ backgroundColor: accent }}
+              >
+                {isPasswordMutationPending
+                  ? hasPassword
+                    ? "Changing…"
+                    : "Adding…"
+                  : hasPassword
+                    ? "Change password"
+                    : "Add password"}
+              </button>
+            </div>
           </form>
         </article>
 
+        {/* ── Appearance card ── */}
         <article
-          className="rounded-2xl border bg-white p-6 shadow-sm md:p-8"
-          style={{ borderColor: palette.lightPurple }}
+          className="overflow-hidden rounded-2xl border"
+          style={{ borderColor: border, backgroundColor: cardBg }}
         >
-          <h2 className="text-xl font-semibold" style={{ color: palette.deep }}>
-            Appearance
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-            Choose your theme preference.
-          </p>
+          <div
+            className="border-b px-6 py-4"
+            style={{ borderColor: border, backgroundColor: mutedBg }}
+          >
+            <h2 className="text-sm font-semibold" style={{ color: deep }}>
+              Appearance
+            </h2>
+            <p className="mt-0.5 text-xs" style={{ color: muted }}>
+              Choose your theme preference.
+            </p>
+          </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {themeOptions.map((option) => {
-              const Icon = option.icon;
-              const isActive = theme === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setTheme(option.value)}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition"
-                  style={{
-                    borderColor: isActive
-                      ? palette.purple
-                      : palette.lightPurple,
-                    color: isActive ? palette.cardMutedBg : palette.deep,
-                    backgroundColor: isActive
-                      ? palette.purple
-                      : palette.sectionBg,
-                  }}
-                >
-                  <Icon size={16} />
-                  {option.label}
-                </button>
-              );
-            })}
+          <div className="px-6 py-5">
+            <p
+              className="mb-3 text-xs font-semibold uppercase tracking-widest"
+              style={{ color: muted }}
+            >
+              Theme
+            </p>
+            <div className="flex gap-2">
+              {themeOptions.map((option) => {
+                const Icon = option.icon;
+                const isActive = theme === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTheme(option.value)}
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors"
+                    style={{
+                      borderColor: isActive ? accent : border,
+                      color: isActive ? "#ffffff" : deep,
+                      backgroundColor: isActive ? accent : mutedBg,
+                    }}
+                  >
+                    <Icon size={14} />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </article>
 
+        {/* ── Danger zone card ── */}
         <article
-          className="rounded-2xl border bg-white p-6 shadow-sm md:p-8"
-          style={{ borderColor: "#FECACA" }}
+          className="overflow-hidden rounded-2xl border"
+          style={{ borderColor: "#fecaca", backgroundColor: cardBg }}
         >
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={20} className="text-red-500" />
-            <h2 className="text-xl font-semibold text-red-600">Danger Zone</h2>
-          </div>
-          <p className="mt-2 text-sm text-red-500">
-            Sign out from your current session.
-          </p>
-
-          <button
-            type="button"
-            className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
+          <div
+            className="flex items-center gap-2.5 border-b px-6 py-4"
+            style={{ borderColor: "#fecaca", backgroundColor: "#fff5f5" }}
           >
-            <LogOut size={16} />
-            {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
-          </button>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
+              <AlertTriangle size={14} className="text-red-500" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-red-600">
+                Danger zone
+              </h2>
+              <p className="text-xs text-red-400">
+                Sign out from your current session.
+              </p>
+            </div>
+          </div>
+
+          <div className="px-6 py-5">
+            <button
+              type="button"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ borderColor: "#fecaca", color: "#dc2626" }}
+            >
+              <LogOut size={14} />
+              {logoutMutation.isPending ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
         </article>
       </div>
     </section>
