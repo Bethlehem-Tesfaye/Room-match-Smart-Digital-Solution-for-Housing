@@ -8,7 +8,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { palette } from "../../../theme/palette";
 import {
   useConversations,
   useOwnerPendingRentRequests,

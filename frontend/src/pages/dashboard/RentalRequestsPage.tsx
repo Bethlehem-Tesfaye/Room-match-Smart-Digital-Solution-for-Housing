@@ -26,7 +26,6 @@ import {
 } from "../../features/message/hooks/useMessageHooks";
 import type { RentRequest } from "../../features/message/types/type";
 import { useRentalUnreadCounts } from "../../features/dashbord/context/RentalUnreadCountsContext";
-import useIsDark from "../../lib/useTheme";
 
 type RequestsTab = "active" | "incoming" | "accepted" | "termination";
 
@@ -424,7 +423,6 @@ function RequestCard({
   onCancel,
   onWithdrawTermination,
   isMutating,
-  nowTick,
 }: {
   request: RentRequest;
   activeTab: RequestsTab;
@@ -632,8 +630,6 @@ function RentalRequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestsTab>("active");
   const [nowTick, setNowTick] = useState(() => Date.now());
   const { user } = useCurrentUser();
-  const isDark = useIsDark();
-
   const {
     incomingUnreadCount,
     terminationUnreadCount,
