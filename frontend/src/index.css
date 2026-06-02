@@ -28,25 +28,25 @@
 html.dark {
   color-scheme: dark;
 
-  --app-bg: #0a0a0f;
-  --app-text: #e8e4f0;
-  --app-surface: #131318;
-  --app-surface-border: #2a2635;
+  --app-bg: #0e0b1a;
+  --app-text: #ede9f8;
+  --app-surface: #17112e;
+  --app-surface-border: #3a2d5c;
 
-  --palette-deep: #e8e4f0;
-  --palette-purple: #9f7de0;
-  --palette-soft-purple: #7c6a9e;
-  --palette-light-purple: #2a2635;
+  --palette-deep: #ede9f8;
+  --palette-purple: #b08ee0;
+  --palette-soft-purple: #9b78d4;
+  --palette-light-purple: #3a2d5c;
 
-  --palette-page-bg: #0a0a0f;
-  --palette-section-bg: #111117;
-  --palette-card-bg: #131318;
-  --palette-card-muted-bg: #1a1a22;
-  --palette-card-muted-alt-bg: #17171f;
-  --palette-border: #232230;
-  --palette-chip-bg: #1e1c2e;
-  --palette-input-bg: #111117;
-  --palette-skeleton: #1a1a22;
+  --palette-page-bg: #080612;
+  --palette-section-bg: #100d1f;
+  --palette-card-bg: #17112e;
+  --palette-card-muted-bg: #1f1838;
+  --palette-card-muted-alt-bg: #1b1530;
+  --palette-border: #3a2d5c;
+  --palette-chip-bg: #251c42;
+  --palette-input-bg: #100d1f;
+  --palette-skeleton: #1f1838;
 }
 
 html,

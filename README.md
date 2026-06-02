@@ -1,28 +1,38 @@
-### 3. Main README ([README.md](http://_vscodecontentref_/2))
+# RoomMatch
 
-````markdown
-# Full Stack Application
+A full-stack rental and roommate-matching platform. Tenants and owners use the **frontend** app; moderators use the **admin** panel. The **server** provides REST APIs, auth, payments (Chapa), messaging, and MongoDB persistence.
 
-This repository contains a full-stack application built with React for the frontend and Node.js for the backend. The application includes user authentication, registration, and a dashboard for users.
+## Repository structure
 
-## Project Structure
+| Folder      | Stack                             | Purpose                                        |
+| ----------- | --------------------------------- | ---------------------------------------------- |
+| `frontend/` | React, TypeScript, Vite, Tailwind | User app (browse, list, rent, chat, roommates) |
+| `admin/`    | React, Vite                       | Admin dashboard (users, properties, reports)   |
+| `server/`   | Node.js, Express, Mongoose        | API, auth, database, Socket.IO                 |
 
-- `frontend/`: Contains the React application.
-- `server/`: Contains the Node.js backend.
+## Features
 
-## Getting Started
+- User registration, login, email verification
+- Property listings (create, edit, search, save)
+- Rent requests and contract workflow
+- Online rent payment and receipts (Chapa)
+- In-app messaging and notifications
+- Roommate preferences and matching
+- Admin moderation and user management
 
-Follow the instructions in the respective `README.md` files in the `frontend` and `server` directories to set up and run the application.
+## Prerequisites
 
-### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- Environment variables (see `.env.example` in each app)
 
-- Node.js (version 14 or higher)
-- MongoDB (local or cloud instance)
+## Quick start
 
-### Installation
+### 1. Server
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   ```
-````
+```bash
+cd server
+npm install
+cp .env.example .env   # if present; configure MongoDB, secrets, Chapa, etc.
+npm run dev
+```
