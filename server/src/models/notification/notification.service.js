@@ -1,9 +1,39 @@
 import mongoose from "mongoose";
 import CustomError from "../../lib/errors.js";
+import { emitToUser } from "../../config/socket.js";
+import { logger } from "../../config/logger.js";
 import { Notification } from "./schema.js";
 import { Message } from "../message/schema.js";
 
 const { Types } = mongoose;
+
+const UNBLOCK_REPORT_TITLE_PATTERN = /^Unblock request from/i;
+
+const toNotificationPayload = (notification) => {
+  const doc =
+    typeof notification?.toObject === "function"
+      ? notification.toObject()
+      : notification;
+
+  return {
+    id: doc._id?.toString?.() ?? String(doc._id),
+    userId: doc.userId?.toString?.() ?? String(doc.userId),
+    type: doc.type,
+    title: doc.title,
+    content: doc.content,
+    relatedEntityId: doc.relatedEntityId?.toString?.() ?? null,
+    isRead: Boolean(doc.isRead),
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt
+  };
+};
+
+const isAdminDashboardNotification = ({ type, title }) => {
+  return (
+    type === "ListingUpdate" ||
+    (typeof title === "string" && UNBLOCK_REPORT_TITLE_PATTERN.test(title))
+  );
+};
 
 const toObjectId = (value, fieldName) => {
   if (!Types.ObjectId.isValid(value)) {
@@ -34,7 +64,75 @@ export const createNotification = async ({
     relatedEntityId: normalizedRelatedEntityId
   });
 
+  const payload = toNotificationPayload(notification);
+
+  emitToUser(String(userId), "notification:receive", payload);
+
+  if (isAdminDashboardNotification({ type, title })) {
+    void emitAdminNotificationCounts(userId).catch((error) => {
+      logger.warn({ error, userId }, "Failed to emit admin notification counts");
+    });
+  }
+
   return notification;
+};
+
+export const getAdminNotificationCountsForUser = async (userId) => {
+  const normalizedUserId = toObjectId(userId, "user id");
+
+  const [propertyNotifications, reportNotifications] = await Promise.all([
+    Notification.countDocuments({
+      userId: normalizedUserId,
+      type: "ListingUpdate",
+      isRead: false
+    }),
+    Notification.countDocuments({
+      userId: normalizedUserId,
+      title: { $regex: UNBLOCK_REPORT_TITLE_PATTERN },
+      isRead: false
+    })
+  ]);
+
+  return {
+    propertyNotifications,
+    reportNotifications
+  };
+};
+
+export const emitAdminNotificationCounts = async (userId) => {
+  const counts = await getAdminNotificationCountsForUser(userId);
+  emitToUser(String(userId), "admin:notification:counts", counts);
+  return counts;
+};
+
+export const markAdminReportNotificationsAsRead = async (userId) => {
+  const normalizedUserId = toObjectId(userId, "user id");
+
+  const result = await Notification.updateMany(
+    {
+      userId: normalizedUserId,
+      title: { $regex: UNBLOCK_REPORT_TITLE_PATTERN },
+      isRead: false
+    },
+    { $set: { isRead: true } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const markAdminPropertyNotificationsAsRead = async (userId) => {
+  const normalizedUserId = toObjectId(userId, "user id");
+
+  const result = await Notification.updateMany(
+    {
+      userId: normalizedUserId,
+      type: "ListingUpdate",
+      isRead: false
+    },
+    { $set: { isRead: true } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
 };
 
 // GET USER NOTIFICATIONS

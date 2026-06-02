@@ -76,10 +76,15 @@ function DeleteTerminationModal({
 }) {
   if (!isOpen) return null;
 
-  const cardBg = isDark ? "#17112e" : "#ffffff";
-  const border = isDark ? "#3a2d5c" : "#e5d9f9";
-  const deep = isDark ? "#ede9f8" : "#2e1f4a";
-  const muted = isDark ? "#9b78d4" : "#a98fd4";
+  // const cardBg = isDark ? "#17112e" : "#ffffff";
+  // const border = isDark ? "#3a2d5c" : "#e5d9f9";
+  // const deep = isDark ? "#ede9f8" : "#2e1f4a";
+  // const muted = isDark ? "#9b78d4" : "#a98fd4";
+
+  const cardBg = "var(--palette-card-bg)";
+  const border = "var(--palette-border)";
+  const deep = "var(--app-text)";
+  const muted = "var(--palette-soft-purple)";
 
   return (
     <div

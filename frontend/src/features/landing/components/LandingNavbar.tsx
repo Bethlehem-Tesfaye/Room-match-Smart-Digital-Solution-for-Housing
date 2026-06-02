@@ -152,15 +152,14 @@ function LandingNavbar() {
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
-  // ── Derived style tokens ──────────────────────────────────────────────────
-  const navBg = isDark ? "#17112e" : "#ffffff";
-  const navBorder = isDark ? "#3a2d5c" : "#e5d9f9";
-  const deepColor = isDark ? "#ede9f8" : "#2e1f4a";
+  const navBg = "var(--palette-section-bg)";
+  const navBorder = "var(--palette-border)";
+  const deepColor = "var(--app-text)";
+  const chipBg = "var(--palette-chip-bg)";
+  const dropdownBg = "var(--palette-card-bg)";
+  const dropdownBorder = "var(--palette-border)";
   const mutedColor = isDark ? "#9b78d4" : "#a98fd4";
-  const chipBg = isDark ? "#251c42" : "#ede7fd";
-  const dropdownBg = isDark ? "#17112e" : "#ffffff";
-  const dropdownBorder = isDark ? "#3a2d5c" : "#e5d9f9";
+
   const hoverBg = isDark ? "rgba(255,255,255,0.05)" : "#f5f1ff";
   const iconBtnStyle = {
     borderColor: navBorder,

@@ -23,7 +23,7 @@ const BlockUserModal: React.FC<{
       <div className="modal">
         <div className="modal-header">
           <h3>{isBlocked ? "Unblock User" : "Block User"}</h3>
-          <button onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
           <div className="modal-user">
@@ -48,7 +48,7 @@ const BlockUserModal: React.FC<{
         </div>
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn danger" onClick={() => onConfirm(reason)}>
+          <button className="btn btn-danger" onClick={() => onConfirm(reason)}>
             {isBlocked ? "Unblock User" : "Block User"}
           </button>
         </div>

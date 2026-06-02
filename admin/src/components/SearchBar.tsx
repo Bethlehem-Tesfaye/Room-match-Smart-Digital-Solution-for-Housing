@@ -29,8 +29,12 @@ const SearchBar: React.FC<{
   ];
 
   return (
-    <div className="search-bar">
-      <select value={filter} onChange={(e) => onFilterChange(e.target.value as SearchFilter)}>
+    <div className="admin-search">
+      <select
+        className="admin-input"
+        value={filter}
+        onChange={(e) => onFilterChange(e.target.value as SearchFilter)}
+      >
         {(filterOptions || defaultOptions).map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -39,19 +43,28 @@ const SearchBar: React.FC<{
       </select>
 
       {filter === "status" ? (
-        <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <select
+          className="admin-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
           <option value="">Select status</option>
           <option value="Active">Active</option>
           <option value="Blocked">Blocked</option>
         </select>
       ) : filter === "type" ? (
-        <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <select
+          className="admin-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
           <option value="">Select type</option>
           <option value="Tenant">Tenant</option>
           <option value="Owner">Owner</option>
         </select>
       ) : filter === "joined" ? (
         <input
+          className="admin-input"
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -59,6 +72,7 @@ const SearchBar: React.FC<{
         />
       ) : (
         <input
+          className="admin-input"
           placeholder={placeholder ?? "Search across all records..."}
           value={value}
           onChange={(e) => onChange(e.target.value)}

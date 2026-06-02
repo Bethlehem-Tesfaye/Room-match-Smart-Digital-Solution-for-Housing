@@ -180,7 +180,25 @@ export const markAdminReportsAsRead = async () => {
     headers: defaultHeaders,
     credentials: "include",
   });
-  return handleResponse<{ updatedCount: number }>(response);
+  return handleResponse<{
+    updatedCount: number;
+    counts?: AdminNotificationCountResponse;
+  }>(response);
+};
+
+export const markAdminPropertyNotificationsAsRead = async () => {
+  const response = await fetch(
+    `${apiUrl}/api/admin/notifications/properties/read-all`,
+    {
+      method: "PATCH",
+      headers: defaultHeaders,
+      credentials: "include",
+    },
+  );
+  return handleResponse<{
+    updatedCount: number;
+    counts?: AdminNotificationCountResponse;
+  }>(response);
 };
 
 export interface AdminNotificationCountResponse {

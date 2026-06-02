@@ -9,6 +9,12 @@ import { Property, PropertyImage } from "../models/property/schema.js";
 import { RoommateProfile } from "../models/roommate/schema.js";
 import { Notification } from "../models/notification/schema.js";
 import {
+  emitAdminNotificationCounts,
+  getAdminNotificationCountsForUser,
+  markAdminPropertyNotificationsAsRead,
+  markAdminReportNotificationsAsRead
+} from "../models/notification/notification.service.js";
+import {
   attachUploadedPropertyImages,
   makeUploader,
   normalizePropertyMultipartBody
@@ -214,17 +220,31 @@ adminRouter.patch(
   adminMiddleware,
   async (req, res, next) => {
     try {
-      const result = await Notification.updateMany(
-        {
-          userId: req.userId,
-          title: { $regex: /^Unblock request from/i },
-          isRead: false
-        },
-        { $set: { isRead: true } }
-      );
+      const result = await markAdminReportNotificationsAsRead(req.userId);
+      const counts = await emitAdminNotificationCounts(req.userId);
 
       return res.status(200).json({
-        updatedCount: result.modifiedCount ?? 0
+        ...result,
+        counts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.patch(
+  "/notifications/properties/read-all",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const result = await markAdminPropertyNotificationsAsRead(req.userId);
+      const counts = await emitAdminNotificationCounts(req.userId);
+
+      return res.status(200).json({
+        ...result,
+        counts
       });
     } catch (error) {
       next(error);
@@ -238,23 +258,9 @@ adminRouter.get(
   adminMiddleware,
   async (req, res, next) => {
     try {
-      const [propertyNotifications, reportNotifications] = await Promise.all([
-        Notification.countDocuments({
-          userId: req.userId,
-          type: "ListingUpdate",
-          isRead: false
-        }),
-        Notification.countDocuments({
-          userId: req.userId,
-          title: { $regex: /^Unblock request from/i },
-          isRead: false
-        })
-      ]);
+      const counts = await getAdminNotificationCountsForUser(req.userId);
 
-      return res.status(200).json({
-        propertyNotifications,
-        reportNotifications
-      });
+      return res.status(200).json(counts);
     } catch (error) {
       next(error);
     }

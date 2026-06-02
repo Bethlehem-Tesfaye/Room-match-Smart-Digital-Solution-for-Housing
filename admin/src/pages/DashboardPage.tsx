@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import StatsCards from "../components/StatsCards";
 import SearchBar, { SearchFilter } from "../components/SearchBar";
 import UserTable, { UserRow } from "../components/UserTable";
@@ -7,12 +7,11 @@ import BlockUserModal from "../components/BlockUserModal";
 import {
   getAdminDashboardSummary,
   getAdminUsers,
-  getAdminReports,
-  getAdminNotificationCounts,
   setUserBlockedStatus,
   deleteAdminUser,
   signOutAdmin,
 } from "../lib/api";
+import AdminNavTabs from "../components/AdminNavTabs";
 
 const defaultStats = {
   totalUsers: 0,
@@ -33,11 +32,6 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<SearchFilter>("all");
-  const [notificationCounts, setNotificationCounts] = useState({
-    propertyNotifications: 0,
-    reportNotifications: 0
-  });
-
   const loadAdminData = async () => {
     setLoading(true);
     setError(null);
@@ -49,11 +43,6 @@ function DashboardPage() {
       const usersResponse = await getAdminUsers();
       setUsers(usersResponse.users ?? []);
 
-      const countsResponse = await getAdminNotificationCounts();
-      setNotificationCounts({
-        propertyNotifications: countsResponse.propertyNotifications ?? 0,
-        reportNotifications: countsResponse.reportNotifications ?? 0
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin dashboard data.");
     } finally {
@@ -179,12 +168,14 @@ function DashboardPage() {
     <div className="dashboard-wrapper">
       <header className="dashboard-hero">
         <div className="dashboard-inner">
-          <div className="dashboard-header-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+          <div className="dashboard-header-top">
             <div>
               <h1 className="hero-title">Admin Dashboard</h1>
-              <p className="hero-sub">Manage users, properties, and roommate profiles</p>
+              <p className="hero-sub">
+                Manage users, listings, and reports in one place.
+              </p>
             </div>
-            <button className="button logout-button" onClick={handleLogout} style={{ padding: "10px 16px", borderRadius: "8px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>
+            <button className="btn btn-danger" onClick={handleLogout}>
               Logout
             </button>
           </div>
@@ -194,18 +185,42 @@ function DashboardPage() {
 
       <main className="dashboard-main">
         <div className="container-wide">
-          <SearchBar value={search} onChange={setSearch} filter={filter} onFilterChange={(newFilter) => { setFilter(newFilter); setSearch(""); }} />
-
-          <div className="tabs">
-            <button className={`tab ${activeUserTab === "users" ? "active" : ""}`} onClick={() => setActiveUserTab("users")}>Users ({loading ? "..." : normalUsers.length})</button>
-            <button className={`tab ${activeUserTab === "admins" ? "active" : ""}`} onClick={() => setActiveUserTab("admins")}>Admins ({loading ? "..." : adminUsers.length})</button>
-            <button className="tab"><Link to="/dashboard/properties">Properties ({loading ? "..." : statsData.properties})</Link>{notificationCounts.propertyNotifications > 0 && <span className="tab-badge">{notificationCounts.propertyNotifications}</span>}</button>
-            <button className="tab"><Link to="/dashboard/reports">Reports</Link>{notificationCounts.reportNotifications > 0 && <span className="tab-badge">{notificationCounts.reportNotifications}</span>}</button>
+          <div className="admin-surface">
+            <div className="admin-surface-head">
+              <p className="admin-mono-label">Directory</p>
+            </div>
+            <div className="admin-surface-body">
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                filter={filter}
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter);
+                  setSearch("");
+                }}
+              />
+            </div>
           </div>
 
-          {error && <div className="dashboard-error">{error}</div>}
+          <div className="tabs">
+            <button
+              className={`tab ${activeUserTab === "users" ? "active" : ""}`}
+              onClick={() => setActiveUserTab("users")}
+            >
+              Users ({loading ? "..." : normalUsers.length})
+            </button>
+            <button
+              className={`tab ${activeUserTab === "admins" ? "active" : ""}`}
+              onClick={() => setActiveUserTab("admins")}
+            >
+              Admins ({loading ? "..." : adminUsers.length})
+            </button>
+            <AdminNavTabs propertiesCount={loading ? "..." : statsData.properties} />
+          </div>
+
+          {error && <div className="alert">{error}</div>}
           {loading && users.length === 0 ? (
-            <div className="dashboard-placeholder">Loading latest admin data…</div>
+            <div className="admin-empty">Loading latest admin data...</div>
           ) : (
             <UserTable users={currentViewUsers} onBlock={handleBlockClick} onDelete={handleDeleteUser} />
           )}
