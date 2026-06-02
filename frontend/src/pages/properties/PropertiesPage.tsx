@@ -138,7 +138,11 @@ function PropertiesPage() {
     setPage(1);
   };
 
-  const activeFilterPills: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  const activeFilterPills: Array<{
+    key: string;
+    label: string;
+    onRemove: () => void;
+  }> = [];
 
   if (
     filters.minPrice > DEFAULT_MIN_PRICE ||
@@ -238,7 +242,7 @@ function PropertiesPage() {
         </header>
 
         <div
-          className="sticky top-[4.5rem] z-40 -mx-4 mb-6 border-b px-4 py-4"
+          className="sticky top-18 z-40 -mx-4 mb-6 border-b px-4 py-4"
           style={{
             backgroundColor: palette.pageBg,
             borderColor: palette.border,
@@ -246,7 +250,7 @@ function PropertiesPage() {
         >
           <div className="flex items-center gap-3">
             <div
-              className="flex min-h-[44px] flex-1 items-center gap-2 rounded-full border px-4"
+              className="flex min-h-11 flex-1 items-center gap-2 rounded-full border px-4"
               style={{
                 backgroundColor: palette.cardBg,
                 borderColor: palette.border,
@@ -264,7 +268,7 @@ function PropertiesPage() {
               />
             </div>
             <button
-              className="relative inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold lg:hidden"
+              className="relative inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold lg:hidden"
               type="button"
               onClick={() => setIsFilterOpen(true)}
               style={{
@@ -293,7 +297,7 @@ function PropertiesPage() {
                   key={pill.key}
                   type="button"
                   onClick={pill.onRemove}
-                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-opacity hover:opacity-80"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-opacity hover:opacity-80"
                   style={{
                     backgroundColor: palette.chipBg,
                     color: "var(--app-text)",
@@ -336,7 +340,7 @@ function PropertiesPage() {
                 {Array.from({ length: 6 }).map((_, idx) => (
                   <div
                     key={idx}
-                    className="skeleton min-h-[340px] min-w-[280px] rounded-xl"
+                    className="skeleton min-h-85 min-w-70 rounded-xl"
                   />
                 ))}
               </div>
@@ -370,7 +374,7 @@ function PropertiesPage() {
                 <button
                   type="button"
                   onClick={handleClearFilters}
-                  className="mt-6 min-h-[44px] rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  className="mt-6 min-h-11 rounded-lg px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: palette.purple }}
                 >
                   Clear filters

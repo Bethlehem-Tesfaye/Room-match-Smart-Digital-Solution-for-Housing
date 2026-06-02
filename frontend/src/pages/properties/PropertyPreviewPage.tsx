@@ -92,7 +92,7 @@ function PropertyPreviewPage() {
                 type="button"
                 onClick={() => void refetch()}
                 disabled={isFetching}
-                className="mt-6 min-h-[44px] rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                className="mt-6 min-h-11 rounded-lg px-6 py-2.5 text-sm font-bold text-white"
                 style={{ backgroundColor: palette.purple }}
               >
                 {isFetching ? "Retrying..." : "Try again"}
@@ -113,7 +113,7 @@ function PropertyPreviewPage() {
               </p>
               <Link
                 to="/dashboard/my-properties"
-                className="mt-6 inline-flex min-h-[44px] items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
+                className="mt-6 inline-flex min-h-11 items-center rounded-lg px-6 py-2.5 text-sm font-bold text-white"
                 style={{ backgroundColor: palette.purple }}
               >
                 Back to my properties
