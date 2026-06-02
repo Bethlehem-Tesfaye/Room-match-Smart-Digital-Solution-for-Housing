@@ -66,9 +66,7 @@ const SliderRow = ({
       <span className="text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
         {label}
       </span>
-      <span className="text-sm font-bold text-(--palette-purple)">
-        {value}
-      </span>
+      <span className="text-sm font-bold text-(--palette-purple)">{value}</span>
     </div>
     <input
       type="range"
@@ -586,7 +584,7 @@ export const RoommateWizard: React.FC<Props> = ({
       </div>
 
       <div className="flex items-center gap-3 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
-        <Sparkles className="h-5 w-5 flex-shrink-0 text-(--palette-purple)" />
+        <Sparkles className="h-5 w-5 shrink-0 text-(--palette-purple)" />
         <div>
           <p className="font-serif text-sm font-bold text-(--palette-deep)">
             Ready to find matches

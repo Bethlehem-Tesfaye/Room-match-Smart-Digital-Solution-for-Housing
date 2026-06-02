@@ -14,7 +14,7 @@ const ScoreRing = ({ score }: { score: number }) => {
   const color = score >= 75 ? "#1D9E75" : score >= 50 ? "#7F77DD" : "#E24B4A";
 
   return (
-    <div className="relative h-14 w-14 flex-shrink-0">
+    <div className="relative h-14 w-14 shrink-0">
       <svg
         width="56"
         height="56"
@@ -60,7 +60,7 @@ const BreakdownBar = ({ label, value }: { label: string; value: number }) => {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-24 flex-shrink-0 text-[11px] text-(--palette-soft-purple)">
+      <span className="w-24 shrink-0 text-[11px] text-(--palette-soft-purple)">
         {label}
       </span>
       <div
@@ -109,15 +109,17 @@ export const MatchCard: React.FC<Props> = ({
           <img
             src={profilePic}
             alt={name}
-            className="h-12 w-12 flex-shrink-0 rounded-full object-cover"
+            className="h-12 w-12 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-(--palette-chip-bg) text-sm font-bold text-(--palette-purple)">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-(--palette-chip-bg) text-sm font-bold text-(--palette-purple)">
             {initials}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-serif font-bold text-(--palette-deep)">{name}</p>
+          <p className="truncate font-serif font-bold text-(--palette-deep)">
+            {name}
+          </p>
           {leaseInfo && (
             <p className="text-[12px] leading-relaxed text-(--palette-soft-purple)">
               {leaseInfo.remainingDays} days left on lease
