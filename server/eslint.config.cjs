@@ -32,9 +32,14 @@ module.exports = [
       "no-restricted-syntax": "off",
       "no-inner-declarations": "off",
       "import/no-unresolved": "off",
+      "prefer-destructuring": "off",
+      "no-param-reassign": "off",
+      "consistent-return": "off",
+      "no-continue": "off",
+      "no-void": "off",
       "no-underscore-dangle": [
         "error",
-        { allow: ["_sum", "_count", "_avg", "_min", "_max"] }
+        { allow: ["_id", "_sum", "_count", "_avg", "_min", "_max"] }
       ]
     }
   },

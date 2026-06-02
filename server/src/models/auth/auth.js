@@ -6,15 +6,12 @@ import { MongoClient } from "mongodb";
 import { publishEmailJob } from "../../jobs/qstash.js";
 import { env } from "../../config/evnironments.js";
 
-// ✅ Mongo Client
 const client = new MongoClient(env.DATABASE_URL);
 await client.connect();
 const db = client.db();
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db, {
-    client // enables transactions
-  }),
+  database: mongodbAdapter(db),
 
   experimental: {
     joins: true
@@ -42,13 +39,23 @@ export const auth = betterAuth({
         <p>If you did not request a password reset, you can ignore this email.</p>
       `;
 
-      await publishEmailJob({
+      const res = await publishEmailJob({
         type: "reset",
         to: user.email,
         subject: "Reset your password",
         html,
         token
       });
+
+      logger.info(
+        {
+          to: user.email,
+          type: "reset",
+          emailApiUrl: process.env.EMAIL_API_URL ?? env.EMAIL_API_URL,
+          messageId: res?.messageId
+        },
+        "Password reset email job published"
+      );
     }
   },
 
@@ -65,12 +72,22 @@ export const auth = betterAuth({
         </a>
       `;
 
-      await publishEmailJob({
+      const res = await publishEmailJob({
         type: "verification",
         to: user.email,
         subject: "Verify your email",
         html
       });
+
+      logger.info(
+        {
+          to: user.email,
+          type: "verification",
+          emailApiUrl: process.env.EMAIL_API_URL ?? env.EMAIL_API_URL,
+          messageId: res?.messageId
+        },
+        "Verification email job published"
+      );
     },
 
     autoSignInAfterVerification: true,
@@ -92,19 +109,25 @@ export const auth = betterAuth({
 
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      if (ctx.path === "/sign-up/email") {
-        const newUser = ctx.context.newSession?.user;
+      const newUser = ctx.context.newSession?.user;
 
-        if (newUser) {
-          // Mongo version of profile creation
-          await db
-            .collection("profiles")
-            .insertOne({
+      if (newUser) {
+        await db.collection("userProfile").updateOne(
+          { userId: newUser.id },
+          {
+            $setOnInsert: {
               userId: newUser.id,
-              createdAt: new Date()
-            })
-            .catch(() => {});
-        }
+              fullName: newUser.name ?? "",
+              phoneNumber: null,
+              profilePictureUrl: null,
+              role: "user",
+              deletedAt: null,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          },
+          { upsert: true }
+        );
       }
     })
   },

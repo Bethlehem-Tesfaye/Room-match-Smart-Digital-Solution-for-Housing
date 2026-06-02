@@ -7,12 +7,30 @@ const qstash = new Client({
 
 export async function publishEmailJob(payload) {
   try {
+    const preview = {
+      to: payload.to,
+      subject: payload.subject,
+      htmlSnippet:
+        typeof payload.html === "string"
+          ? payload.html.slice(0, 200)
+          : undefined,
+      type: payload.type
+    };
+
+    logger.info(
+      { target: process.env.EMAIL_API_URL, preview },
+      "Publishing QStash job"
+    );
+
     const res = await qstash.publishJSON({
       url: process.env.EMAIL_API_URL,
       body: payload
     });
 
-    logger.info({ messageId: res.messageId }, "QStash email job published");
+    logger.info(
+      { messageId: res.messageId, res },
+      "QStash email job published"
+    );
 
     return res;
   } catch (err) {

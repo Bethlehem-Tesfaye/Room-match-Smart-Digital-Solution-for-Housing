@@ -1,1 +1,105 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  color-scheme: light;
+
+  --app-bg: #faf7ff;
+  --app-text: #1f1635;
+  --app-surface: #ffffff;
+  --app-surface-border: #c8b4ec;
+
+  --palette-deep: #2e1f4a;
+  --palette-purple: #8b64c8;
+  --palette-soft-purple: #a98fd4;
+  --palette-light-purple: #c8b4ec;
+
+  --palette-page-bg: #faf7ff;
+  --palette-section-bg: #f5f1ff;
+  --palette-card-bg: #ffffff;
+  --palette-card-muted-bg: #f0ebff;
+  --palette-card-muted-alt-bg: #f7f4ff;
+  --palette-border: #e5d9f9;
+  --palette-chip-bg: #ede7fd;
+  --palette-input-bg: #ffffff;
+  --palette-skeleton: #e2d9f7;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --app-bg: #0a0a0f;
+  --app-text: #e8e4f0;
+  --app-surface: #131318;
+  --app-surface-border: #2a2635;
+
+  --palette-deep: #e8e4f0;
+  --palette-purple: #9f7de0;
+  --palette-soft-purple: #7c6a9e;
+  --palette-light-purple: #2a2635;
+
+  --palette-page-bg: #0a0a0f;
+  --palette-section-bg: #111117;
+  --palette-card-bg: #131318;
+  --palette-card-muted-bg: #1a1a22;
+  --palette-card-muted-alt-bg: #17171f;
+  --palette-border: #232230;
+  --palette-chip-bg: #1e1c2e;
+  --palette-input-bg: #111117;
+  --palette-skeleton: #1a1a22;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+html.dark .bg-white {
+  background-color: var(--app-surface) !important;
+}
+
+html.dark .border,
+html.dark [class*="border-"] {
+  border-color: var(--app-surface-border);
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.skeleton {
+  background-color: var(--palette-skeleton) !important;
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--palette-light-purple);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--palette-deep); /* darker purple */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--palette-purple) transparent;
+}

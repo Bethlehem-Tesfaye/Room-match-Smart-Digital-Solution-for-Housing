@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useForgotPassword } from "../hooks/useForgotPassword";
+import { palette } from "../../../theme/palette";
 
 function ForgotPasswordForm() {
   const [email, setEmail] = useState<string>("");
@@ -28,10 +29,18 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl border border-purple-500 rounded-xl p-6 bg-white shadow-sm">
+    <div
+      className="w-full max-w-2xl border rounded-xl p-6 shadow-sm"
+      style={{
+        borderColor: palette.lightPurple,
+        backgroundColor: palette.cardBg,
+      }}
+    >
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Forgot your password?</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-2xl font-bold" style={{ color: palette.deep }}>
+          Forgot your password?
+        </h2>
+        <p className="text-sm" style={{ color: palette.softPurple }}>
           Enter your email and we’ll send you a password reset link.
         </p>
       </div>
@@ -44,7 +53,13 @@ function ForgotPasswordForm() {
           <input
             id="email"
             type="email"
-            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            className="w-full border rounded-md px-3 py-2 focus:ring-2 outline-none"
+            style={{
+              borderColor: palette.border,
+              color: palette.deep,
+              backgroundColor: palette.inputBg,
+              boxShadow: "none",
+            }}
             placeholder="you@roommatch.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -55,7 +70,8 @@ function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={!email || isPending}
-          className="w-full bg-[#7C67E4FF] hover:bg-[#6b58c9] text-white rounded-md py-2 font-semibold transition-colors disabled:opacity-60"
+          className="w-full text-white rounded-md py-2 font-semibold transition-colors disabled:opacity-60"
+          style={{ backgroundColor: palette.purple }}
         >
           {isPending ? "Sending..." : "Send reset link"}
         </button>
@@ -69,7 +85,8 @@ function ForgotPasswordForm() {
 
       <Link
         to="/login"
-        className="block text-center text-sm text-[#7C67E4FF] font-medium mt-4 hover:underline"
+        className="block text-center text-sm font-medium mt-4 hover:underline"
+        style={{ color: palette.purple }}
       >
         Back to login
       </Link>

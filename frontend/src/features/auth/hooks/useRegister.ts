@@ -14,7 +14,6 @@ interface RegisterResponse {
   user: {
     id: string;
     email: string;
-    isAnonymous?: boolean | null;
     [key: string]: any;
   };
   session?: {

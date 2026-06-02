@@ -1,7 +1,7 @@
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { authClient } from "../../../lib/authClient";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface LoginInput {
   email: string;
@@ -12,7 +12,6 @@ interface LoginResponse {
   user: {
     id: string;
     email: string;
-    isAnonymous?: boolean | null;
     [key: string]: any;
   };
   [key: string]: any;
@@ -20,6 +19,14 @@ interface LoginResponse {
 
 export const useLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from =
+    typeof location.state === "object" &&
+    location.state !== null &&
+    "from" in location.state
+      ? String(location.state.from)
+      : "";
 
   const mutation: UseMutationResult<LoginResponse, Error, LoginInput> =
     useMutation<LoginResponse, Error, LoginInput>({
@@ -31,7 +38,7 @@ export const useLogin = () => {
       },
       onSuccess: (data) => {
         toast.success(`Welcome back, ${data.user.email}!`);
-        navigate("/dashboard");
+        navigate(from || "/", { replace: true });
       },
       onError: (error: Error) => {
         toast.error(error.message || "Login failed, try again");

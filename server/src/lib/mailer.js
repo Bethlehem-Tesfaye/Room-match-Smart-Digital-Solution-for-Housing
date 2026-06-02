@@ -86,6 +86,18 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
       attachments
     });
 
+    logger.info(
+      {
+        to,
+        subject,
+        from: env.SENDER_EMAIL ?? process.env.SENDER_EMAIL,
+        attachmentsCount: attachments?.length ?? 0,
+        htmlLength: html ? html.length : 0,
+        rawSize: Buffer.byteLength(raw || "")
+      },
+      "Prepared Gmail raw message"
+    );
+
     const { token } = await oAuth2Client.getAccessToken();
     if (!token) throw new Error("Failed to obtain Gmail access token");
 
@@ -96,7 +108,18 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
       requestBody: { raw }
     });
 
-    logger.info({ to, subject, id: res.data?.id }, "Email sent");
+    logger.info(
+      {
+        to,
+        subject,
+        id: res.data?.id,
+        threadId: res.data?.threadId,
+        labelIds: res.data?.labelIds,
+        snippet: res.data?.snippet
+      },
+      "Gmail API send response"
+    );
+
     return res.data;
   } catch (err) {
     function extractErrorInfo(e) {
@@ -122,7 +145,8 @@ export async function sendMail({ to, subject, html, attachments = [] }) {
     logger.error(
       {
         message,
-        response
+        response,
+        stack: err?.stack
       },
       "Gmail API send failed"
     );

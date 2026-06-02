@@ -1,0 +1,15 @@
+export const palette = {
+  deep: "var(--palette-deep)",
+  purple: "var(--palette-purple)",
+  softPurple: "var(--palette-soft-purple)",
+  lightPurple: "var(--palette-light-purple)",
+  pageBg: "var(--palette-page-bg)",
+  sectionBg: "var(--palette-section-bg)",
+  cardBg: "var(--palette-card-bg)",
+  cardMutedBg: "var(--palette-card-muted-bg)",
+  cardMutedAltBg: "var(--palette-card-muted-alt-bg)",
+  border: "var(--palette-border)",
+  chipBg: "var(--palette-chip-bg)",
+  inputBg: "var(--palette-input-bg)",
+  skeleton: "var(--palette-skeleton)",
+} as const;

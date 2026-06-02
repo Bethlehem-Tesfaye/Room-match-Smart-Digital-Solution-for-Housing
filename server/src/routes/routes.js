@@ -1,3 +1,30 @@
 import express from "express";
+import profileRouter from "../models/profile/profile.routes.js";
+import propertyRouter from "../models/property/property.routes.js";
+import amenityRouter from "../models/amenity/amenity.routes.js";
+import settingRouter from "../models/setting/setting.routes.js";
+import conversationRouter from "../models/conversation/conversation.routes.js";
+import messageRouter from "../models/message/message.routes.js";
+import notificationRouter from "../models/notification/notification.routes.js";
+import contractRouter from "../models/contract/contract.routes.js";
+import roommateRouters from "../models/roommate/roommate.routes.js";
+import matchRouter from "../models/roommate/match.routes.js";
+import banksRouter from "./banks.routes.js";
+import paymentRouter from "../models/payment/payment.routes.js";
+// import roomateRouter from "../models/roommate/roommateRoute.js";
 
 export const router = express.Router();
+
+router.use("/profile", profileRouter);
+router.use("/properties", propertyRouter);
+router.use("/amenities", amenityRouter);
+router.use("/settings", settingRouter);
+router.use("/conversations", conversationRouter);
+router.use("/messages", messageRouter);
+router.use("/notifications", notificationRouter);
+router.use("/contracts", contractRouter);
+// router.use("/roommate", roomateRouter);
+router.use("/roommate", roommateRouters);
+router.use("/match", matchRouter);
+router.use("/banks", banksRouter);
+router.use("/payments", paymentRouter);
