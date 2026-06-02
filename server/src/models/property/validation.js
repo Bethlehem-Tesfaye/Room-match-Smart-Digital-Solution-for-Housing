@@ -1,5 +1,26 @@
 import { z } from "zod";
 
+const startOfToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const availableFromSchema = z.preprocess(
+  (value) => {
+    if (value === null || value === undefined || value === "") {
+      return undefined;
+    }
+    return value;
+  },
+  z.coerce.date({
+    required_error: "Available from date is required",
+    invalid_type_error: "Available from date is required"
+  })
+).refine((date) => date >= startOfToday(), {
+  message: "Available from date cannot be in the past"
+});
+
 const propertyTypeEnum = z.enum([
   "Apartment",
   "House",
@@ -65,7 +86,6 @@ export const createPropertySchema = z.object({
 
   // Use z.coerce.number() for all numeric fields — this handles "2000" → 2000
   price: z.coerce.number().positive(),
-  deposit: z.coerce.number().min(0).default(0),
   numberOfBedrooms: z.coerce.number().min(0),
   numberOfBathrooms: z.coerce.number().min(0),
   floorNumber: z.coerce.number().min(0).optional().nullable(),
@@ -77,7 +97,7 @@ export const createPropertySchema = z.object({
   currency: z.string().default("ETB"),
   address: z.string().min(1),
   city: z.string().min(1),
-  availableFrom: z.string().optional().default(""),
+  availableFrom: availableFromSchema,
   isFurnished: z.coerce.boolean().default(false),
   allowRoommates: z.coerce.boolean().default(false),
   status: z.string().optional().default("Active"),
@@ -101,7 +121,6 @@ export const updatePropertySchema = z
     propertyType: propertyTypeEnum.optional(),
     price: z.number().nonnegative().optional(),
     currency: z.string().trim().max(10).optional(),
-    deposit: z.number().nonnegative().optional(),
     leasePeriod: z.number().int().positive().optional(),
     initialPayment: z.number().nonnegative().optional(),
     address: z.string().trim().min(3).max(255).optional(),

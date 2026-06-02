@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "../../../lib/apiError";
 import { api } from "../../../lib/axios";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { useAmenities } from "../../property/hooks/usePropertyHooks";
@@ -15,6 +16,7 @@ import {
   initialBankInfoDraft,
   initialAddListingDraft,
 } from "./addListingForm.constants";
+import { getAvailableFromError } from "../utils/availableFromValidation";
 import { useCreateCreatorProperty } from "../hooks/useCreatorPropertyHooks";
 import type {
   AddListingDraft,
@@ -56,6 +58,7 @@ function CreatePropertyForm() {
     Record<AddListingStep, boolean>
   >(initialAttemptedSteps);
   const [isSavingBankInfo, setIsSavingBankInfo] = useState(false);
+  const [availableFromTouched, setAvailableFromTouched] = useState(false);
   const createProperty = useCreateCreatorProperty();
   const profileQuery = useMyProfile(true);
   const { data: amenities = [] } = useAmenities();
@@ -126,6 +129,7 @@ function CreatePropertyForm() {
       accountNumber?: string;
       bankCode?: string;
     } = {};
+    const stepFiveErrors: { availableFrom?: string } = {};
 
     const trimmedTitle = draft.title.trim();
     if (!trimmedTitle) stepOneErrors.title = "Listing title is required.";
@@ -151,12 +155,15 @@ function CreatePropertyForm() {
     if (!bankInfo.bankCode.trim())
       stepFourErrors.bankCode = "Bank name is required.";
 
+    const availableFromError = getAvailableFromError(draft.availableFrom);
+    if (availableFromError) stepFiveErrors.availableFrom = availableFromError;
+
     return {
       1: stepOneErrors,
       2: stepTwoErrors,
       3: stepThreeErrors,
       4: stepFourErrors,
-      5: {},
+      5: stepFiveErrors,
     };
   }, [bankInfo, draft]);
 
@@ -209,9 +216,7 @@ function CreatePropertyForm() {
       return true;
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to save bank information",
+        getApiErrorMessage(error, "Failed to save bank information"),
       );
       return false;
     } finally {
@@ -228,6 +233,8 @@ function CreatePropertyForm() {
       goNext();
       return;
     }
+    setAttemptedSteps((prev) => ({ ...prev, 5: true }));
+    if (validationErrors[5].availableFrom) return;
     await onSubmit();
   };
 
@@ -296,7 +303,6 @@ function CreatePropertyForm() {
     payload.append("propertyType", draft.propertyType);
     payload.append("price", String(Number(draft.price || 0)));
     payload.append("currency", draft.currency);
-    payload.append("deposit", String(Number(draft.deposit || 0)));
     payload.append("address", draft.address.trim());
     payload.append("city", draft.city.trim());
     payload.append(
@@ -319,7 +325,7 @@ function CreatePropertyForm() {
       "areaSqFt",
       draft.areaSqFt ? String(Number(draft.areaSqFt)) : "",
     );
-    payload.append("availableFrom", draft.availableFrom || "");
+    payload.append("availableFrom", draft.availableFrom.trim());
     payload.append("isFurnished", String(draft.isFurnished));
     payload.append("allowRoommates", String(draft.allowRoommates));
     payload.append("status", "Active");
@@ -341,6 +347,7 @@ function CreatePropertyForm() {
       draft.images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setDraft(initialAddListingDraft);
       setAttemptedSteps({ 1: false, 2: false, 3: false, 4: false, 5: false });
+      setAvailableFromTouched(false);
       setStep(1);
     } catch (error) {
       toast.error(
@@ -395,6 +402,12 @@ function CreatePropertyForm() {
         amenities={amenities}
         setField={setField}
         onToggleAmenity={toggleAmenity}
+        errors={
+          attemptedSteps[5] || availableFromTouched
+            ? validationErrors[5]
+            : {}
+        }
+        onAvailableFromBlur={() => setAvailableFromTouched(true)}
       />
     );
   };

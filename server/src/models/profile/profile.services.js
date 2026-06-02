@@ -13,6 +13,8 @@ const normalizeBankField = (value) => {
   return String(value).trim();
 };
 
+const INVALID_ACCOUNT_MESSAGE = "Please enter a correct account number";
+
 const extractChapaSubaccountId = (payload) => {
   return (
     payload?.data?.id ??
@@ -23,6 +25,45 @@ const extractChapaSubaccountId = (payload) => {
     payload?.subaccount_id ??
     payload?.subaccountId ??
     null
+  );
+};
+
+const toReadableMessage = (value) => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value
+      .map((item) => toReadableMessage(item))
+      .filter(Boolean)
+      .join(", ");
+
+    return joined || null;
+  }
+
+  if (value && typeof value === "object") {
+    return (
+      toReadableMessage(value.message) ||
+      toReadableMessage(value.error) ||
+      toReadableMessage(value.detail) ||
+      null
+    );
+  }
+
+  return null;
+};
+
+const resolveChapaBankErrorMessage = (responsePayload, status) => {
+  if (status === 400) {
+    return INVALID_ACCOUNT_MESSAGE;
+  }
+
+  return (
+    toReadableMessage(responsePayload?.message) ||
+    toReadableMessage(responsePayload?.error) ||
+    toReadableMessage(responsePayload?.data?.message) ||
+    "Failed to set up bank information"
   );
 };
 
@@ -71,9 +112,10 @@ const requestChapaSubaccount = async ({
 
   if (!response.ok) {
     throw new CustomError(
-      responsePayload?.message ||
-        responsePayload?.error ||
-        "Failed to set up bank information",
+      resolveChapaBankErrorMessage(
+        responsePayload,
+        response.status || 500
+      ),
       response.status || 500
     );
   }

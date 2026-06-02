@@ -36,7 +36,6 @@ export interface Property {
   propertyType: PropertyType;
   price: number;
   currency: string;
-  deposit: number;
   address: string;
   city: string;
   numberOfBedrooms: number;
@@ -69,7 +68,6 @@ export interface CreatePropertyInput {
   propertyType: PropertyType;
   price: number;
   currency?: string;
-  deposit?: number;
   address: string;
   city: string;
   numberOfBedrooms?: number;

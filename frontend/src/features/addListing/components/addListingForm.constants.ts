@@ -25,7 +25,6 @@ export const initialAddListingDraft: AddListingDraft = {
   propertyType: "Apartment",
   price: "",
   currency: "ETB",
-  deposit: "0",
   numberOfBedrooms: "0",
   numberOfBathrooms: "0",
   floorNumber: "",

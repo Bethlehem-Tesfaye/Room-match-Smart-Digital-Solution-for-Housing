@@ -22,7 +22,6 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
         propertyType: property.propertyType,
         price: property.price,
         currency: property.currency,
-        deposit: property.deposit,
         leasePeriod: property.leasePeriod,
         initialPayment: property.initialPayment,
         address: property.address,
@@ -212,17 +211,6 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-field">
-                  <label htmlFor="deposit">Deposit</label>
-                  <input
-                    id="deposit"
-                    name="deposit"
-                    type="number"
-                    min="0"
-                    value={formData.deposit || 0}
-                    onChange={handleChange}
-                  />
-                </div>
                 <div className="form-field">
                   <label htmlFor="initialPayment">Initial Payment</label>
                   <input

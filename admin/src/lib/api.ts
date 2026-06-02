@@ -60,7 +60,6 @@ export interface AdminPropertyDetail {
   propertyType: string;
   price: number;
   currency: string;
-  deposit: number;
   leasePeriod: number;
   initialPayment: number;
   address: string;
@@ -77,7 +76,6 @@ export interface AdminPropertyDetail {
   updatedAt: string;
   images?: AdminPropertyImage[];
 }
-
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -217,7 +215,6 @@ export const getAdminProperty = async (id: string) => {
   return handleResponse<{ property: AdminPropertyDetail }>(response);
 };
 
-
 export const createAdminProperty = async (payload: Record<string, any>) => {
   const response = await fetch(`${apiUrl}/api/admin/properties`, {
     method: "POST",
@@ -230,7 +227,7 @@ export const createAdminProperty = async (payload: Record<string, any>) => {
 
 export const updateAdminProperty = async (
   id: string,
-  payload: Record<string, any> | FormData
+  payload: Record<string, any> | FormData,
 ) => {
   const requestInit: RequestInit = {
     method: "PATCH",
@@ -244,7 +241,10 @@ export const updateAdminProperty = async (
     requestInit.body = JSON.stringify(payload);
   }
 
-  const response = await fetch(`${apiUrl}/api/admin/properties/${id}`, requestInit);
+  const response = await fetch(
+    `${apiUrl}/api/admin/properties/${id}`,
+    requestInit,
+  );
   return handleResponse<{ property: AdminPropertyDetail }>(response);
 };
 
@@ -265,7 +265,7 @@ export interface UnreadNotificationCountsResponse {
 export const setUserBlockedStatus = async (
   userId: string,
   blocked: boolean,
-  reason?: string
+  reason?: string,
 ) => {
   const response = await fetch(`${apiUrl}/api/admin/users/${userId}/blocked`, {
     method: "PATCH",
@@ -273,7 +273,11 @@ export const setUserBlockedStatus = async (
     credentials: "include",
     body: JSON.stringify({ blocked, reason }),
   });
-  return handleResponse<{ userId: string; blocked: boolean; reason?: string | null }>(response);
+  return handleResponse<{
+    userId: string;
+    blocked: boolean;
+    reason?: string | null;
+  }>(response);
 };
 
 export const getUnreadNotificationCounts = async () => {

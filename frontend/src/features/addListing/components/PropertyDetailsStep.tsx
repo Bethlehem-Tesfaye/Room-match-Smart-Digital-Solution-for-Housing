@@ -178,18 +178,6 @@ function PropertyDetailsStep({
         </div>
       </Field>
 
-      <Field label="Deposit">
-        <input
-          value={draft.deposit}
-          onChange={(e) =>
-            setField("deposit", e.target.value.replace(/[^\d]/g, ""))
-          }
-          placeholder="1000"
-          className={inputCls}
-          style={baseInputStyle()}
-        />
-      </Field>
-
       <Field label="Lease period (months) *" error={errors.leasePeriod}>
         <input
           value={draft.leasePeriod}

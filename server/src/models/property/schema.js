@@ -14,7 +14,6 @@ const propertySchema = new Schema(
     },
     price: { type: Number, required: true, min: 0 },
     currency: { type: String, trim: true, default: "ETB", maxlength: 10 },
-    deposit: { type: Number, default: 0, min: 0 },
     leasePeriod: { type: Number, required: true, min: 1 },
     initialPayment: { type: Number, required: true, min: 0 },
     address: { type: String, required: true, trim: true, maxlength: 255 },

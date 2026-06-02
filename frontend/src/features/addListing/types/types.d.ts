@@ -43,7 +43,6 @@ export interface AddListingDraft {
   propertyType: PropertyType;
   price: string;
   currency: string;
-  deposit: string;
   numberOfBedrooms: string;
   numberOfBathrooms: string;
   floorNumber: string;

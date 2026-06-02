@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "../../../lib/apiError";
 import { api } from "../../../lib/axios";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { useAmenities } from "../../property/hooks/usePropertyHooks";
@@ -52,7 +53,6 @@ const createDraftFromProperty = (property: Property): EditListingDraft => ({
   propertyType: property.propertyType,
   price: String(property.price ?? ""),
   currency: property.currency || "ETB",
-  deposit: String(property.deposit ?? 0),
   numberOfBedrooms: String(property.numberOfBedrooms ?? 0),
   numberOfBathrooms: String(property.numberOfBathrooms ?? 0),
   floorNumber:
@@ -373,9 +373,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       });
     } catch (bankError) {
       toast.error(
-        bankError instanceof Error
-          ? bankError.message
-          : "Failed to save bank information",
+        getApiErrorMessage(bankError, "Failed to save bank information"),
       );
       setActiveSection("bank");
       return;
@@ -386,7 +384,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     payload.append("propertyType", draft.propertyType);
     payload.append("price", String(Number(draft.price || 0)));
     payload.append("currency", draft.currency);
-    payload.append("deposit", String(Number(draft.deposit || 0)));
     payload.append("leasePeriod", String(Number(draft.leasePeriod || 0)));
     payload.append("initialPayment", String(Number(draft.initialPayment || 0)));
     payload.append("address", draft.address.trim());
@@ -731,13 +728,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                     </option>
                   ))}
                 </select>
-              </Field>
-
-              <Field label="Deposit">
-                <TextInput
-                  value={draft.deposit}
-                  onChange={(v) => setField("deposit", v.replace(/[^\d]/g, ""))}
-                />
               </Field>
 
               <Field label="Floor number">

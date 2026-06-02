@@ -203,10 +203,6 @@ function PropertyDetailsView({
 
   const detailItems = [
     {
-      label: "Deposit",
-      value: formatCurrency(property.deposit, property.currency),
-    },
-    {
       label: "Initial payment",
       value: formatCurrency(property.initialPayment, property.currency),
     },
