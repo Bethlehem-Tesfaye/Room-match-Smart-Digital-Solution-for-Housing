@@ -608,7 +608,9 @@ export const createTerminationNotice = async ({
     if (!contract.ownerId.equals(normalizedRequesterId)) {
       void emitOwnerRentalUnreadUpdate(contract.ownerId).catch(() => undefined);
     } else {
-      void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
+      void emitTenantRentalUnreadUpdate(contract.tenantId).catch(
+        () => undefined
+      );
     }
 
     return hydrateContract(contract._id);

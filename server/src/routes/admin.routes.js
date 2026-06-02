@@ -88,7 +88,9 @@ adminRouter.get(
         deletedAt: null
       }).lean();
       const adminIds = new Set(
-        profiles.filter((profile) => profile.role === "admin").map((profile) => String(profile.userId))
+        profiles
+          .filter((profile) => profile.role === "admin")
+          .map((profile) => String(profile.userId))
       );
 
       const totalAdmins = adminIds.size;
@@ -509,13 +511,17 @@ adminRouter.delete(
 
       const db = mongoose.connection.db;
       if (!db) {
-        return res.status(500).json({ message: "Database connection unavailable." });
+        return res
+          .status(500)
+          .json({ message: "Database connection unavailable." });
       }
 
-      const updateResult = await db.collection("user").updateOne(
-        { _id: new ObjectId(userId) },
-        { $set: { deletedAt: new Date() } }
-      );
+      const updateResult = await db
+        .collection("user")
+        .updateOne(
+          { _id: new ObjectId(userId) },
+          { $set: { deletedAt: new Date() } }
+        );
 
       if (updateResult.matchedCount === 0) {
         return res.status(404).json({ message: "User not found." });

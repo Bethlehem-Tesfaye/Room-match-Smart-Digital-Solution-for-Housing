@@ -34,6 +34,7 @@ module.exports = [
       "import/no-unresolved": "off",
       "prefer-destructuring": "off",
       "no-param-reassign": "off",
+      "consistent-return": "off",
       "no-continue": "off",
       "no-void": "off",
       "no-underscore-dangle": [
