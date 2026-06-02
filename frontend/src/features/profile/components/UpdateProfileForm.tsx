@@ -9,7 +9,6 @@ import {
 import { toast } from "sonner";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
 import { useMyProfile, useUpdateMyProfile } from "../hooks/useProfileHooks";
-import { palette } from "../../../theme/palette";
 
 function UpdateProfileForm() {
   const {

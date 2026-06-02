@@ -1,4 +1,3 @@
-import { useState } from "react";
 import LandingFooter from "../../features/landing/components/LandingFooter";
 import LandingFeaturedProperties from "../../features/landing/components/LandingFeaturedProperties";
 import LandingHero from "../../features/landing/components/LandingHero";
@@ -10,29 +9,17 @@ import LandingWhyChoose from "../../features/landing/components/LandingWhyChoose
 import { useBrowserProperties } from "../../features/property/hooks/usePropertyHooks";
 
 function LandingPage() {
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-
   const { data, isLoading, isError } = useBrowserProperties({
     page: 1,
     limit: 6,
-    search: searchQuery,
   });
 
   const properties = data?.properties ?? [];
 
-  const handleSearchSubmit = () => {
-    setSearchQuery(searchInput.trim());
-  };
-
   return (
     <main style={{ backgroundColor: "var(--palette-page-bg)" }}>
       <LandingNavbar />
-      <LandingHero
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onSearchSubmit={handleSearchSubmit}
-      />
+      <LandingHero />
       <LandingTrustBar />
       <LandingFeaturedProperties
         properties={properties}
