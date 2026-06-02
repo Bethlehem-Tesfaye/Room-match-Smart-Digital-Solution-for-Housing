@@ -1,6 +1,5 @@
-import { ImageIcon, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { palette } from "../../../theme/palette";
 import type { AddListingDraft } from "../types/types";
 
 interface PropertyPhotosStepProps {
@@ -21,34 +20,28 @@ function PropertyPhotosStep({
   errors,
 }: PropertyPhotosStepProps) {
   return (
-    <div className="space-y-5">
-      <div>
-        <div
-          className="mb-1 flex items-center gap-2 text-lg font-semibold"
-          style={{ color: palette.deep }}
-        >
-          <ImageIcon size={18} style={{ color: palette.purple }} />
-          Photos
-        </div>
-        <p className="text-sm" style={{ color: palette.softPurple }}>
-          Add photos to showcase your property
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="text-sm" style={{ color: "var(--palette-soft-purple)" }}>
+        Add photos to showcase your property. Up to 10 images.
+      </p>
 
       <label
         htmlFor="add-listing-upload"
-        className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed"
+        className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed transition-colors"
         style={{
-          borderColor: palette.border,
-          backgroundColor: palette.cardBg,
+          borderColor: "var(--palette-border)",
+          backgroundColor: "var(--palette-section-bg)",
         }}
       >
-        <Upload size={40} style={{ color: palette.softPurple }} />
-        <p className="mt-3 text-xl" style={{ color: palette.deep }}>
+        <Upload size={26} style={{ color: "var(--palette-soft-purple)" }} />
+        <p
+          className="text-sm font-medium"
+          style={{ color: "var(--palette-deep)" }}
+        >
           Click to upload or drag and drop
         </p>
-        <p className="text-sm" style={{ color: palette.softPurple }}>
-          PNG, JPG up to 10MB
+        <p className="text-xs" style={{ color: "var(--palette-soft-purple)" }}>
+          PNG · JPG · up to 10 MB
         </p>
       </label>
       <input
@@ -57,12 +50,16 @@ function PropertyPhotosStep({
         accept="image/png,image/jpeg,image/jpg"
         multiple
         className="hidden"
-        onChange={(event) => {
-          void onUploadPhotos(event);
-        }}
+        onChange={(e) => void onUploadPhotos(e)}
       />
 
-      {draft.images.length > 0 ? (
+      {errors.images && (
+        <p className="text-xs" style={{ color: "#dc2626" }}>
+          {errors.images}
+        </p>
+      )}
+
+      {draft.images.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {draft.images.map((image) => (
             <div key={image.id} className="relative overflow-hidden rounded-xl">
@@ -71,33 +68,35 @@ function PropertyPhotosStep({
                 alt="Property preview"
                 className="h-40 w-full object-cover"
               />
-              {image.isPrimary ? (
-                <span
-                  className="absolute bottom-2 left-2 rounded-md px-2 py-1 text-xs font-semibold text-white"
-                  style={{ backgroundColor: palette.purple }}
-                >
-                  Cover
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onSetPrimary(image.id)}
-                  className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white"
-                >
-                  Set as cover
-                </button>
-              )}
+              <div className="absolute bottom-2 left-2">
+                {image.isPrimary ? (
+                  <span
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-white"
+                    style={{ backgroundColor: "#8b64c8" }}
+                  >
+                    Cover
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onSetPrimary(image.id)}
+                    className="rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white"
+                  >
+                    Set as cover
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => onRemovePhoto(image.id)}
-                className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white"
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white"
               >
                 ×
               </button>
             </div>
           ))}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

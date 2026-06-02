@@ -19,12 +19,10 @@ function DashboardShell() {
       navigate("/dashboard/message");
       return;
     }
-
     if (tab === "rental-requests") {
       navigate("/dashboard/rental-requests");
       return;
     }
-
     setActiveTab(tab);
   };
 
@@ -35,7 +33,7 @@ function DashboardShell() {
     >
       <DashboardNavbar activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <main className="flex-1 px-4 py-10 pt-24">
+      <main className="flex-1 px-4 py-10 pt-20">
         <div className="mx-auto max-w-6xl">
           <DashboardTabs activeTab={activeTab} />
         </div>

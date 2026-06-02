@@ -1,5 +1,4 @@
-import { ChevronDown, ImageIcon } from "lucide-react";
-import { palette } from "../../../theme/palette";
+import { ChevronDown } from "lucide-react";
 import {
   currencyOptions,
   propertyTypeOptions,
@@ -19,402 +18,261 @@ interface PropertyDetailsStepProps {
   };
 }
 
+function Field({
+  label,
+  error,
+  children,
+  span2,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+  span2?: boolean;
+}) {
+  return (
+    <div className={`space-y-1.5 ${span2 ? "md:col-span-2" : ""}`}>
+      <label
+        className="font-mono text-[10px] uppercase tracking-widest"
+        style={{ color: "var(--palette-soft-purple)" }}
+      >
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const inputCls = "w-full rounded-xl border px-4 py-2.5 text-sm outline-none";
+
 function PropertyDetailsStep({
   draft,
   setField,
   errors,
 }: PropertyDetailsStepProps) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <div
-          className="mb-1 flex items-center gap-2 text-lg font-semibold"
-          style={{ color: palette.deep }}
-        >
-          <ImageIcon size={18} style={{ color: palette.purple }} />
-          Property Details
-        </div>
-        <p className="text-sm" style={{ color: palette.softPurple }}>
-          Basic information about your property
-        </p>
-      </div>
+  const borderColor = (hasErr?: string) =>
+    hasErr ? "#dc2626" : "var(--palette-border)";
+  const baseInputStyle = (hasErr?: string) => ({
+    borderColor: borderColor(hasErr),
+    backgroundColor: "var(--palette-input-bg)",
+    color: "var(--palette-deep)",
+  });
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Listing Title *
-        </label>
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <Field label="Listing title *" error={errors.title} span2>
         <input
           value={draft.title}
-          onChange={(event) => setField("title", event.target.value)}
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor: errors.title ? "rgb(220 38 38)" : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
-          placeholder="e.g., Sunny 2BR Apartment in Downtown"
+          onChange={(e) => setField("title", e.target.value)}
+          placeholder="e.g., Sunny 2BR apartment in downtown"
+          className={inputCls}
+          style={baseInputStyle(errors.title)}
         />
-        {errors.title ? (
-          <p className="text-sm text-red-600">{errors.title}</p>
-        ) : null}
-      </div>
+      </Field>
 
+      <Field label="Description" span2>
+        <textarea
+          value={draft.description}
+          onChange={(e) => setField("description", e.target.value)}
+          placeholder="Describe your property, its unique features, and the neighbourhood…"
+          className="h-28 w-full rounded-xl border px-4 py-3 text-sm outline-none resize-none"
+          style={baseInputStyle()}
+        />
+      </Field>
+
+      {/* Roommates */}
       <div
-        className="rounded-2xl border px-4 py-4"
-        style={{ borderColor: palette.border, backgroundColor: palette.pageBg }}
+        className="md:col-span-2 rounded-xl border px-4 py-3"
+        style={{
+          borderColor: "var(--palette-border)",
+          backgroundColor: "var(--palette-section-bg)",
+        }}
       >
-        <label
-          className="flex items-start gap-3 text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
+        <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             checked={draft.allowRoommates}
-            onChange={(event) =>
-              setField("allowRoommates", event.target.checked)
-            }
-            className="mt-1 h-4 w-4 rounded border-gray-300"
+            onChange={(e) => setField("allowRoommates", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded"
           />
           <span>
-            Do you allow tenants to add roommates?
             <span
-              className="mt-1 block text-xs font-normal"
-              style={{ color: palette.softPurple }}
+              className="text-sm font-medium"
+              style={{ color: "var(--palette-deep)" }}
             >
-              This allows tenants renting this property to use the roommate
-              matching feature.
+              Allow roommates
+            </span>
+            <span
+              className="mt-0.5 block text-xs"
+              style={{ color: "var(--palette-soft-purple)" }}
+            >
+              Tenants renting this property can use the roommate matching
+              feature.
             </span>
           </span>
         </label>
       </div>
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Description
-        </label>
-        <textarea
-          value={draft.description}
-          onChange={(event) => setField("description", event.target.value)}
-          className="h-32 w-full rounded-lg border px-4 py-3 outline-none"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
-          placeholder="Describe your property, its unique features, and the neighborhood..."
+      <Field label="Property type">
+        <div className="relative">
+          <select
+            value={draft.propertyType}
+            onChange={(e) =>
+              setField(
+                "propertyType",
+                e.target.value as AddListingDraft["propertyType"],
+              )
+            }
+            className={`${inputCls} appearance-none pr-10`}
+            style={baseInputStyle()}
+          >
+            {propertyTypeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+            size={14}
+            style={{ color: "var(--palette-soft-purple)" }}
+          />
+        </div>
+      </Field>
+
+      <Field label="Monthly rent *" error={errors.price}>
+        <input
+          value={draft.price}
+          onChange={(e) =>
+            setField("price", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="2000"
+          className={inputCls}
+          style={baseInputStyle(errors.price)}
         />
-      </div>
+      </Field>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
+      <Field label="Currency">
+        <div className="relative">
+          <select
+            value={draft.currency}
+            onChange={(e) => setField("currency", e.target.value)}
+            className={`${inputCls} appearance-none pr-10`}
+            style={baseInputStyle()}
           >
-            Property Type *
-          </label>
-          <div className="relative">
-            <select
-              value={draft.propertyType}
-              onChange={(event) =>
-                setField(
-                  "propertyType",
-                  event.target.value as AddListingDraft["propertyType"],
-                )
-              }
-              className="w-full appearance-none rounded-lg border px-4 py-2 pr-10 outline-none"
-              style={{
-                borderColor: palette.border,
-                backgroundColor: palette.inputBg,
-                color: palette.deep,
-              }}
-            >
-              {propertyTypeOptions.map((propertyType) => (
-                <option key={propertyType} value={propertyType}>
-                  {propertyType}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-              size={16}
-              style={{ color: palette.softPurple }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Monthly Rent *
-          </label>
-          <input
-            value={draft.price}
-            onChange={(event) =>
-              setField("price", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: errors.price ? "rgb(220 38 38)" : palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="2000"
-          />
-          {errors.price ? (
-            <p className="text-sm text-red-600">{errors.price}</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Currency
-          </label>
-          <div className="relative">
-            <select
-              value={draft.currency}
-              onChange={(event) => setField("currency", event.target.value)}
-              className="w-full appearance-none rounded-lg border px-4 py-2 pr-10 outline-none"
-              style={{
-                borderColor: palette.border,
-                backgroundColor: palette.inputBg,
-                color: palette.deep,
-              }}
-            >
-              {currencyOptions.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-              size={16}
-              style={{ color: palette.softPurple }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Deposit
-          </label>
-          <input
-            value={draft.deposit}
-            onChange={(event) =>
-              setField("deposit", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="1000"
+            {currencyOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+            size={14}
+            style={{ color: "var(--palette-soft-purple)" }}
           />
         </div>
-      </div>
+      </Field>
 
-      <div className="grid gap-4 md:grid-cols-5">
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Lease Period (months) *
-          </label>
-          <input
-            value={draft.leasePeriod}
-            onChange={(event) =>
-              setField("leasePeriod", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: errors.leasePeriod
-                ? "rgb(220 38 38)"
-                : palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="12"
-          />
-          {errors.leasePeriod ? (
-            <p className="text-sm text-red-600">{errors.leasePeriod}</p>
-          ) : null}
-        </div>
+      <Field label="Deposit">
+        <input
+          value={draft.deposit}
+          onChange={(e) =>
+            setField("deposit", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="1000"
+          className={inputCls}
+          style={baseInputStyle()}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Initial Payment *
-          </label>
-          <input
-            value={draft.initialPayment}
-            onChange={(event) =>
-              setField(
-                "initialPayment",
-                event.target.value.replace(/[^\d]/g, ""),
-              )
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: errors.initialPayment
-                ? "rgb(220 38 38)"
-                : palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="500"
-          />
-          {errors.initialPayment ? (
-            <p className="text-sm text-red-600">{errors.initialPayment}</p>
-          ) : null}
-        </div>
+      <Field label="Lease period (months) *" error={errors.leasePeriod}>
+        <input
+          value={draft.leasePeriod}
+          onChange={(e) =>
+            setField("leasePeriod", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="12"
+          className={inputCls}
+          style={baseInputStyle(errors.leasePeriod)}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Bedrooms *
-          </label>
-          <input
-            value={draft.numberOfBedrooms}
-            onChange={(event) =>
-              setField(
-                "numberOfBedrooms",
-                event.target.value.replace(/[^\d]/g, ""),
-              )
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: errors.numberOfBedrooms
-                ? "rgb(220 38 38)"
-                : palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="2"
-          />
-          {errors.numberOfBedrooms ? (
-            <p className="text-sm text-red-600">{errors.numberOfBedrooms}</p>
-          ) : null}
-        </div>
+      <Field label="Initial payment *" error={errors.initialPayment}>
+        <input
+          value={draft.initialPayment}
+          onChange={(e) =>
+            setField("initialPayment", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="500"
+          className={inputCls}
+          style={baseInputStyle(errors.initialPayment)}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Bathrooms *
-          </label>
-          <input
-            value={draft.numberOfBathrooms}
-            onChange={(event) =>
-              setField(
-                "numberOfBathrooms",
-                event.target.value.replace(/[^\d]/g, ""),
-              )
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: errors.numberOfBathrooms
-                ? "rgb(220 38 38)"
-                : palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="1"
-          />
-          {errors.numberOfBathrooms ? (
-            <p className="text-sm text-red-600">{errors.numberOfBathrooms}</p>
-          ) : null}
-        </div>
+      <Field label="Bedrooms *" error={errors.numberOfBedrooms}>
+        <input
+          value={draft.numberOfBedrooms}
+          onChange={(e) =>
+            setField("numberOfBedrooms", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="2"
+          className={inputCls}
+          style={baseInputStyle(errors.numberOfBedrooms)}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Area (sq ft)
-          </label>
-          <input
-            value={draft.areaSqFt}
-            onChange={(event) =>
-              setField("areaSqFt", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="1000"
-          />
-        </div>
+      <Field label="Bathrooms *" error={errors.numberOfBathrooms}>
+        <input
+          value={draft.numberOfBathrooms}
+          onChange={(e) =>
+            setField("numberOfBathrooms", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="1"
+          className={inputCls}
+          style={baseInputStyle(errors.numberOfBathrooms)}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Floor Number
-          </label>
-          <input
-            value={draft.floorNumber}
-            onChange={(event) =>
-              setField("floorNumber", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="3"
-          />
-        </div>
+      <Field label="Area (sq ft)">
+        <input
+          value={draft.areaSqFt}
+          onChange={(e) =>
+            setField("areaSqFt", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="1000"
+          className={inputCls}
+          style={baseInputStyle()}
+        />
+      </Field>
 
-        <div className="space-y-2">
-          <label
-            className="text-sm font-semibold"
-            style={{ color: palette.deep }}
-          >
-            Total Floors
-          </label>
-          <input
-            value={draft.totalFloors}
-            onChange={(event) =>
-              setField("totalFloors", event.target.value.replace(/[^\d]/g, ""))
-            }
-            className="w-full rounded-lg border px-4 py-2 outline-none"
-            style={{
-              borderColor: palette.border,
-              backgroundColor: palette.inputBg,
-              color: palette.deep,
-            }}
-            placeholder="10"
-          />
-        </div>
-      </div>
+      <Field label="Floor number">
+        <input
+          value={draft.floorNumber}
+          onChange={(e) =>
+            setField("floorNumber", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="3"
+          className={inputCls}
+          style={baseInputStyle()}
+        />
+      </Field>
+
+      <Field label="Total floors">
+        <input
+          value={draft.totalFloors}
+          onChange={(e) =>
+            setField("totalFloors", e.target.value.replace(/[^\d]/g, ""))
+          }
+          placeholder="10"
+          className={inputCls}
+          style={baseInputStyle()}
+        />
+      </Field>
     </div>
   );
 }

@@ -14,7 +14,6 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../../../lib/axios";
-import { palette } from "../../../theme/palette";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
 import { useAmenities } from "../../property/hooks/usePropertyHooks";
 import type { Property } from "../../property/types/type";
@@ -40,11 +39,11 @@ const sectionItems: Array<{
   label: string;
   icon: typeof Building2;
 }> = [
-  { key: "details", label: "Property Details", icon: Building2 },
+  { key: "details", label: "Property details", icon: Building2 },
   { key: "location", label: "Location", icon: MapPin },
   { key: "photos", label: "Photos", icon: ImageIcon },
-  { key: "bank", label: "Bank Information", icon: Sparkles },
-  { key: "amenities", label: "Amenities & Final", icon: Sparkles },
+  { key: "bank", label: "Bank information", icon: Sparkles },
+  { key: "amenities", label: "Amenities & final", icon: Sparkles },
 ];
 
 const createDraftFromProperty = (property: Property): EditListingDraft => ({
@@ -86,6 +85,69 @@ const createDraftFromProperty = (property: Property): EditListingDraft => ({
   allowRoommates: !!property.allowRoommates,
 });
 
+// ── Shared field wrapper ──────────────────────────────────────────────────────
+function Field({
+  label,
+  required,
+  error,
+  children,
+  span2,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+  span2?: boolean;
+}) {
+  return (
+    <div className={`space-y-1.5 ${span2 ? "md:col-span-2" : ""}`}>
+      <label
+        className="font-mono text-[10px] uppercase tracking-widest"
+        style={{ color: "var(--palette-soft-purple)" }}
+      >
+        {label}
+        {required && <span style={{ color: "#dc2626" }}> *</span>}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Shared text input ─────────────────────────────────────────────────────────
+function TextInput({
+  value,
+  onChange,
+  hasError,
+  placeholder,
+  type = "text",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  hasError?: boolean;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors"
+      style={{
+        borderColor: hasError ? "#dc2626" : "var(--palette-border)",
+        backgroundColor: "var(--palette-input-bg)",
+        color: "var(--palette-deep)",
+      }}
+    />
+  );
+}
+
 interface EditListingFormProps {
   propertyId: string;
 }
@@ -112,7 +174,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   });
   const updateMutation = useUpdateEditListingProperty();
   const validAmenityIdSet = useMemo(
-    () => new Set(amenities.map((amenity) => amenity._id)),
+    () => new Set(amenities.map((a) => a._id)),
     [amenities],
   );
   const isRentedProperty = property?.status === "Rented";
@@ -123,9 +185,10 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   const [bankInfo, setBankInfo] = useState<BankInfoDraft>(initialBankInfoDraft);
   const [attemptedSave, setAttemptedSave] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const selectedBankName = useMemo(() => {
     return (
-      banks.find((bank) => bank.id === bankInfo.bankCode)?.name ??
+      banks.find((b) => b.id === bankInfo.bankCode)?.name ??
       bankInfo.bankName ??
       ""
     );
@@ -138,11 +201,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
 
   useEffect(() => {
     const profileBankInfo = profileQuery.data?.bankInfo;
-
-    if (!profileBankInfo) {
-      return;
-    }
-
+    if (!profileBankInfo) return;
     setBankInfo({
       accountName: profileBankInfo.accountName ?? "",
       accountNumber: profileBankInfo.accountNumber ?? "",
@@ -154,15 +213,9 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
 
   useEffect(() => {
     if (!draft) return;
-
-    const filteredAmenityIds = draft.amenityIds.filter((amenityId) =>
-      validAmenityIdSet.has(amenityId),
-    );
-
-    if (filteredAmenityIds.length !== draft.amenityIds.length) {
-      setDraft((prev) =>
-        prev ? { ...prev, amenityIds: filteredAmenityIds } : prev,
-      );
+    const filtered = draft.amenityIds.filter((id) => validAmenityIdSet.has(id));
+    if (filtered.length !== draft.amenityIds.length) {
+      setDraft((prev) => (prev ? { ...prev, amenityIds: filtered } : prev));
     }
   }, [draft, validAmenityIdSet]);
 
@@ -179,36 +232,19 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
 
   const errors = useMemo<EditListingValidationErrors>(() => {
     if (!draft) return {};
-
     const nextErrors: EditListingValidationErrors = {};
-
     const trimmedTitle = draft.title.trim();
-    if (!trimmedTitle) {
-      nextErrors.title = "Title is required.";
-    } else if (trimmedTitle.length < 3) {
+    if (!trimmedTitle) nextErrors.title = "Title is required.";
+    else if (trimmedTitle.length < 3)
       nextErrors.title = "Title must be at least 3 characters.";
-    }
-
-    if (!draft.price || Number(draft.price) <= 0) {
+    if (!draft.price || Number(draft.price) <= 0)
       nextErrors.price = "Monthly rent is required.";
-    }
-
-    if (!draft.leasePeriod || Number(draft.leasePeriod) <= 0) {
-      nextErrors.leasePeriod = "Lease period (months) is required.";
-    }
-
-    if (draft.initialPayment === "" || Number(draft.initialPayment) < 0) {
+    if (!draft.leasePeriod || Number(draft.leasePeriod) <= 0)
+      nextErrors.leasePeriod = "Lease period is required.";
+    if (draft.initialPayment === "" || Number(draft.initialPayment) < 0)
       nextErrors.initialPayment = "Initial payment is required.";
-    }
-
-    if (!draft.address.trim()) {
-      nextErrors.address = "Address is required.";
-    }
-
-    if (!draft.city.trim()) {
-      nextErrors.city = "City is required.";
-    }
-
+    if (!draft.address.trim()) nextErrors.address = "Address is required.";
+    if (!draft.city.trim()) nextErrors.city = "City is required.";
     return nextErrors;
   }, [draft]);
 
@@ -219,19 +255,12 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       bankCode?: string;
       bankName?: string;
     } = {};
-
-    if (!bankInfo.accountName.trim()) {
+    if (!bankInfo.accountName.trim())
       nextErrors.accountName = "Account name is required.";
-    }
-
-    if (!bankInfo.accountNumber.trim()) {
+    if (!bankInfo.accountNumber.trim())
       nextErrors.accountNumber = "Account number is required.";
-    }
-
-    if (!bankInfo.bankCode.trim()) {
+    if (!bankInfo.bankCode.trim())
       nextErrors.bankCode = "Bank name is required.";
-    }
-
     return nextErrors;
   }, [bankInfo]);
 
@@ -252,13 +281,10 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
   const uploadPhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
-
     setDraft((prev) => {
       if (!prev) return prev;
-
       const nextImages = [...prev.images];
       const remainingSlots = Math.max(0, 10 - nextImages.length);
-
       files.slice(0, remainingSlots).forEach((file, index) => {
         nextImages.push({
           id: `${file.name}-${Date.now()}-${index}`,
@@ -267,53 +293,34 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
           isPrimary: false,
         });
       });
-
-      if (!nextImages.some((image) => image.isPrimary) && nextImages[0]) {
+      if (!nextImages.some((i) => i.isPrimary) && nextImages[0])
         nextImages[0] = { ...nextImages[0], isPrimary: true };
-      }
-
-      return {
-        ...prev,
-        images: nextImages,
-      };
+      return { ...prev, images: nextImages };
     });
-
     event.target.value = "";
   };
 
   const setPrimaryImage = (id: string) => {
-    setDraft((prev) => {
-      if (!prev) return prev;
-
-      return {
-        ...prev,
-        images: prev.images.map((image) => ({
-          ...image,
-          isPrimary: image.id === id,
-        })),
-      };
-    });
+    setDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            images: prev.images.map((i) => ({ ...i, isPrimary: i.id === id })),
+          }
+        : prev,
+    );
   };
 
   const removeImage = (id: string) => {
     setDraft((prev) => {
       if (!prev) return prev;
-
-      const imageToRemove = prev.images.find((image) => image.id === id);
-      if (imageToRemove?.file && imageToRemove.previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(imageToRemove.previewUrl);
-      }
-
-      const nextImages = prev.images.filter((image) => image.id !== id);
-
-      if (!nextImages.some((image) => image.isPrimary) && nextImages[0]) {
+      const toRemove = prev.images.find((i) => i.id === id);
+      if (toRemove?.file && toRemove.previewUrl.startsWith("blob:"))
+        URL.revokeObjectURL(toRemove.previewUrl);
+      const nextImages = prev.images.filter((i) => i.id !== id);
+      if (!nextImages.some((i) => i.isPrimary) && nextImages[0])
         nextImages[0] = { ...nextImages[0], isPrimary: true };
-      }
-
-      return {
-        ...prev,
-        images: nextImages,
-      };
+      return { ...prev, images: nextImages };
     });
   };
 
@@ -321,7 +328,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     setDraft((prev) => {
       if (!prev) return prev;
       const exists = prev.amenityIds.includes(amenityId);
-
       return {
         ...prev,
         amenityIds: exists
@@ -333,14 +339,11 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
 
   const submitUpdate = async () => {
     if (!draft) return;
-
     if (isRentedProperty) {
       toast.error("Rented properties cannot be edited.");
       return;
     }
-
     setAttemptedSave(true);
-
     if (Object.keys(errors).length > 0) {
       if (
         errors.title ||
@@ -352,7 +355,6 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       else if (errors.address || errors.city) setActiveSection("location");
       return;
     }
-
     if (
       bankValidationErrors.accountName ||
       bankValidationErrors.accountNumber ||
@@ -361,9 +363,7 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
       setActiveSection("bank");
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       await api.post("/api/profile/setup-bank", {
         accountName: bankInfo.accountName.trim(),
@@ -372,17 +372,15 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
         bankName: selectedBankName.trim(),
       });
     } catch (bankError) {
-      const message =
+      toast.error(
         bankError instanceof Error
           ? bankError.message
-          : "Failed to save bank information";
-      toast.error(message);
+          : "Failed to save bank information",
+      );
       setActiveSection("bank");
       return;
     }
-
     const payload = new FormData();
-
     payload.append("title", draft.title.trim());
     payload.append("description", draft.description.trim());
     payload.append("propertyType", draft.propertyType);
@@ -416,292 +414,278 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
     payload.append("availableFrom", draft.availableFrom || "");
     payload.append("isFurnished", String(draft.isFurnished));
     payload.append("allowRoommates", String(draft.allowRoommates));
-    const sanitizedAmenityIds = draft.amenityIds.filter((amenityId) =>
-      validAmenityIdSet.has(amenityId),
+    const sanitizedAmenityIds = draft.amenityIds.filter((id) =>
+      validAmenityIdSet.has(id),
     );
-
     payload.append("amenityIds", JSON.stringify(sanitizedAmenityIds));
-
     const existingImageUrls = draft.images
-      .filter((image) => !image.file && image.imageUrl)
-      .map((image) => image.imageUrl as string);
-
+      .filter((i) => !i.file && i.imageUrl)
+      .map((i) => i.imageUrl as string);
     payload.append("existingImageUrls", JSON.stringify(existingImageUrls));
-
     draft.images
-      .filter((image) => image.file)
-      .forEach((image) => {
-        payload.append("images", image.file as File);
-      });
-
-    const primaryImageIndex = draft.images.findIndex(
-      (image) => image.isPrimary,
-    );
+      .filter((i) => i.file)
+      .forEach((i) => payload.append("images", i.file as File));
+    const primaryImageIndex = draft.images.findIndex((i) => i.isPrimary);
     payload.append(
       "primaryImageIndex",
       String(primaryImageIndex >= 0 ? primaryImageIndex : 0),
     );
-
     try {
       await updateMutation.mutateAsync({ propertyId, payload });
       toast.success("Listing updated successfully.");
-      // navigate("/dashboard/my-properties");
     } catch (submitError) {
-      const message =
+      toast.error(
         submitError instanceof Error
           ? submitError.message
-          : "Failed to update listing";
-      toast.error(message);
+          : "Failed to update listing",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isLoading || !draft) {
     return (
-      <section className="mx-auto max-w-5xl py-10 pt-24 ">
-        <div className="mb-6 space-y-2">
-          <div className="skeleton h-10 w-64 rounded" />
-          <div className="skeleton h-6 w-96 rounded" />
+      <section className="mx-auto max-w-4xl px-4 py-10 pt-20 space-y-6">
+        <div className="space-y-2">
+          <div className="skeleton h-4 w-32 rounded" />
+          <div className="skeleton h-8 w-56 rounded-xl" />
+          <div className="skeleton h-4 w-80 rounded" />
         </div>
-
-        <div className="mb-6 flex flex-wrap gap-2">
-          <div className="skeleton h-10 w-40 rounded-lg" />
-          <div className="skeleton h-10 w-32 rounded-lg" />
-          <div className="skeleton h-10 w-28 rounded-lg" />
-          <div className="skeleton h-10 w-44 rounded-lg" />
+        <div className="flex flex-wrap gap-2">
+          {[140, 110, 90, 150, 160].map((w, i) => (
+            <div
+              key={i}
+              className="skeleton h-9 rounded-full"
+              style={{ width: w }}
+            />
+          ))}
         </div>
-
         <div
-          className="rounded-2xl border p-6 md:p-8 shadow-sm"
-          style={{ borderColor: palette.border }}
+          className="rounded-2xl border overflow-hidden"
+          style={{ borderColor: "var(--palette-border)" }}
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <div className="skeleton h-4 w-36 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <div className="skeleton h-4 w-28 rounded" />
-              <div className="skeleton h-28 rounded-lg" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-24 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-28 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-20 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-20 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-24 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-            <div className="space-y-2">
-              <div className="skeleton h-4 w-24 rounded" />
-              <div className="skeleton h-11 rounded-lg" />
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="skeleton h-36 rounded-xl" />
-            <div className="skeleton h-36 rounded-xl" />
-            <div className="skeleton h-36 rounded-xl" />
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-            <div className="skeleton h-10 w-28 rounded-lg" />
-            <div className="skeleton h-10 w-36 rounded-lg" />
+          <div className="skeleton h-12 w-full" />
+          <div className="p-6 grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className={`space-y-2 ${i < 2 ? "md:col-span-2" : ""}`}
+              >
+                <div className="skeleton h-3 w-24 rounded" />
+                <div className="skeleton h-10 rounded-xl" />
+              </div>
+            ))}
           </div>
         </div>
       </section>
     );
   }
 
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (isError) {
     return (
-      <div
-        className="rounded-2xl border p-6 text-sm"
-        style={{ borderColor: palette.border, color: palette.purple }}
-      >
-        {error.message || "Failed to load listing"}
-      </div>
+      <section className="mx-auto max-w-4xl px-4 py-12 pt-20">
+        <div
+          className="rounded-2xl border px-6 py-10 text-center text-sm"
+          style={{
+            borderColor: "var(--palette-border)",
+            backgroundColor: "var(--palette-card-bg)",
+            color: "var(--palette-soft-purple)",
+          }}
+        >
+          {error.message || "Failed to load listing."}
+        </div>
+      </section>
     );
   }
 
+  const isSaving = isSubmitting || updateMutation.isPending;
+
   return (
-    <section className="mx-auto max-w-5xl px-4 py-24">
-      <Link
-        to="/dashboard/my-properties"
-        className="mb-4 inline-flex items-center gap-2 text-sm font-semibold"
-        style={{ color: palette.deep }}
-      >
-        <ArrowLeft size={16} />
-        Back to Listings
-      </Link>
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: palette.deep }}>
-          Edit Listing
-        </h1>
-        <p className="mt-2 text-lg" style={{ color: palette.softPurple }}>
-          Jump to any section and update your property details quickly.
-        </p>
-        {isRentedProperty ? (
-          <div
-            className="mt-4 rounded-xl border px-4 py-3 text-sm font-semibold"
-            style={{
-              borderColor: "#F4C7C7",
-              backgroundColor: "#FFF5F5",
-              color: "#B42318",
-            }}
+    <section className="mx-auto max-w-4xl px-4 py-10 pt-20 space-y-6">
+      {/* Page header */}
+      <div className="flex items-start gap-3">
+        <Link
+          to="/dashboard/my-properties"
+          className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border transition-opacity hover:opacity-70"
+          style={{
+            borderColor: "var(--palette-border)",
+            backgroundColor: "var(--palette-card-bg)",
+            color: "var(--palette-deep)",
+          }}
+          aria-label="Back to listings"
+        >
+          <ArrowLeft size={14} />
+        </Link>
+        <div>
+          <p
+            className="mb-1 font-mono text-[10px] uppercase tracking-widest"
+            style={{ color: "var(--palette-soft-purple)" }}
           >
-            This property is already rented, so editing is locked.
-          </div>
-        ) : null}
+            Owner · My properties
+          </p>
+          <h1
+            className="text-2xl font-semibold"
+            style={{ color: "var(--palette-deep)" }}
+          >
+            Edit listing
+          </h1>
+          <p
+            className="mt-0.5 text-sm"
+            style={{ color: "var(--palette-soft-purple)" }}
+          >
+            Jump to any section and update your property details.
+          </p>
+        </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {sectionItems.map((section) => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.key;
+      {/* Rented warning */}
+      {isRentedProperty && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm font-medium"
+          style={{
+            borderColor: "#fecaca",
+            backgroundColor: "#fff1f2",
+            color: "#dc2626",
+          }}
+        >
+          This property is currently rented — editing is locked.
+        </div>
+      )}
 
+      {/* Section tabs */}
+      <div className="flex flex-wrap gap-2">
+        {sectionItems.map(({ key, label, icon: Icon }) => {
+          const isActive = activeSection === key;
           return (
             <button
-              key={section.key}
+              key={key}
               type="button"
-              onClick={() => setActiveSection(section.key)}
-              className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold"
+              onClick={() => setActiveSection(key)}
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
               style={{
-                borderColor: isActive ? palette.purple : palette.border,
-                color: isActive ? palette.purple : palette.deep,
-                backgroundColor: isActive ? palette.chipBg : palette.cardBg,
+                backgroundColor: isActive
+                  ? "#8b64c8"
+                  : "var(--palette-card-bg)",
+                color: isActive ? "#ffffff" : "var(--palette-deep)",
+                border: `1px solid ${isActive ? "#8b64c8" : "var(--palette-border)"}`,
               }}
             >
-              <Icon size={15} />
-              {section.label}
+              <Icon size={13} />
+              {label}
             </button>
           );
         })}
       </div>
 
+      {/* Section card */}
       <div
-        className="rounded-2xl border p-6 md:p-8 shadow-sm"
-        style={{ borderColor: palette.border, backgroundColor: palette.cardBg }}
+        className="rounded-2xl border overflow-hidden"
+        style={{
+          borderColor: "var(--palette-border)",
+          backgroundColor: "var(--palette-card-bg)",
+          boxShadow: "0 1px 4px rgba(46,31,74,0.06)",
+        }}
       >
-        {activeSection === "details" ? (
-          <div className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Listing Title *
-                </label>
-                <input
-                  value={draft.title}
-                  onChange={(event) => setField("title", event.target.value)}
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor:
-                      attemptedSave && errors.title
-                        ? "rgb(220 38 38)"
-                        : palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
-                />
-                {attemptedSave && errors.title ? (
-                  <p className="text-sm text-red-600">{errors.title}</p>
-                ) : null}
-              </div>
+        {/* Header strip */}
+        <div
+          className="flex items-center justify-between px-4 py-2.5 border-b"
+          style={{
+            backgroundColor: "var(--palette-card-muted-alt-bg)",
+            borderColor: "var(--palette-border)",
+          }}
+        >
+          <span
+            className="font-mono text-[10px] uppercase tracking-widest"
+            style={{ color: "var(--palette-soft-purple)" }}
+          >
+            {sectionItems.find((s) => s.key === activeSection)?.label}
+          </span>
+        </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Description
-                </label>
+        {/* Body */}
+        <div className="p-5 md:p-6">
+          {/* ── Details ── */}
+          {activeSection === "details" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label="Listing title"
+                required
+                error={attemptedSave ? errors.title : undefined}
+                span2
+              >
+                <TextInput
+                  value={draft.title}
+                  onChange={(v) => setField("title", v)}
+                  hasError={!!(attemptedSave && errors.title)}
+                />
+              </Field>
+
+              <Field label="Description" span2>
                 <textarea
                   value={draft.description}
-                  onChange={(event) =>
-                    setField("description", event.target.value)
-                  }
-                  className="h-32 w-full rounded-lg border px-4 py-3 outline-none"
+                  onChange={(e) => setField("description", e.target.value)}
+                  className="h-28 w-full rounded-xl border px-4 py-3 text-sm outline-none resize-none"
                   style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
+                    borderColor: "var(--palette-border)",
+                    backgroundColor: "var(--palette-input-bg)",
+                    color: "var(--palette-deep)",
                   }}
                 />
-              </div>
+              </Field>
 
+              {/* Roommates toggle */}
               <div
-                className="md:col-span-2 rounded-2xl border px-4 py-4"
+                className="md:col-span-2 rounded-xl border px-4 py-3"
                 style={{
-                  borderColor: palette.border,
-                  backgroundColor: palette.pageBg,
+                  borderColor: "var(--palette-border)",
+                  backgroundColor: "var(--palette-section-bg)",
                 }}
               >
-                <label
-                  className="flex items-start gap-3 text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={draft.allowRoommates}
-                    onChange={(event) =>
-                      setField("allowRoommates", event.target.checked)
+                    onChange={(e) =>
+                      setField("allowRoommates", e.target.checked)
                     }
-                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                    className="mt-0.5 h-4 w-4 rounded"
                   />
                   <span>
-                    Do you allow tenants to add roommates?
                     <span
-                      className="mt-1 block text-xs font-normal"
-                      style={{ color: palette.softPurple }}
+                      className="text-sm font-medium"
+                      style={{ color: "var(--palette-deep)" }}
                     >
-                      This allows tenants renting this property to use the
-                      roommate matching feature.
+                      Allow roommates
+                    </span>
+                    <span
+                      className="mt-0.5 block text-xs"
+                      style={{ color: "var(--palette-soft-purple)" }}
+                    >
+                      Tenants renting this property can use the roommate
+                      matching feature.
                     </span>
                   </span>
                 </label>
               </div>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Property Type
-                </label>
+              <Field label="Property type">
                 <div className="relative">
                   <select
                     value={draft.propertyType}
-                    onChange={(event) =>
+                    onChange={(e) =>
                       setField(
                         "propertyType",
-                        event.target.value as EditListingDraft["propertyType"],
+                        e.target.value as EditListingDraft["propertyType"],
                       )
                     }
-                    className="w-full appearance-none rounded-lg border px-4 py-2 pr-10 outline-none"
+                    className="w-full appearance-none rounded-xl border px-4 py-2.5 pr-10 text-sm outline-none"
                     style={{
-                      borderColor: palette.border,
-                      backgroundColor: palette.inputBg,
-                      color: palette.deep,
+                      borderColor: "var(--palette-border)",
+                      backgroundColor: "var(--palette-input-bg)",
+                      color: "var(--palette-deep)",
                     }}
                   >
                     {propertyTypeOptions.map((item) => (
@@ -712,54 +696,33 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                   </select>
                   <ChevronDown
                     className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                    size={16}
-                    style={{ color: palette.softPurple }}
+                    size={14}
+                    style={{ color: "var(--palette-soft-purple)" }}
                   />
                 </div>
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Monthly Rent *
-                </label>
-                <input
+              <Field
+                label="Monthly rent"
+                required
+                error={attemptedSave ? errors.price : undefined}
+              >
+                <TextInput
                   value={draft.price}
-                  onChange={(event) =>
-                    setField("price", event.target.value.replace(/[^\d]/g, ""))
-                  }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor:
-                      attemptedSave && errors.price
-                        ? "rgb(220 38 38)"
-                        : palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
+                  onChange={(v) => setField("price", v.replace(/[^\d]/g, ""))}
+                  hasError={!!(attemptedSave && errors.price)}
                 />
-                {attemptedSave && errors.price ? (
-                  <p className="text-sm text-red-600">{errors.price}</p>
-                ) : null}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Currency
-                </label>
+              <Field label="Currency">
                 <select
                   value={draft.currency}
-                  onChange={(event) => setField("currency", event.target.value)}
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
+                  onChange={(e) => setField("currency", e.target.value)}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                   style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
+                    borderColor: "var(--palette-border)",
+                    backgroundColor: "var(--palette-input-bg)",
+                    color: "var(--palette-deep)",
                   }}
                 >
                   {currencyOptions.map((item) => (
@@ -768,483 +731,341 @@ function EditListingForm({ propertyId }: EditListingFormProps) {
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Deposit
-                </label>
-                <input
+              <Field label="Deposit">
+                <TextInput
                   value={draft.deposit}
-                  onChange={(event) =>
-                    setField(
-                      "deposit",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
-                  }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
+                  onChange={(v) => setField("deposit", v.replace(/[^\d]/g, ""))}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Floor Number
-                </label>
-                <input
+              <Field label="Floor number">
+                <TextInput
                   value={draft.floorNumber}
-                  onChange={(event) =>
-                    setField(
-                      "floorNumber",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("floorNumber", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Total Floors
-                </label>
-                <input
+              <Field label="Total floors">
+                <TextInput
                   value={draft.totalFloors}
-                  onChange={(event) =>
-                    setField(
-                      "totalFloors",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("totalFloors", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Area (sq ft)
-                </label>
-                <input
+              <Field label="Area (sq ft)">
+                <TextInput
                   value={draft.areaSqFt}
-                  onChange={(event) =>
-                    setField(
-                      "areaSqFt",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("areaSqFt", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Lease Period (months) *
-                </label>
-                <input
+              <Field
+                label="Lease period (months)"
+                required
+                error={attemptedSave ? errors.leasePeriod : undefined}
+              >
+                <TextInput
                   value={draft.leasePeriod}
-                  onChange={(event) =>
-                    setField(
-                      "leasePeriod",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("leasePeriod", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor:
-                      attemptedSave && errors.leasePeriod
-                        ? "rgb(220 38 38)"
-                        : palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
+                  hasError={!!(attemptedSave && errors.leasePeriod)}
                 />
-                {attemptedSave && errors.leasePeriod ? (
-                  <p className="text-sm text-red-600">{errors.leasePeriod}</p>
-                ) : null}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Initial Payment *
-                </label>
-                <input
+              <Field
+                label="Initial payment"
+                required
+                error={attemptedSave ? errors.initialPayment : undefined}
+              >
+                <TextInput
                   value={draft.initialPayment}
-                  onChange={(event) =>
-                    setField(
-                      "initialPayment",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("initialPayment", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor:
-                      attemptedSave && errors.initialPayment
-                        ? "rgb(220 38 38)"
-                        : palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
+                  hasError={!!(attemptedSave && errors.initialPayment)}
                 />
-                {attemptedSave && errors.initialPayment ? (
-                  <p className="text-sm text-red-600">
-                    {errors.initialPayment}
-                  </p>
-                ) : null}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Bedrooms
-                </label>
-                <input
+              <Field label="Bedrooms">
+                <TextInput
                   value={draft.numberOfBedrooms}
-                  onChange={(event) =>
-                    setField(
-                      "numberOfBedrooms",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("numberOfBedrooms", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Bathrooms
-                </label>
-                <input
+              <Field label="Bathrooms">
+                <TextInput
                   value={draft.numberOfBathrooms}
-                  onChange={(event) =>
-                    setField(
-                      "numberOfBathrooms",
-                      event.target.value.replace(/[^\d]/g, ""),
-                    )
+                  onChange={(v) =>
+                    setField("numberOfBathrooms", v.replace(/[^\d]/g, ""))
                   }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
                 />
-              </div>
+              </Field>
             </div>
-          </div>
-        ) : null}
+          )}
 
-        {activeSection === "location" ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <label
-                className="text-sm font-semibold"
-                style={{ color: palette.deep }}
+          {/* ── Location ── */}
+          {activeSection === "location" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label="Street address"
+                required
+                error={attemptedSave ? errors.address : undefined}
+                span2
               >
-                Street Address *
-              </label>
-              <input
-                value={draft.address}
-                onChange={(event) => setField("address", event.target.value)}
-                className="w-full rounded-lg border px-4 py-2 outline-none"
-                style={{
-                  borderColor:
-                    attemptedSave && errors.address
-                      ? "rgb(220 38 38)"
-                      : palette.border,
-                  backgroundColor: palette.inputBg,
-                  color: palette.deep,
-                }}
-              />
-              {attemptedSave && errors.address ? (
-                <p className="text-sm text-red-600">{errors.address}</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className="text-sm font-semibold"
-                style={{ color: palette.deep }}
+                <TextInput
+                  value={draft.address}
+                  onChange={(v) => setField("address", v)}
+                  hasError={!!(attemptedSave && errors.address)}
+                />
+              </Field>
+              <Field
+                label="City"
+                required
+                error={attemptedSave ? errors.city : undefined}
               >
-                City *
-              </label>
-              <input
-                value={draft.city}
-                onChange={(event) => setField("city", event.target.value)}
-                className="w-full rounded-lg border px-4 py-2 outline-none"
-                style={{
-                  borderColor:
-                    attemptedSave && errors.city
-                      ? "rgb(220 38 38)"
-                      : palette.border,
-                  backgroundColor: palette.inputBg,
-                  color: palette.deep,
-                }}
-              />
-              {attemptedSave && errors.city ? (
-                <p className="text-sm text-red-600">{errors.city}</p>
-              ) : null}
+                <TextInput
+                  value={draft.city}
+                  onChange={(v) => setField("city", v)}
+                  hasError={!!(attemptedSave && errors.city)}
+                />
+              </Field>
             </div>
-          </div>
-        ) : null}
+          )}
 
-        {activeSection === "photos" ? (
-          <div className="space-y-4">
-            <label
-              htmlFor="edit-listing-upload"
-              className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed"
-              style={{
-                borderColor: palette.border,
-                backgroundColor: palette.cardBg,
-              }}
-            >
-              <Upload size={38} style={{ color: palette.softPurple }} />
-              <p className="mt-3 text-lg" style={{ color: palette.deep }}>
-                Upload new photos or keep existing ones
-              </p>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Up to 10 images, JPG/PNG/WEBP
-              </p>
-            </label>
-            <input
-              id="edit-listing-upload"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              multiple
-              className="hidden"
-              onChange={uploadPhotos}
-            />
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {draft.images.map((image) => (
-                <div
-                  key={image.id}
-                  className="relative overflow-hidden rounded-xl"
+          {/* ── Photos ── */}
+          {activeSection === "photos" && (
+            <div className="space-y-4">
+              <label
+                htmlFor="edit-listing-upload"
+                className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed transition-colors"
+                style={{
+                  borderColor: "var(--palette-border)",
+                  backgroundColor: "var(--palette-section-bg)",
+                }}
+              >
+                <Upload
+                  size={28}
+                  style={{ color: "var(--palette-soft-purple)" }}
+                />
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--palette-deep)" }}
                 >
-                  <img
-                    src={image.previewUrl}
-                    alt="Property preview"
-                    className="h-40 w-full object-cover"
-                  />
-                  <div className="absolute bottom-2 left-2 flex gap-2">
-                    {image.isPrimary ? (
-                      <span
-                        className="rounded-md px-2 py-1 text-xs font-semibold text-white"
-                        style={{ backgroundColor: palette.purple }}
-                      >
-                        Cover
-                      </span>
-                    ) : (
+                  Upload new photos or keep existing ones
+                </p>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--palette-soft-purple)" }}
+                >
+                  Up to 10 images · JPG / PNG / WEBP
+                </p>
+              </label>
+              <input
+                id="edit-listing-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                className="hidden"
+                onChange={uploadPhotos}
+              />
+
+              {draft.images.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {draft.images.map((image) => (
+                    <div
+                      key={image.id}
+                      className="relative overflow-hidden rounded-xl"
+                    >
+                      <img
+                        src={image.previewUrl}
+                        alt="Property preview"
+                        className="h-40 w-full object-cover"
+                      />
+                      <div className="absolute bottom-2 left-2">
+                        {image.isPrimary ? (
+                          <span
+                            className="rounded-md px-2 py-1 text-xs font-semibold text-white"
+                            style={{ backgroundColor: "#8b64c8" }}
+                          >
+                            Cover
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setPrimaryImage(image.id)}
+                            className="rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white"
+                          >
+                            Set as cover
+                          </button>
+                        )}
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setPrimaryImage(image.id)}
-                        className="rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white"
+                        onClick={() => removeImage(image.id)}
+                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white"
                       >
-                        Set as cover
+                        ×
                       </button>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(image.id)}
-                    className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white"
-                  >
-                    ×
-                  </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        ) : null}
+          )}
 
-        {activeSection === "bank" ? (
-          <BankInformationStep
-            bankInfo={bankInfo}
-            banks={banks}
-            hasExistingBankAccount={Boolean(bankInfo.chapaSubaccountId)}
-            isLoadingBanks={isLoadingBanks}
-            errors={{
-              accountName: attemptedSave
-                ? bankValidationErrors.accountName
-                : undefined,
-              accountNumber: attemptedSave
-                ? bankValidationErrors.accountNumber
-                : undefined,
-              bankCode: attemptedSave
-                ? bankValidationErrors.bankCode
-                : undefined,
-              bankName: attemptedSave
-                ? bankValidationErrors.bankName
-                : undefined,
-            }}
-            onChangeField={setBankField}
-          />
-        ) : null}
+          {/* ── Bank ── */}
+          {activeSection === "bank" && (
+            <BankInformationStep
+              bankInfo={bankInfo}
+              banks={banks}
+              hasExistingBankAccount={Boolean(bankInfo.chapaSubaccountId)}
+              isLoadingBanks={isLoadingBanks}
+              errors={{
+                accountName: attemptedSave
+                  ? bankValidationErrors.accountName
+                  : undefined,
+                accountNumber: attemptedSave
+                  ? bankValidationErrors.accountNumber
+                  : undefined,
+                bankCode: attemptedSave
+                  ? bankValidationErrors.bankCode
+                  : undefined,
+                bankName: attemptedSave
+                  ? bankValidationErrors.bankName
+                  : undefined,
+              }}
+              onChangeField={setBankField}
+            />
+          )}
 
-        {activeSection === "amenities" ? (
-          <div className="space-y-5">
-            <div>
-              <p
-                className="mb-2 text-sm font-semibold"
-                style={{ color: palette.deep }}
-              >
-                Amenities
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {amenities.map((amenity) => {
-                  const selected = draft.amenityIds.includes(amenity._id);
-
-                  return (
-                    <button
-                      key={amenity._id}
-                      type="button"
-                      className="rounded-md border px-3 py-2 text-sm font-semibold"
-                      style={{
-                        borderColor: selected ? palette.purple : palette.border,
-                        backgroundColor: selected
-                          ? palette.chipBg
-                          : palette.cardBg,
-                        color: selected ? palette.purple : palette.deep,
-                      }}
-                      onClick={() => toggleAmenity(amenity._id)}
-                    >
-                      {amenity.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
+          {/* ── Amenities ── */}
+          {activeSection === "amenities" && (
+            <div className="space-y-6">
+              <div>
+                <p
+                  className="mb-3 font-mono text-[10px] uppercase tracking-widest"
+                  style={{ color: "var(--palette-soft-purple)" }}
                 >
-                  Available From
-                </label>
-                <input
-                  type="date"
-                  value={draft.availableFrom}
-                  onChange={(event) =>
-                    setField("availableFrom", event.target.value)
-                  }
-                  className="w-full rounded-lg border px-4 py-2 outline-none"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.deep,
-                  }}
-                />
+                  Amenities
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {amenities.map((amenity) => {
+                    const selected = draft.amenityIds.includes(amenity._id);
+                    return (
+                      <button
+                        key={amenity._id}
+                        type="button"
+                        onClick={() => toggleAmenity(amenity._id)}
+                        className="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+                        style={{
+                          borderColor: selected
+                            ? "#8b64c8"
+                            : "var(--palette-border)",
+                          backgroundColor: selected
+                            ? "#f0ebff"
+                            : "var(--palette-card-bg)",
+                          color: selected ? "#8b64c8" : "var(--palette-deep)",
+                        }}
+                      >
+                        {amenity.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Furnished
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setField("isFurnished", !draft.isFurnished)}
-                  className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors"
-                  style={{
-                    backgroundColor: draft.isFurnished
-                      ? palette.purple
-                      : palette.border,
-                  }}
-                >
-                  <span
-                    className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Available from">
+                  <input
+                    type="date"
+                    value={draft.availableFrom}
+                    onChange={(e) => setField("availableFrom", e.target.value)}
+                    className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                     style={{
-                      transform: draft.isFurnished
-                        ? "translateX(30px)"
-                        : "translateX(4px)",
+                      borderColor: "var(--palette-border)",
+                      backgroundColor: "var(--palette-input-bg)",
+                      color: "var(--palette-deep)",
                     }}
                   />
-                </button>
+                </Field>
+
+                <Field label="Furnished">
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setField("isFurnished", !draft.isFurnished)
+                      }
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                      style={{
+                        backgroundColor: draft.isFurnished
+                          ? "#8b64c8"
+                          : "var(--palette-border)",
+                      }}
+                    >
+                      <span
+                        className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                        style={{
+                          transform: draft.isFurnished
+                            ? "translateX(26px)"
+                            : "translateX(4px)",
+                        }}
+                      />
+                    </button>
+                  </div>
+                </Field>
               </div>
             </div>
-          </div>
-        ) : null}
+          )}
+        </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        {/* Footer strip */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3"
+          style={{ borderColor: "var(--palette-border)" }}
+        >
           <button
             type="button"
             onClick={() => navigate("/dashboard/my-properties")}
-            className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: palette.border, color: palette.deep }}
+            className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium"
+            style={{
+              borderColor: "var(--palette-border)",
+              color: "var(--palette-deep)",
+              backgroundColor: "var(--palette-card-muted-alt-bg)",
+            }}
           >
             Cancel
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              void submitUpdate();
-            }}
-            disabled={
-              isSubmitting || updateMutation.isPending || isRentedProperty
-            }
-            className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ backgroundColor: palette.purple, color: palette.pageBg }}
+            onClick={() => void submitUpdate()}
+            disabled={isSaving || isRentedProperty}
+            className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ backgroundColor: "#8b64c8" }}
           >
-            {isSubmitting || updateMutation.isPending ? (
-              <Loader2 size={16} className="animate-spin" />
+            {isSaving ? (
+              <Loader2 size={13} className="animate-spin" />
             ) : (
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={13} />
             )}
             {isRentedProperty
-              ? "Editing Locked"
-              : isSubmitting || updateMutation.isPending
-                ? "Saving..."
-                : "Save Changes"}
+              ? "Editing locked"
+              : isSaving
+                ? "Saving…"
+                : "Save changes"}
           </button>
         </div>
       </div>

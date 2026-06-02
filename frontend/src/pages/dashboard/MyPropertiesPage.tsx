@@ -3,38 +3,47 @@ import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 import MyPropertyList from "../../features/dashbord/componets/MyPropertyList";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import { palette } from "../../theme/palette";
 
 function MyPropertiesPage() {
   return (
     <div
       className="flex min-h-screen flex-col"
-      style={{ backgroundColor: palette.pageBg }}
+      style={{ backgroundColor: "var(--palette-page-bg)" }}
     >
       <DashboardNavbar activeTab="my-properties" />
 
-      <main className="flex-1 px-4 py-10 pt-24">
+      <main className="flex-1 px-4 py-10 pt-20">
         <div className="mx-auto max-w-6xl space-y-6">
-          <div className="flex items-start justify-between">
+          {/* Page header */}
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1
-                className="text-3xl font-extrabold"
-                style={{ color: palette.deep }}
+              <p
+                className="mb-1 font-mono text-[10px] uppercase tracking-widest"
+                style={{ color: "var(--palette-soft-purple)" }}
               >
-                My Properties
+                Owner · Listings
+              </p>
+              <h1
+                className="text-2xl font-semibold"
+                style={{ color: "var(--palette-deep)" }}
+              >
+                My properties
               </h1>
-              <p className="mt-2 text-sm" style={{ color: palette.purple }}>
-                Browse and manage your own property listings.
+              <p
+                className="mt-0.5 text-sm"
+                style={{ color: "var(--palette-soft-purple)" }}
+              >
+                Browse and manage your property listings.
               </p>
             </div>
 
             <Link
               to="/properties/create"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold"
-              style={{ backgroundColor: palette.purple, color: palette.pageBg }}
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#8b64c8" }}
             >
-              <Plus size={16} />
-              Add Property
+              <Plus size={14} />
+              Add property
             </Link>
           </div>
 

@@ -20,7 +20,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import Logo from "../../../components/logo";
 import useIsDark from "../../../lib/useTheme";
-import { palette } from "../../../theme/palette";
 import { useCurrentUser } from "../../auth/hooks/useCurrentUser";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { useMyProfile } from "../../profile/hooks/useProfileHooks";
@@ -59,8 +58,12 @@ function LandingNavbar() {
   const isDark = useIsDark();
 
   const navItems = useMemo(() => {
+    if (!isAuthenticated) {
+      return [baseNavItems[0]];
+    }
+
     const tenantNavItem =
-      isAuthenticated && profile?.role !== "admin"
+      profile?.role !== "admin"
         ? [{ to: "/my-rentals", label: "My Rentals", icon: KeyRound }]
         : [];
     return [

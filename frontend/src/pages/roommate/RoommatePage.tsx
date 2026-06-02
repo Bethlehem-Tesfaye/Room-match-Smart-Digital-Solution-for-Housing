@@ -41,64 +41,70 @@ const TypePicker: React.FC<TypePickerProps> = ({
   canChooseTypeA,
   typeABlockedMessage,
 }) => (
-  <main className="min-h-screen pt-15">
+  <main
+    className="min-h-screen pb-12"
+    style={{ backgroundColor: "var(--palette-page-bg)" }}
+  >
     <LandingNavbar />
-    <div className="flex min-h-[80vh] items-center justify-center bg-(--palette-page-bg) px-4">
-      <div className="w-full max-w-2xl">
-        <h1 className="mb-2 text-center font-serif text-3xl font-bold text-(--palette-deep)">
-          Welcome! How can we help you?
-        </h1>
-        <p className="mb-8 text-center text-[15px] leading-relaxed text-(--palette-soft-purple)">
-          Choose your situation to get started. This helps us find the right
-          matches for you.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => void onPick("TYPE_A")}
-            className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
-            aria-disabled={!canChooseTypeA}
-            title={
-              !canChooseTypeA
-                ? (typeABlockedMessage ??
-                  "This rental does not allow roommates")
-                : undefined
-            }
-            disabled={isSaving || !canChooseTypeA}
-          >
-            <div className="mb-3 text-3xl">🏠</div>
-            <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
-              I have a rented place
-            </h2>
-            <p className="text-sm leading-relaxed text-(--app-text)">
-              I'm already renting and looking for someone to share it with.
-            </p>
-            {!canChooseTypeA && typeABlockedMessage ? (
-              <p className="mt-3 text-[12px] leading-relaxed text-(--palette-purple)">
-                {typeABlockedMessage}
-              </p>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={() => void onPick("TYPE_B")}
-            className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
-          >
-            <div className="mb-3 text-3xl">🔍</div>
-            <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
-              I'm looking for a place
-            </h2>
-            <p className="text-sm leading-relaxed text-(--app-text)">
-              I don't have a place yet and want to find a roommate to rent with.
-            </p>
-          </button>
-        </div>
-        {isSaving && (
-          <p className="mt-6 animate-pulse text-center text-[12px] leading-relaxed text-(--palette-soft-purple)">
-            Saving your choice...
+    <div className="mx-auto max-w-7xl px-4 pt-24">
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <div className="w-full max-w-2xl">
+          <h1 className="mb-2 text-center font-serif text-3xl font-bold text-(--palette-deep)">
+            Welcome! How can we help you?
+          </h1>
+          <p className="mb-8 text-center text-[15px] leading-relaxed text-(--palette-soft-purple)">
+            Choose your situation to get started. This helps us find the right
+            matches for you.
           </p>
-        )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => void onPick("TYPE_A")}
+              className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
+              aria-disabled={!canChooseTypeA}
+              title={
+                !canChooseTypeA
+                  ? (typeABlockedMessage ??
+                    "This rental does not allow roommates")
+                  : undefined
+              }
+              disabled={isSaving || !canChooseTypeA}
+            >
+              <div className="mb-3 text-3xl">🏠</div>
+              <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
+                I have a rented place
+              </h2>
+              <p className="text-sm leading-relaxed text-(--app-text)">
+                I'm already renting and looking for someone to share it with.
+              </p>
+              {!canChooseTypeA && typeABlockedMessage ? (
+                <p className="mt-3 text-[12px] leading-relaxed text-(--palette-purple)">
+                  {typeABlockedMessage}
+                </p>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => void onPick("TYPE_B")}
+              className="rounded-2xl border-2 border-(--palette-border) bg-(--palette-card-bg) p-6 text-left shadow-sm transition hover:border-(--palette-purple) hover:shadow-md disabled:opacity-60"
+            >
+              <div className="mb-3 text-3xl">🔍</div>
+              <h2 className="mb-1 font-serif text-lg font-bold text-(--palette-deep)">
+                I'm looking for a place
+              </h2>
+              <p className="text-sm leading-relaxed text-(--app-text)">
+                I don't have a place yet and want to find a roommate to rent
+                with.
+              </p>
+            </button>
+          </div>
+          {isSaving && (
+            <p className="mt-6 animate-pulse text-center text-[12px] leading-relaxed text-(--palette-soft-purple)">
+              Saving your choice...
+            </p>
+          )}
+        </div>
       </div>
     </div>
   </main>
@@ -481,10 +487,13 @@ const RoommatePage: React.FC = () => {
 
   // ── main UI ───────────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen pt-15">
+    <main
+      className="min-h-screen pb-12"
+      style={{ backgroundColor: "var(--palette-page-bg)" }}
+    >
       <LandingNavbar />
-      <div className="bg-(--palette-page-bg) py-8">
-        <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto max-w-7xl px-4 pt-24">
+        <div>
           <h1 className="mb-6 text-center font-serif text-3xl font-bold text-(--palette-deep)">
             Find a roommate
           </h1>

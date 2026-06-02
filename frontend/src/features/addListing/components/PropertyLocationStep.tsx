@@ -1,5 +1,3 @@
-import { MapPin } from "lucide-react";
-import { palette } from "../../../theme/palette";
 import type { AddListingDraft, SetAddListingField } from "../types/types";
 
 interface PropertyLocationStepProps {
@@ -11,71 +9,69 @@ interface PropertyLocationStepProps {
   };
 }
 
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label
+        className="font-mono text-[10px] uppercase tracking-widest"
+        style={{ color: "var(--palette-soft-purple)" }}
+      >
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PropertyLocationStep({
   draft,
   setField,
   errors,
 }: PropertyLocationStepProps) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <div
-          className="mb-1 flex items-center gap-2 text-lg font-semibold"
-          style={{ color: palette.deep }}
-        >
-          <MapPin size={18} style={{ color: palette.purple }} />
-          Location
-        </div>
-        <p className="text-sm" style={{ color: palette.softPurple }}>
-          Where is your property located?
-        </p>
-      </div>
+  const inputStyle = (hasErr?: string) => ({
+    borderColor: hasErr ? "#dc2626" : "var(--palette-border)",
+    backgroundColor: "var(--palette-input-bg)",
+    color: "var(--palette-deep)",
+  });
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          Street Address *
-        </label>
+  return (
+    <div className="space-y-4">
+      <p className="text-sm" style={{ color: "var(--palette-soft-purple)" }}>
+        Where is your property located?
+      </p>
+
+      <Field label="Street address *" error={errors.address}>
         <input
           value={draft.address}
-          onChange={(event) => setField("address", event.target.value)}
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor: errors.address ? "rgb(220 38 38)" : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
+          onChange={(e) => setField("address", e.target.value)}
           placeholder="123 Main Street, Apt 4B"
+          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+          style={inputStyle(errors.address)}
         />
-        {errors.address ? (
-          <p className="text-sm text-red-600">{errors.address}</p>
-        ) : null}
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <label
-          className="text-sm font-semibold"
-          style={{ color: palette.deep }}
-        >
-          City *
-        </label>
+      <Field label="City *" error={errors.city}>
         <input
           value={draft.city}
-          onChange={(event) => setField("city", event.target.value)}
-          className="w-full rounded-lg border px-4 py-2 outline-none"
-          style={{
-            borderColor: errors.city ? "rgb(220 38 38)" : palette.border,
-            backgroundColor: palette.inputBg,
-            color: palette.deep,
-          }}
+          onChange={(e) => setField("city", e.target.value)}
           placeholder="Addis Ababa"
+          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+          style={inputStyle(errors.city)}
         />
-        {errors.city ? (
-          <p className="text-sm text-red-600">{errors.city}</p>
-        ) : null}
-      </div>
+      </Field>
     </div>
   );
 }

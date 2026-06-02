@@ -1,7 +1,13 @@
 import { useMemo } from "react";
-import { Building2, Eye, MessageCircle, Plus, UsersRound } from "lucide-react";
+import {
+  Building2,
+  Eye,
+  MessageCircle,
+  Plus,
+  UsersRound,
+  ArrowRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { palette } from "../../../theme/palette";
 import {
   useConversations,
   useOwnerPendingRentRequests,
@@ -34,32 +40,47 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
     useMyPropertiesOverview({ page: 1, limit: 4 });
   const { data: conversations, isPending: isConversationsPending } =
     useConversations();
-  const {
-    data: pendingRentRequests,
-    isPending: isRentRequestsPending,
-  } = useOwnerPendingRentRequests();
+  const { data: pendingRentRequests, isPending: isRentRequestsPending } =
+    useOwnerPendingRentRequests();
 
   const activeLabel = useMemo(
     () => tabLabels[activeTab as NonNullDashboardTabKey] ?? "Dashboard",
     [activeTab],
   );
 
+  // ── Style tokens ────────────────────────────────────────────────────────
+  const deep = "var(--palette-deep)";
+  const muted = "var(--palette-soft-purple)";
+  const border = "var(--palette-border)";
+  const cardBg = "var(--palette-card-bg)";
+  const mutedBg = "var(--palette-card-muted-alt-bg)";
+  const chipBg = "var(--palette-chip-bg)";
+  const accent = "#8b64c8";
+
   if (activeTab !== "dashboard") {
     return (
       <section className="space-y-6">
         <div
-          className="min-h-80 rounded-2xl border p-6"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
+          className="min-h-80 overflow-hidden rounded-2xl border"
+          style={{ borderColor: border, backgroundColor: cardBg }}
         >
-          <h2 className="text-2xl font-bold" style={{ color: palette.deep }}>
-            {activeLabel}
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: palette.softPurple }}>
-            UI shell is ready. Content for this section can be added next.
-          </p>
+          {/* Bento header strip */}
+          <div
+            className="flex items-center border-b px-5 py-3"
+            style={{ borderColor: border, backgroundColor: mutedBg }}
+          >
+            <p
+              className="font-mono text-[10px] uppercase tracking-widest"
+              style={{ color: muted }}
+            >
+              Dashboard · {activeLabel}
+            </p>
+          </div>
+          <div className="px-5 py-6">
+            <p className="text-sm" style={{ color: muted }}>
+              Content for this section loads here.
+            </p>
+          </div>
         </div>
       </section>
     );
@@ -72,317 +93,230 @@ function DashboardTabs({ activeTab }: DashboardTabsProps) {
   const inquiriesCount = pendingRentRequests?.length ?? 0;
   const properties = myProperties?.properties ?? [];
 
+  const statCards = [
+    {
+      label: "Total properties",
+      value: isCountsPending ? null : totalProperties,
+      icon: Building2,
+      bg: chipBg,
+    },
+    {
+      label: "Active listings",
+      value: isCountsPending ? null : activeListings,
+      icon: Eye,
+      bg: "var(--palette-card-muted-bg)",
+    },
+    {
+      label: "Messages",
+      value: isConversationsPending ? null : messagesCount,
+      icon: MessageCircle,
+      bg: mutedBg,
+    },
+    {
+      label: "Pending inquiries",
+      value: isRentRequestsPending ? null : inquiriesCount,
+      icon: UsersRound,
+      bg: "var(--palette-section-bg)",
+    },
+  ];
+
   return (
-    <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <section className="space-y-5">
+      {/* ── Page header ── */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold" style={{ color: palette.deep }}>
-            Welcome back, {firstName}!
+          <p
+            className="mb-1 font-mono text-[10px] uppercase tracking-widest"
+            style={{ color: muted }}
+          >
+            Owner · Dashboard
+          </p>
+          <h2 className="text-2xl font-semibold" style={{ color: deep }}>
+            Welcome back, {firstName}
           </h2>
-          <p className="mt-1 text-md" style={{ color: palette.softPurple }}>
+          <p className="mt-0.5 text-sm" style={{ color: muted }}>
             Manage your properties and connect with tenants
           </p>
         </div>
 
         <Link
           to="/properties/create"
-          className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white"
-          style={{ backgroundColor: palette.purple, color: palette.pageBg }}
+          className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: accent }}
         >
-          <Plus size={16} />
-          Add Property
+          <Plus size={14} />
+          Add property
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div
-          className="rounded-2xl border p-5"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Total Properties
-              </p>
-              <p
-                className="mt-2 text-4xl font-bold"
-                style={{ color: palette.deep }}
-              >
-                {isCountsPending ? "..." : totalProperties}
-              </p>
-            </div>
-            <span
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: palette.chipBg }}
+      {/* ── Stat cards — bento grid ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className="overflow-hidden rounded-2xl border"
+              style={{ borderColor: border, backgroundColor: cardBg }}
             >
-              <Building2 size={18} style={{ color: palette.deep }} />
-            </span>
-          </div>
-        </div>
+              {/* Header strip */}
+              <div
+                className="flex items-center justify-between border-b px-4 py-2.5"
+                style={{ borderColor: border, backgroundColor: card.bg }}
+              >
+                <p
+                  className="font-mono text-[10px] uppercase tracking-widest"
+                  style={{ color: muted }}
+                >
+                  {card.label}
+                </p>
+                <div
+                  className="flex h-6 w-6 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: chipBg }}
+                >
+                  <Icon size={12} style={{ color: accent }} />
+                </div>
+              </div>
 
-        <div
-          className="rounded-2xl border p-5"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Active Listings
-              </p>
-              <p
-                className="mt-2 text-4xl font-bold"
-                style={{ color: palette.deep }}
-              >
-                {isCountsPending ? "..." : activeListings}
-              </p>
+              {/* Value */}
+              <div className="px-4 py-4">
+                {card.value === null ? (
+                  <div className="skeleton h-8 w-12 rounded-lg" />
+                ) : (
+                  <p className="text-3xl font-bold" style={{ color: deep }}>
+                    {card.value}
+                  </p>
+                )}
+              </div>
             </div>
-            <span
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: palette.cardMutedBg }}
-            >
-              <Eye size={18} style={{ color: palette.deep }} />
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="rounded-2xl border p-5"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Messages
-              </p>
-              <p
-                className="mt-2 text-4xl font-bold"
-                style={{ color: palette.deep }}
-              >
-                {isConversationsPending ? "..." : messagesCount}
-              </p>
-            </div>
-            <span
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: palette.cardMutedAltBg }}
-            >
-              <MessageCircle size={18} style={{ color: palette.deep }} />
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="rounded-2xl border p-5"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Inquiries
-              </p>
-              <p
-                className="mt-2 text-4xl font-bold"
-                style={{ color: palette.deep }}
-              >
-                {isRentRequestsPending ? "..." : inquiriesCount}
-              </p>
-            </div>
-            <span
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: palette.sectionBg }}
-            >
-              <UsersRound size={18} style={{ color: palette.deep }} />
-            </span>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      {/* ── Properties list card ── */}
+      <div
+        className="overflow-hidden rounded-2xl border"
+        style={{ borderColor: border, backgroundColor: cardBg }}
+      >
+        {/* Bento header */}
         <div
-          className="rounded-2xl border p-6 xl:col-span-2"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
+          className="flex items-center justify-between border-b px-5 py-3"
+          style={{ borderColor: border, backgroundColor: mutedBg }}
         >
-          <div className="mb-5 flex items-center justify-between">
-            <h3
-              className="text-2xl font-semibold"
-              style={{ color: palette.deep }}
-            >
-              Your Properties
-            </h3>
-            <Link
-              to="/dashboard/my-properties"
-              className="cursor-pointer text-sm font-semibold"
-              style={{ color: palette.purple }}
-            >
-              View All →
-            </Link>
-          </div>
+          <p
+            className="font-mono text-[10px] uppercase tracking-widest"
+            style={{ color: muted }}
+          >
+            Your properties
+          </p>
+          <Link
+            to="/dashboard/my-properties"
+            className="inline-flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-70"
+            style={{ color: accent }}
+          >
+            View all
+            <ArrowRight size={11} />
+          </Link>
+        </div>
 
-          <div className="space-y-4">
-            {isPropertiesPending ? (
-              Array.from({ length: 4 }).map((_, index) => (
+        <div className="divide-y" style={{ borderColor: border }}>
+          {isPropertiesPending ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div className="skeleton h-16 w-24 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton h-4 w-40 rounded" />
+                  <div className="skeleton h-3 w-56 rounded" />
+                  <div className="flex gap-2">
+                    <div className="skeleton h-5 w-20 rounded" />
+                    <div className="skeleton h-5 w-14 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : properties.length === 0 ? (
+            <div className="px-5 py-8 text-center">
+              <p className="text-sm" style={{ color: muted }}>
+                No properties yet.
+              </p>
+            </div>
+          ) : (
+            properties.slice(0, 4).map((property) => {
+              const primaryImage =
+                property.images.find((img) => img.isPrimary)?.imageUrl ||
+                property.images[0]?.imageUrl ||
+                "";
+
+              const statusColors: Record<
+                string,
+                { bg: string; color: string }
+              > = {
+                Active: { bg: "#e6f9f0", color: "#166534" },
+                Rented: { bg: "#f0ebff", color: "#8b64c8" },
+                Reserved: { bg: "#fef9ec", color: "#92400e" },
+              };
+              const sc = statusColors[property.status] ?? {
+                bg: chipBg,
+                color: deep,
+              };
+
+              return (
                 <div
-                  key={`property-skeleton-${index}`}
-                  className="flex items-center gap-4"
+                  key={property._id}
+                  className="flex items-center gap-4 px-5 py-4"
                 >
-                  <div className="skeleton h-20 w-28 rounded-xl" />
+                  {/* Thumbnail */}
+                  <div
+                    className="h-16 w-24 shrink-0 overflow-hidden rounded-xl"
+                    style={{ backgroundColor: "var(--palette-card-muted-bg)" }}
+                  >
+                    {primaryImage ? (
+                      <img
+                        src={primaryImage}
+                        alt={property.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Building2 size={16} style={{ color: muted }} />
+                      </div>
+                    )}
+                  </div>
 
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="skeleton h-5 w-44 rounded-md" />
-                    <div className="skeleton h-4 w-60 rounded-md" />
-                    <div className="flex items-center gap-3">
-                      <div className="skeleton h-6 w-24 rounded-md" />
-                      <div className="skeleton h-5 w-16 rounded-md" />
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-sm font-semibold"
+                      style={{ color: deep }}
+                    >
+                      {property.title}
+                    </p>
+                    <p
+                      className="mt-0.5 truncate text-xs"
+                      style={{ color: muted }}
+                    >
+                      {property.city}, {property.address}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: accent }}
+                      >
+                        {new Intl.NumberFormat().format(property.price)}/mo
+                      </span>
+                      <span
+                        className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ backgroundColor: sc.bg, color: sc.color }}
+                      >
+                        {property.status}
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))
-            ) : properties.length === 0 ? (
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                No properties available yet.
-              </p>
-            ) : (
-              properties.slice(0, 4).map((property) => {
-                const primaryImage =
-                  property.images.find((image) => image.isPrimary)?.imageUrl ||
-                  property.images[0]?.imageUrl ||
-                  "";
-
-                return (
-                  <div key={property._id} className="flex items-center gap-4">
-                    <div
-                      className="h-20 w-28 overflow-hidden rounded-xl"
-                      style={{ backgroundColor: palette.cardMutedBg }}
-                    >
-                      {primaryImage ? (
-                        <img
-                          src={primaryImage}
-                          alt={property.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="truncate text-xl font-semibold"
-                        style={{ color: palette.deep }}
-                      >
-                        {property.title}
-                      </p>
-                      <p
-                        className="text-md"
-                        style={{ color: palette.softPurple }}
-                      >
-                        {property.city}, {property.address}
-                      </p>
-                      <div className="mt-1 flex items-center gap-3">
-                        <span
-                          className="text-xl font-bold"
-                          style={{ color: palette.purple }}
-                        >
-                          {new Intl.NumberFormat().format(property.price)}/mo
-                        </span>
-                        <span
-                          className="rounded-md px-2 py-1 text-xs font-semibold"
-                          style={{
-                            backgroundColor:
-                              property.status === "Active"
-                                ? palette.cardMutedBg
-                                : palette.chipBg,
-                            color: palette.deep,
-                          }}
-                        >
-                          {property.status.toLowerCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+              );
+            })
+          )}
         </div>
-
-        {/* <div
-          className="rounded-2xl border p-6"
-          style={{
-            borderColor: palette.border,
-            backgroundColor: palette.cardBg,
-          }}
-        >
-          <div className="mb-5 flex items-center justify-between">
-            <h3
-              className="text-2xl font-semibold"
-              style={{ color: palette.deep }}
-            >
-              Recent Messages
-            </h3>
-            <button
-              type="button"
-              className="cursor-pointer text-sm font-semibold"
-              style={{ color: palette.purple }}
-            >
-              View All →
-            </button>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <p
-                  className="text-xl font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Jessica Brown
-                </p>
-                <span className="text-sm" style={{ color: palette.softPurple }}>
-                  Mar 19
-                </span>
-              </div>
-              <p className="text-sm" style={{ color: palette.purple }}>
-                Re: Sunny Room in Shared House
-              </p>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                Thanks! Can I schedule a visit this week?
-              </p>
-            </div>
-
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <p
-                  className="text-xl font-semibold"
-                  style={{ color: palette.deep }}
-                >
-                  Sarah Johnson
-                </p>
-                <span className="text-sm" style={{ color: palette.softPurple }}>
-                  Mar 17
-                </span>
-              </div>
-              <p className="text-sm" style={{ color: palette.purple }}>
-                Re: Modern Luxury Apartment in Downtown
-              </p>
-              <p className="text-sm" style={{ color: palette.softPurple }}>
-                I’m interested, is the unit still available?
-              </p>
-            </div>
-          </div>
-        </div> */}
       </div>
     </section>
   );

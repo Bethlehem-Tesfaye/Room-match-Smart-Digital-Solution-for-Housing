@@ -1,17 +1,15 @@
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import SettingsPanel from "../../features/setting/components/SettingsPanel";
-import { palette } from "../../theme/palette";
 
 function SettingPage() {
   return (
-    <main className="pt-24">
+    <main
+      className="min-h-screen pt-14"
+      style={{ backgroundColor: "var(--palette-page-bg)" }}
+    >
       <LandingNavbar />
-
-      <section
-        className="-mt-10 px-4 py-12"
-        style={{ backgroundColor: palette.pageBg }}
-      >
-        <div className="mx-auto max-w-6xl">
+      <section className="px-4 py-10">
+        <div className="mx-auto max-w-2xl">
           <SettingsPanel />
         </div>
       </section>

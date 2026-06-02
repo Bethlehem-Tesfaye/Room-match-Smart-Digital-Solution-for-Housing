@@ -25,15 +25,16 @@ import type {
   RentRequest,
   RentRequestParty,
 } from "../../features/message/types/type";
-import { palette } from "../../theme/palette";
 
 type RentalsTab = "requested" | "rented" | "termination" | "history";
 
 function TabUnreadBadge({ count }: { count: number }) {
   if (count <= 0) return null;
-
   return (
-    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+    <span
+      className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+      style={{ backgroundColor: "#8b64c8" }}
+    >
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -43,112 +44,62 @@ const pendingPaymentStorageKey = "pending_rental_payment_contract_id";
 
 const getListing = (
   listing: RentRequest["listingId"],
-): ConversationListing | null => {
-  return typeof listing === "string" ? null : listing;
-};
+): ConversationListing | null => (typeof listing === "string" ? null : listing);
 
-const getParty = (party: RentRequest["ownerId"]): RentRequestParty | null => {
-  return typeof party === "string" ? null : party;
-};
+const getParty = (party: RentRequest["ownerId"]): RentRequestParty | null =>
+  typeof party === "string" ? null : party;
 
 const getTerminationRequester = (
   requester: RentRequest["terminationRequestedBy"],
-): RentRequestParty | null => {
-  return typeof requester === "string" ? null : (requester ?? null);
-};
+): RentRequestParty | null =>
+  typeof requester === "string" ? null : (requester ?? null);
 
+// ── Status badge config — uses palette vars like the rest of the app ─────────
 const getStatusMeta = (status: ContractStatus) => {
   switch (status) {
     case "ACTIVE":
-      return {
-        label: "Rented",
-        className: "bg-emerald-100 text-emerald-700",
-      };
+      return { label: "Rented", bg: "#e6f9f0", color: "#166534" };
     case "RESERVED":
-      return {
-        label: "Awaiting Payment",
-        className: "bg-amber-100 text-amber-700",
-      };
+      return { label: "Awaiting payment", bg: "#fef9ec", color: "#92400e" };
     case "REJECTED":
-      return {
-        label: "Rejected",
-        className: "bg-rose-100 text-rose-700",
-      };
+      return { label: "Rejected", bg: "#fff1f2", color: "#be123c" };
     case "CANCELLED":
-      return {
-        label: "Cancelled",
-        className: "bg-zinc-100 text-zinc-700",
-      };
+      return { label: "Cancelled", bg: "#f5f1ff", color: "#6b5fa8" };
     case "PENDING":
-      return {
-        label: "Request Sent",
-        className: "bg-sky-100 text-sky-700",
-      };
+      return { label: "Request sent", bg: "#f0ebff", color: "#8b64c8" };
     case "TERMINATION_PENDING":
-      return {
-        label: "Termination Notice Active",
-        className: "bg-orange-100 text-orange-700",
-      };
+      return { label: "Notice active", bg: "#fff8e7", color: "#92400e" };
     case "TERMINATED":
-      return {
-        label: "Terminated",
-        className: "bg-zinc-100 text-zinc-700",
-      };
+      return { label: "Terminated", bg: "#f5f1ff", color: "#6b5fa8" };
     default:
-      return {
-        label: status,
-        className: "bg-zinc-100 text-zinc-700",
-      };
+      return { label: status, bg: "#f5f1ff", color: "#6b5fa8" };
   }
 };
 
 const formatPrice = (listing: ConversationListing | null) => {
-  if (listing?.price == null) {
-    return "Price not available";
-  }
-
+  if (listing?.price == null) return "Price not available";
   const currency = listing.currency || "ETB";
   return `${new Intl.NumberFormat().format(listing.price)} ${currency}/mo`;
 };
 
 const getListingStateMeta = (listing: ConversationListing | null) => {
-  if (!listing?.status || listing.status === "Active") {
-    return null;
-  }
-
-  if (listing.status === "Reserved") {
-    return {
-      label: "Room Reserved",
-      className: "bg-amber-100 text-amber-700",
-    };
-  }
-
-  if (listing.status === "Rented") {
-    return {
-      label: "Room Rented",
-      className: "bg-rose-100 text-rose-700",
-    };
-  }
-
-  return {
-    label: listing.status,
-    className: "bg-zinc-100 text-zinc-700",
-  };
+  if (!listing?.status || listing.status === "Active") return null;
+  if (listing.status === "Reserved")
+    return { label: "Room reserved", bg: "#fef9ec", color: "#92400e" };
+  if (listing.status === "Rented")
+    return { label: "Room rented", bg: "#fff1f2", color: "#be123c" };
+  return { label: listing.status, bg: "#f5f1ff", color: "#6b5fa8" };
 };
 
 const formatRemainingTime = (paymentDueAt?: string | null) => {
   if (!paymentDueAt) return null;
-
   const remainingMs = new Date(paymentDueAt).getTime() - Date.now();
   if (Number.isNaN(remainingMs)) return null;
-
   if (remainingMs <= 0) return "Expired";
-
   const totalSeconds = Math.floor(remainingMs / 1000);
   const days = Math.floor(totalSeconds / 86_400);
   const hours = Math.floor((totalSeconds % 86_400) / 3_600);
   const minutes = Math.floor((totalSeconds % 3_600) / 60);
-
   if (days > 0) return `${days}d ${hours}h ${minutes}m left`;
   if (hours > 0) return `${hours}h ${minutes}m left`;
   return `${minutes}m left`;
@@ -156,26 +107,19 @@ const formatRemainingTime = (paymentDueAt?: string | null) => {
 
 const formatNoticeCountdown = (effectiveDate?: string | null) => {
   if (!effectiveDate) return null;
-
   const remainingMs = new Date(effectiveDate).getTime() - Date.now();
   if (Number.isNaN(remainingMs)) return null;
-
   if (remainingMs <= 0) return "Terminates today";
-
   const totalDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
-
   if (totalDays === 30) return "30 days remaining";
   if (totalDays === 1) return "1 day remaining";
-
   return `${totalDays} days remaining`;
 };
 
 const formatNoticeDate = (value?: string | null) => {
   if (!value) return "Not available";
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Not available";
-
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -185,24 +129,51 @@ const formatNoticeDate = (value?: string | null) => {
 
 const getErrorMessage = (error: unknown) => {
   if (typeof error === "object" && error !== null && "response" in error) {
-    const maybeResponse = error as {
+    const e = error as {
       response?: { data?: { message?: string } };
       message?: string;
     };
-
-    return (
-      maybeResponse.response?.data?.message ||
-      maybeResponse.message ||
-      "Request failed"
-    );
+    return e.response?.data?.message || e.message || "Request failed";
   }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
+  if (error instanceof Error) return error.message;
   return "Request failed";
 };
+
+// ── Shared ghost action button ────────────────────────────────────────────────
+function ActionBtn({
+  onClick,
+  disabled,
+  children,
+  variant = "primary",
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  variant?: "primary" | "danger" | "ghost";
+}) {
+  const styles: Record<string, { bg: string; color: string; border: string }> =
+    {
+      primary: { bg: "#8b64c8", color: "#ffffff", border: "transparent" },
+      danger: { bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
+      ghost: { bg: "#f0ebff", color: "#2e1f4a", border: "#e5d9f9" },
+    };
+  const s = styles[variant];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
+      style={{
+        backgroundColor: s.bg,
+        color: s.color,
+        border: `1px solid ${s.border}`,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 function MyRentalsPage() {
   const [activeTab, setActiveTab] = useState<RentalsTab>("rented");
@@ -231,10 +202,8 @@ function MyRentalsPage() {
       requestedMarkStartedRef.current = false;
       return;
     }
-
     if (requestedMarkStartedRef.current) return;
     requestedMarkStartedRef.current = true;
-
     void markRequestedAsRead().catch(() => {
       requestedMarkStartedRef.current = false;
     });
@@ -245,10 +214,8 @@ function MyRentalsPage() {
       terminationMarkStartedRef.current = false;
       return;
     }
-
     if (terminationMarkStartedRef.current) return;
     terminationMarkStartedRef.current = true;
-
     void markTerminationAsRead().catch(() => {
       terminationMarkStartedRef.current = false;
     });
@@ -259,15 +226,9 @@ function MyRentalsPage() {
       paymentReturnHandledRef.current = false;
       return;
     }
-
-    if (paymentReturnHandledRef.current) {
-      return;
-    }
-
+    if (paymentReturnHandledRef.current) return;
     paymentReturnHandledRef.current = true;
-
     const contractId = window.localStorage.getItem(pendingPaymentStorageKey);
-
     const finalizePayment = async () => {
       if (!contractId) {
         toast.success("Payment completed successfully.");
@@ -275,7 +236,6 @@ function MyRentalsPage() {
         setSearchParams({}, { replace: true });
         return;
       }
-
       try {
         await api.post("/api/payments/confirm", { contractId });
         toast.success("Payment completed successfully.");
@@ -287,37 +247,27 @@ function MyRentalsPage() {
         setSearchParams({}, { replace: true });
       }
     };
-
     void finalizePayment();
   }, [rentalsQuery, searchParams, setSearchParams]);
 
   const contracts = rentalsQuery.data ?? [];
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowTick(Date.now());
-    }, 1000);
-
+    const timer = window.setInterval(() => setNowTick(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
   const requestContracts = useMemo(
     () =>
       contracts
-        .filter((contract) => {
-          if (contract.status === "PENDING") return true;
-
-          if (contract.status !== "RESERVED") return false;
-
-          if (!contract.paymentDueAt) return true;
-
-          return new Date(contract.paymentDueAt).getTime() > nowTick;
+        .filter((c) => {
+          if (c.status === "PENDING") return true;
+          if (c.status !== "RESERVED") return false;
+          if (!c.paymentDueAt) return true;
+          return new Date(c.paymentDueAt).getTime() > nowTick;
         })
         .sort((a, b) => {
-          if (a.status !== b.status) {
-            return a.status === "RESERVED" ? -1 : 1;
-          }
-
+          if (a.status !== b.status) return a.status === "RESERVED" ? -1 : 1;
           return (
             new Date(b.createdAt || 0).getTime() -
             new Date(a.createdAt || 0).getTime()
@@ -328,41 +278,24 @@ function MyRentalsPage() {
 
   const rentedContracts = useMemo(
     () =>
-      contracts.filter((contract) =>
-        ["ACTIVE", "TERMINATION_PENDING"].includes(contract.status),
+      contracts.filter((c) =>
+        ["ACTIVE", "TERMINATION_PENDING"].includes(c.status),
       ),
     [contracts],
   );
 
   const terminationContracts = useMemo(
-    () =>
-      contracts.filter((contract) => contract.status === "TERMINATION_PENDING"),
+    () => contracts.filter((c) => c.status === "TERMINATION_PENDING"),
     [contracts],
   );
 
   const historyContracts = useMemo(
     () =>
-      contracts.filter((contract) =>
-        ["REJECTED", "CANCELLED", "TERMINATED"].includes(contract.status),
+      contracts.filter((c) =>
+        ["REJECTED", "CANCELLED", "TERMINATED"].includes(c.status),
       ),
     [contracts],
   );
-
-  /* useEffect(() => {
-    if (
-      !rentalsQuery.isLoading &&
-      activeTab === "requested" &&
-      requestContracts.length === 0 &&
-      rentedContracts.length > 0
-    ) {
-      setActiveTab("rented");
-    }
-  }, [
-    activeTab,
-    rentalsQuery.isLoading,
-    requestContracts.length,
-    rentedContracts.length,
-  ]); */
 
   const visibleContracts =
     activeTab === "requested"
@@ -379,33 +312,25 @@ function MyRentalsPage() {
       await rentalsQuery.refetch();
       toast.success("Rental request deleted");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to cancel request";
-      toast.error(message);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to cancel request",
+      );
     }
   };
 
   const handleCompletePayment = async (contractId: string) => {
     setPendingPaymentContractId(contractId);
-
     try {
       const response = await api.post<{ checkout_url: string }>(
         "/api/payments/initialize",
         { contractId },
       );
-
       const checkoutUrl = response.data.checkout_url;
-
-      if (!checkoutUrl) {
-        throw new Error("Missing checkout URL");
-      }
-
+      if (!checkoutUrl) throw new Error("Missing checkout URL");
       window.localStorage.setItem(pendingPaymentStorageKey, contractId);
-
       window.location.href = checkoutUrl;
     } catch (error) {
-      const message = getErrorMessage(error) || "Failed to start payment";
-      toast.error(message);
+      toast.error(getErrorMessage(error) || "Failed to start payment");
       window.localStorage.removeItem(pendingPaymentStorageKey);
     } finally {
       setPendingPaymentContractId(null);
@@ -418,11 +343,11 @@ function MyRentalsPage() {
       await rentalsQuery.refetch();
       toast.success("Termination notice created");
     } catch (error) {
-      const message =
+      toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create termination notice";
-      toast.error(message);
+          : "Failed to create termination notice",
+      );
     }
   };
 
@@ -432,11 +357,11 @@ function MyRentalsPage() {
       await rentalsQuery.refetch();
       toast.success("Termination notice withdrawn");
     } catch (error) {
-      const message =
+      toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to withdraw termination notice";
-      toast.error(message);
+          : "Failed to withdraw termination notice",
+      );
     }
   };
 
@@ -444,159 +369,137 @@ function MyRentalsPage() {
     const requester = contract.terminationRequestedBy;
     const requesterId =
       typeof requester === "string" ? requester : requester?._id;
-
     return requesterId === user?.id;
   };
 
+  // ── Style tokens ──────────────────────────────────────────────────────────
+  const deep = "var(--palette-deep)";
+  const muted = "var(--palette-soft-purple)";
+  const cardBg = "var(--palette-card-bg)";
+  const mutedAltBg = "var(--palette-card-muted-alt-bg)";
+  const border = "var(--palette-border)";
+  const chipBg = "var(--palette-chip-bg)";
+  const pageBg = "var(--palette-page-bg)";
+
+  const tabs: {
+    id: RentalsTab;
+    label: string;
+    count: number;
+    badge?: number;
+  }[] = [
+    { id: "rented", label: "Rented", count: rentedContracts.length },
+    {
+      id: "requested",
+      label: "Requested",
+      count: requestContracts.length,
+      badge: requestedUnreadCount,
+    },
+    {
+      id: "termination",
+      label: "Termination",
+      count: terminationContracts.length,
+      badge: terminationUnreadCount,
+    },
+    { id: "history", label: "History", count: historyContracts.length },
+  ];
+
   return (
-    <main
-      className="min-h-screen pt-17"
-      style={{ backgroundColor: palette.pageBg }}
-    >
+    <main className="min-h-screen pb-12" style={{ backgroundColor: pageBg }}>
       <LandingNavbar />
 
-      <section className="mx-auto max-w-6xl px-4 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="mx-auto max-w-7xl px-4 pt-24">
+        {/* ── Page header ── */}
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-semibold text-(--palette-deep)">
+            <p
+              className="mb-1 text-xs uppercase tracking-widest"
+              style={{ color: muted }}
+            >
+              Tenant · Rentals
+            </p>
+            <h1 className="text-2xl font-semibold" style={{ color: deep }}>
               My Rentals
             </h1>
-            <p className="mt-2 text-sm text-(--palette-soft-purple)">
-              Track your rental requests, payment status, and active rentals in
-              one place.
+            <p className="mt-1 text-sm" style={{ color: muted }}>
+              Track requests, payments, and active rentals.
             </p>
           </div>
 
-          <div className="grid min-w-[16rem] grid-cols-2 gap-3">
-            <div
-              className="rounded-2xl border p-4"
-              style={{
-                borderColor: palette.border,
-                backgroundColor: palette.cardBg,
-              }}
-            >
-              <p className="text-xs font-semibold text-(--palette-soft-purple)">
-                Rented
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-(--palette-deep)">
-                {rentalsQuery.isLoading ? "..." : rentedContracts.length}
-              </p>
-            </div>
-            <div
-              className="rounded-2xl border p-4"
-              style={{
-                borderColor: palette.border,
-                backgroundColor: palette.cardBg,
-              }}
-            >
-              <p className="text-xs font-semibold text-(--palette-soft-purple)">
-                Requested
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-(--palette-deep)">
-                {rentalsQuery.isLoading ? "..." : requestContracts.length}
-              </p>
-            </div>
+          {/* Stat chips */}
+          <div className="flex gap-3">
+            {[
+              { label: "Active", value: rentedContracts.length },
+              { label: "Pending", value: requestContracts.length },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border px-5 py-3 text-center"
+                style={{ borderColor: border, backgroundColor: cardBg }}
+              >
+                <p className="text-xs font-medium" style={{ color: muted }}>
+                  {stat.label}
+                </p>
+                <p
+                  className="mt-1 text-2xl font-semibold"
+                  style={{ color: deep }}
+                >
+                  {rentalsQuery.isLoading ? "—" : stat.value}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("rented")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "rented"
-                ? "text-(--palette-page-bg)"
-                : "text-(--palette-deep)"
-            }`}
-            style={{
-              backgroundColor:
-                activeTab === "rented" ? palette.purple : palette.cardBg,
-              border: `1px solid ${palette.border}`,
-            }}
-          >
-            Rented ({rentedContracts.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("requested")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "requested"
-                ? "text-(--palette-page-bg)"
-                : "text-(--palette-deep)"
-            }`}
-            style={{
-              backgroundColor:
-                activeTab === "requested" ? palette.purple : palette.cardBg,
-              border: `1px solid ${palette.border}`,
-            }}
-          >
-            <span className="inline-flex items-center">
-              Requested ({requestContracts.length})
-              <TabUnreadBadge count={requestedUnreadCount} />
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("termination")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "termination"
-                ? "text-(--palette-page-bg)"
-                : "text-(--palette-deep)"
-            }`}
-            style={{
-              backgroundColor:
-                activeTab === "termination" ? palette.purple : palette.cardBg,
-              border: `1px solid ${palette.border}`,
-            }}
-          >
-            <span className="inline-flex items-center">
-              Termination ({terminationContracts.length})
-              <TabUnreadBadge count={terminationUnreadCount} />
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("history")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "history"
-                ? "text-(--palette-page-bg)"
-                : "text-(--palette-deep)"
-            }`}
-            style={{
-              backgroundColor:
-                activeTab === "history" ? palette.purple : palette.cardBg,
-              border: `1px solid ${palette.border}`,
-            }}
-          >
-            History ({historyContracts.length})
-          </button>
+        {/* ── Filter tabs ── */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: isActive ? "#8b64c8" : cardBg,
+                  color: isActive ? "#ffffff" : deep,
+                  border: `1px solid ${isActive ? "#8b64c8" : border}`,
+                }}
+              >
+                {tab.label}
+                <span
+                  className="ml-1.5 text-xs"
+                  style={{ opacity: isActive ? 0.8 : 0.5 }}
+                >
+                  {tab.count}
+                </span>
+                {tab.badge ? <TabUnreadBadge count={tab.badge} /> : null}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="mt-6 space-y-4">
+        {/* ── Contract list ── */}
+        <div className="space-y-4">
           {rentalsQuery.isLoading ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={`rental-skeleton-${index}`}
-                className="skeleton h-44 rounded-3xl"
-              />
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton h-48 rounded-2xl" />
             ))
           ) : visibleContracts.length === 0 ? (
             <div
-              className="rounded-3xl border p-8 text-sm"
+              className="rounded-2xl border px-6 py-10 text-center text-sm"
               style={{
-                borderColor: palette.border,
-                backgroundColor: palette.cardBg,
-                color: palette.softPurple,
+                borderColor: border,
+                backgroundColor: cardBg,
+                color: muted,
               }}
             >
               {activeTab === "requested"
-                ? "You do not have any active rental requests right now."
+                ? "No active rental requests."
                 : activeTab === "rented"
-                  ? "You do not have any active rentals yet."
+                  ? "No active rentals yet."
                   : activeTab === "termination"
-                    ? "No termination requests right now."
+                    ? "No termination requests."
                     : "No rental history yet."}
             </div>
           ) : (
@@ -622,300 +525,329 @@ function MyRentalsPage() {
               return (
                 <article
                   key={contract._id}
-                  className="rounded-3xl border p-6"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.cardBg,
-                  }}
+                  className="rounded-2xl border"
+                  style={{ borderColor: border, backgroundColor: cardBg }}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl"
-                          style={{ backgroundColor: palette.cardMutedAltBg }}
-                        >
-                          <Building2
-                            size={20}
-                            style={{ color: palette.deep }}
-                          />
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h2 className="truncate text-xl font-semibold text-(--palette-deep)">
-                              {listing?.title || "Rental Listing"}
-                            </h2>
-                            <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
-                            >
-                              {statusMeta.label}
-                            </span>
-                            {listingStateMeta ? (
-                              <span
-                                className={`rounded-full px-3 py-1 text-xs font-semibold ${listingStateMeta.className}`}
-                              >
-                                {listingStateMeta.label}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          <p className="mt-1 text-sm text-(--palette-soft-purple)">
-                            {[listing?.city, listing?.address]
-                              .filter(Boolean)
-                              .join(", ") || "Location not available"}
-                          </p>
-                        </div>
+                  {/* Card header */}
+                  <div
+                    className="flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4"
+                    style={{ borderColor: border }}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                        style={{ backgroundColor: chipBg }}
+                      >
+                        <Building2 size={16} style={{ color: "#8b64c8" }} />
                       </div>
+                      <div className="min-w-0">
+                        <h2
+                          className="truncate text-sm font-semibold"
+                          style={{ color: deep }}
+                        >
+                          {listing?.title || "Rental listing"}
+                        </h2>
+                        <p className="mt-0.5 text-xs" style={{ color: muted }}>
+                          {[listing?.city, listing?.address]
+                            .filter(Boolean)
+                            .join(", ") || "Location not available"}
+                        </p>
+                      </div>
+                    </div>
 
-                      <div className="mt-5 grid gap-4 md:grid-cols-2">
-                        <div
-                          className="rounded-2xl border p-4"
+                    {/* Status badges */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        style={{
+                          backgroundColor: statusMeta.bg,
+                          color: statusMeta.color,
+                        }}
+                      >
+                        {statusMeta.label}
+                      </span>
+                      {listingStateMeta && (
+                        <span
+                          className="rounded-full px-2.5 py-0.5 text-xs font-medium"
                           style={{
-                            borderColor: palette.border,
-                            backgroundColor: palette.cardMutedAltBg,
+                            backgroundColor: listingStateMeta.bg,
+                            color: listingStateMeta.color,
                           }}
                         >
-                          <p className="text-xs font-semibold uppercase tracking-wide text-(--palette-soft-purple)">
-                            Property Details
-                          </p>
-                          <p className="mt-2 text-base font-semibold text-(--palette-deep)">
-                            {formatPrice(listing)}
-                          </p>
-                          <p className="mt-1 text-sm text-(--palette-soft-purple)">
-                            {activeTab === "requested"
-                              ? contract.status === "RESERVED"
-                                ? "Payment is pending. The request will disappear automatically if payment is not completed in time."
-                                : "Your request is recorded and waiting for owner response."
-                              : activeTab === "rented"
-                                ? isNoticeActive
-                                  ? "This rental is currently in its 30-day notice period."
-                                  : "Your rental is active and tracked here."
-                                : activeTab === "termination"
-                                  ? "This rental is waiting for the notice period to end or be withdrawn."
-                                  : contract.status === "REJECTED"
-                                    ? "This request was rejected by the owner, and you can send a new request later."
-                                    : contract.status === "CANCELLED"
-                                      ? "This request was cancelled and remains in your history."
-                                      : "This rental has been terminated and is stored in your history."}
-                          </p>
+                          {listingStateMeta.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                          {contract.status === "RESERVED" ? (
-                            <div
-                              className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-                              style={{
-                                backgroundColor: palette.chipBg,
-                                color: palette.deep,
-                              }}
-                            >
-                              <CalendarClock size={14} />
-                              {formatRemainingTime(contract.paymentDueAt) ||
-                                "Payment due soon"}
-                            </div>
-                          ) : null}
+                  {/* Card body */}
+                  <div className="grid gap-4 p-5 md:grid-cols-2">
+                    {/* Property details */}
+                    <div
+                      className="rounded-xl border p-4"
+                      style={{
+                        borderColor: border,
+                        backgroundColor: mutedAltBg,
+                      }}
+                    >
+                      <p
+                        className="mb-2 text-[10px] font-semibold uppercase tracking-widest"
+                        style={{ color: muted }}
+                      >
+                        Property details
+                      </p>
+                      <p
+                        className="text-base font-semibold"
+                        style={{ color: deep }}
+                      >
+                        {formatPrice(listing)}
+                      </p>
+                      <p
+                        className="mt-1 text-xs leading-relaxed"
+                        style={{ color: muted }}
+                      >
+                        {activeTab === "requested"
+                          ? contract.status === "RESERVED"
+                            ? "Payment pending — request expires if not completed in time."
+                            : "Waiting for owner response."
+                          : activeTab === "rented"
+                            ? isNoticeActive
+                              ? "This rental is in its 30-day notice period."
+                              : "Your rental is active."
+                            : activeTab === "termination"
+                              ? "Waiting for the notice period to end or be withdrawn."
+                              : contract.status === "REJECTED"
+                                ? "Rejected by the owner."
+                                : contract.status === "CANCELLED"
+                                  ? "Cancelled — stored in your history."
+                                  : "Terminated — stored in your history."}
+                      </p>
 
-                          {activeTab === "termination" ? (
-                            <div
-                              className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-                              style={{
-                                backgroundColor: palette.chipBg,
-                                color: palette.deep,
-                              }}
-                            >
-                              Termination Notice Active
-                            </div>
-                          ) : null}
+                      {/* Payment countdown chip */}
+                      {contract.status === "RESERVED" && (
+                        <div
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+                          style={{ backgroundColor: chipBg, color: deep }}
+                        >
+                          <CalendarClock size={12} />
+                          {formatRemainingTime(contract.paymentDueAt) ||
+                            "Payment due soon"}
+                        </div>
+                      )}
 
-                          {isNoticeActive ? (
-                            <div
-                              className="mt-4 rounded-2xl border p-4"
-                              style={{
-                                borderColor: "#F5D487",
-                                backgroundColor: "#FFF8E7",
-                              }}
-                            >
-                              <p className="text-sm font-semibold text-(--palette-deep)">
-                                Termination Notice Active
-                              </p>
-                              <p className="mt-2 text-sm text-(--palette-deep)">
-                                Requested by:{" "}
+                      {/* Termination notice box */}
+                      {isNoticeActive && (
+                        <div
+                          className="mt-4 rounded-xl border p-4"
+                          style={{
+                            borderColor: "#f5d487",
+                            backgroundColor: "#fff8e7",
+                          }}
+                        >
+                          <p
+                            className="text-xs font-semibold uppercase tracking-widest"
+                            style={{ color: "#92400e" }}
+                          >
+                            Termination notice active
+                          </p>
+                          <div
+                            className="mt-2 space-y-1 text-xs"
+                            style={{ color: "#78350f" }}
+                          >
+                            <p>
+                              Requested by:{" "}
+                              <span className="font-medium">
                                 {noticeInitiator?.name ||
                                   noticeInitiator?.email ||
                                   (isTerminationRequester(contract)
                                     ? "you"
                                     : "the other party")}
-                              </p>
-                              <p className="mt-1 text-sm text-(--palette-deep)">
-                                Notice Submitted:{" "}
+                              </span>
+                            </p>
+                            <p>
+                              Notice submitted:{" "}
+                              <span className="font-medium">
                                 {formatNoticeDate(
                                   contract.terminationRequestedAt,
                                 )}
-                              </p>
-                              <p className="mt-1 text-sm text-(--palette-deep)">
-                                Rental Ends:{" "}
+                              </span>
+                            </p>
+                            <p>
+                              Rental ends:{" "}
+                              <span className="font-medium">
                                 {formatNoticeDate(
                                   contract.terminationEffectiveDate,
                                 )}
-                              </p>
-                              <p className="mt-1 text-sm font-semibold text-(--palette-purple)">
-                                {noticeCountdown || "Notice period active"}
-                              </p>
-                              <p className="mt-2 text-sm text-(--palette-soft-purple)">
-                                This rental will automatically terminate on{" "}
-                                {formatNoticeDate(
-                                  contract.terminationEffectiveDate,
-                                )}{" "}
-                                unless the initiator withdraws the notice before
-                                that date.
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div
-                          className="rounded-2xl border p-4"
-                          style={{
-                            borderColor: palette.border,
-                            backgroundColor: palette.cardMutedAltBg,
-                          }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full"
-                              style={{ backgroundColor: palette.chipBg }}
-                            >
-                              {owner?.image ? (
-                                <img
-                                  src={owner.image}
-                                  alt={owner.name || owner.email || "Owner"}
-                                  className="h-10 w-10 rounded-full object-cover"
-                                />
-                              ) : (
-                                <UserRound
-                                  size={18}
-                                  style={{ color: palette.deep }}
-                                />
-                              )}
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-(--palette-soft-purple)">
-                                Owner Info
-                              </p>
-                              <p className="truncate text-base font-semibold text-(--palette-deep)">
-                                {owner?.name ||
-                                  owner?.email ||
-                                  "Property Owner"}
-                              </p>
-                              <p className="truncate text-sm text-(--palette-soft-purple)">
-                                {owner?.email || "Contact available in chat"}
-                              </p>
-                            </div>
+                              </span>
+                            </p>
                           </div>
+                          <p
+                            className="mt-2 text-xs font-semibold"
+                            style={{ color: "#8b64c8" }}
+                          >
+                            {noticeCountdown || "Notice period active"}
+                          </p>
+                          <p
+                            className="mt-1 text-xs leading-relaxed"
+                            style={{ color: "#92400e", opacity: 0.8 }}
+                          >
+                            Auto-terminates on{" "}
+                            {formatNoticeDate(
+                              contract.terminationEffectiveDate,
+                            )}{" "}
+                            unless withdrawn before that date.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Owner info */}
+                    <div
+                      className="rounded-xl border p-4"
+                      style={{
+                        borderColor: border,
+                        backgroundColor: mutedAltBg,
+                      }}
+                    >
+                      <p
+                        className="mb-3 text-[10px] font-semibold uppercase tracking-widest"
+                        style={{ color: muted }}
+                      >
+                        Owner
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                          style={{ backgroundColor: chipBg }}
+                        >
+                          {owner?.image ? (
+                            <img
+                              src={owner.image}
+                              alt={owner.name || owner.email || "Owner"}
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <UserRound size={16} style={{ color: "#8b64c8" }} />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p
+                            className="truncate text-sm font-semibold"
+                            style={{ color: deep }}
+                          >
+                            {owner?.name || owner?.email || "Property owner"}
+                          </p>
+                          <p
+                            className="mt-0.5 truncate text-xs"
+                            style={{ color: muted }}
+                          >
+                            {owner?.email || "Contact available in chat"}
+                          </p>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      {activeTab === "requested" && canCompletePayment ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void handleCompletePayment(contract._id)
-                          }
-                          disabled={isCompletingThisPayment}
-                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                          style={{ backgroundColor: "#059669" }}
-                        >
-                          {isCompletingThisPayment
-                            ? "Redirecting..."
-                            : "Complete Payment"}
-                        </button>
-                      ) : null}
+                  {/* Card footer — actions */}
+                  <div
+                    className="flex flex-wrap items-center gap-2 border-t px-5 py-3"
+                    style={{ borderColor: border }}
+                  >
+                    {/* Complete payment */}
+                    {activeTab === "requested" && canCompletePayment && (
+                      <ActionBtn
+                        variant="primary"
+                        onClick={() => void handleCompletePayment(contract._id)}
+                        disabled={isCompletingThisPayment}
+                      >
+                        {isCompletingThisPayment
+                          ? "Redirecting…"
+                          : "Complete payment"}
+                      </ActionBtn>
+                    )}
 
-                      {activeTab === "requested" ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleCancelRequest(contract._id)}
-                          disabled={cancelRentRequest.isPending}
-                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                          style={{ backgroundColor: "#E11D48" }}
-                        >
-                          <Trash2 size={16} />
-                          {contract.status === "RESERVED"
-                            ? "Cancel Request"
-                            : "Delete Request"}
-                        </button>
-                      ) : activeTab === "rented" ? (
-                        contract.status === "TERMINATION_PENDING" ? (
-                          isTerminationRequester(contract) ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void handleWithdrawTermination(contract._id)
-                              }
-                              disabled={withdrawTerminationNotice.isPending}
-                              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                              style={{ backgroundColor: palette.softPurple }}
-                            >
-                              Withdraw Notice
-                            </button>
-                          ) : null
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleSendTerminationRequest(contract._id)
-                            }
-                            disabled={createTerminationNotice.isPending}
-                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                            style={{ backgroundColor: palette.softPurple }}
-                          >
-                            Create Termination Notice
-                          </button>
-                        )
-                      ) : activeTab === "termination" ? (
-                        isTerminationRequester(contract) ? (
-                          <button
-                            type="button"
+                    {/* Cancel / delete request */}
+                    {activeTab === "requested" && (
+                      <ActionBtn
+                        variant="danger"
+                        onClick={() => void handleCancelRequest(contract._id)}
+                        disabled={cancelRentRequest.isPending}
+                      >
+                        <Trash2 size={14} />
+                        {contract.status === "RESERVED"
+                          ? "Cancel request"
+                          : "Delete request"}
+                      </ActionBtn>
+                    )}
+
+                    {/* Rented tab actions */}
+                    {activeTab === "rented" &&
+                      (contract.status === "TERMINATION_PENDING" ? (
+                        isTerminationRequester(contract) && (
+                          <ActionBtn
+                            variant="ghost"
                             onClick={() =>
                               void handleWithdrawTermination(contract._id)
                             }
                             disabled={withdrawTerminationNotice.isPending}
-                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                            style={{ backgroundColor: palette.softPurple }}
                           >
-                            Withdraw Notice
-                          </button>
-                        ) : null
-                      ) : null}
-
-                      {listing?._id ? (
-                        <Link
-                          to={`/properties/${listing._id}`}
-                          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
-                          style={{
-                            backgroundColor: palette.cardMutedAltBg,
-                            color: palette.deep,
-                          }}
+                            Withdraw notice
+                          </ActionBtn>
+                        )
+                      ) : (
+                        <ActionBtn
+                          variant="ghost"
+                          onClick={() =>
+                            void handleSendTerminationRequest(contract._id)
+                          }
+                          disabled={createTerminationNotice.isPending}
                         >
-                          <KeyRound size={16} />
-                          View Property
-                        </Link>
-                      ) : null}
+                          Create termination notice
+                        </ActionBtn>
+                      ))}
 
+                    {/* Termination tab actions */}
+                    {activeTab === "termination" &&
+                      isTerminationRequester(contract) && (
+                        <ActionBtn
+                          variant="ghost"
+                          onClick={() =>
+                            void handleWithdrawTermination(contract._id)
+                          }
+                          disabled={withdrawTerminationNotice.isPending}
+                        >
+                          Withdraw notice
+                        </ActionBtn>
+                      )}
+
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* View property */}
+                    {listing?._id && (
                       <Link
-                        to={`/message?conversationId=${contract.conversationId}`}
-                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                        to={`/properties/${listing._id}`}
+                        className="inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-opacity hover:opacity-75"
                         style={{
-                          backgroundColor: palette.purple,
-                          color: palette.pageBg,
+                          borderColor: border,
+                          color: deep,
+                          backgroundColor: mutedAltBg,
                         }}
                       >
-                        <MessageCircle size={16} />
-                        Open Chat
+                        <KeyRound size={14} />
+                        View property
                       </Link>
-                    </div>
+                    )}
+
+                    {/* Open chat */}
+                    <Link
+                      to={`/message?conversationId=${contract.conversationId}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: "#8b64c8" }}
+                    >
+                      <MessageCircle size={14} />
+                      Open chat
+                    </Link>
                   </div>
                 </article>
               );
