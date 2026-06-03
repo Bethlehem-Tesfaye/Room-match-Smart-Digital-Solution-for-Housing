@@ -189,18 +189,27 @@ const RoommatePage: React.FC = () => {
     return typeof listing === "string" ? null : listing;
   };
 
-  const roommateEligibleContracts = activeRentedContracts.filter(
-    (contract) => getContractListing(contract)?.allowRoommates === true,
+  const listingAllowsRoommates = (
+    listing: ReturnType<typeof getContractListing>,
+  ) => Boolean(listing?.allowRoommates);
+
+  const getListingId = (
+    listing: ReturnType<typeof getContractListing>,
+  ): string | null => {
+    if (!listing?._id) return null;
+    return String(listing._id);
+  };
+
+  const roommateEligibleContracts = activeRentedContracts.filter((contract) =>
+    listingAllowsRoommates(getContractListing(contract)),
   );
   const hasEligibleRoommateRental = roommateEligibleContracts.length > 0;
   const canUseRoommateWizard =
     roommateType === "TYPE_B" || hasEligibleRoommateRental;
 
-  const selectedRentedPropertyId = (() => {
-    const listing = getContractListing(roommateEligibleContracts[0]);
-    if (!listing || typeof listing === "string") return listing ?? null;
-    return listing._id;
-  })();
+  const selectedRentedPropertyId = getListingId(
+    getContractListing(roommateEligibleContracts[0]),
+  );
 
   useEffect(() => {
     if (roommateType === "TYPE_A") {
@@ -514,10 +523,17 @@ const RoommatePage: React.FC = () => {
                 type="button"
                 onClick={() => void handleChangeType()}
                 disabled={
-                  isSaving || (roommateType === "TYPE_B" && !hasRentedRoom)
+                  isSaving ||
+                  (roommateType === "TYPE_B" && !hasEligibleRoommateRental)
+                }
+                title={
+                  roommateType === "TYPE_B" && !hasEligibleRoommateRental
+                    ? hasRentedRoom
+                      ? "This rental does not allow roommates"
+                      : "You need an active roommate-friendly rental"
+                    : "Change roommate type"
                 }
                 aria-label="Change roommate type"
-                title="Change roommate type"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-(--palette-soft-purple) transition hover:border-(--palette-purple) hover:bg-(--palette-page-bg) hover:text-(--palette-purple) disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -574,7 +590,7 @@ const RoommatePage: React.FC = () => {
                     >
                       {roommateEligibleContracts.map((contract) => {
                         const listing = getContractListing(contract);
-                        const listingId = listing?._id ?? "";
+                        const listingId = getListingId(listing) ?? "";
                         const label = listing
                           ? `${listing.title}${listing.city ? ` • ${listing.city}` : ""}`
                           : "Rented room";

@@ -1,6 +1,12 @@
 import React from "react";
 import { Sparkles, UserRound, Wallet } from "lucide-react";
 import type { RoommateFormData } from "../hooks/useRoommateData";
+import {
+  PREFERRED_ROOMMATE_GENDER_LABELS,
+  PREFERRED_ROOMMATE_GENDERS,
+  ROOMMATE_GENDER_LABELS,
+  ROOMMATE_GENDERS,
+} from "../constants/gender";
 
 interface Props {
   preferences: RoommateFormData | null;
@@ -201,6 +207,8 @@ export const RoommatePreferences: React.FC<Props> = ({
 
   const currentStatus = preferences.currentStatus ?? "Student";
   const occupationField = preferences.occupation ?? "";
+  const gender = preferences.gender ?? "male";
+  const preferredRoommateGender = preferences.preferredRoommateGender ?? "any";
   const lifestyle = toLifestyle(preferences.lifestyleType);
   const socialLevel = preferences.socialLevel ?? preferences.personality ?? 3;
   const tidyLevel = preferences.cleanliness || 3;
@@ -306,6 +314,33 @@ export const RoommatePreferences: React.FC<Props> = ({
                     placeholder="Short text input"
                     className="w-full rounded-2xl border border-(--palette-border) bg-(--palette-input-bg) px-4 py-3 text-(--app-text) outline-none placeholder:text-(--palette-soft-purple)"
                   />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
+                    Your gender
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-1.5">
+                    {ROOMMATE_GENDERS.map((option) => {
+                      const active = gender === option;
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => {
+                            onUpdate("gender", option);
+                          }}
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
+                            active
+                              ? "bg-(--palette-card-bg) font-bold text-(--palette-purple) shadow-sm"
+                              : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
+                          }`}
+                        >
+                          {ROOMMATE_GENDER_LABELS[option]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="lg:col-span-2">
@@ -860,6 +895,33 @@ export const RoommatePreferences: React.FC<Props> = ({
                       ),
                     }}
                   />
+                </div>
+
+                <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
+                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
+                    Preferred roommate gender (hard filter)
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl border border-(--palette-border) bg-(--palette-card-bg) p-1.5">
+                    {PREFERRED_ROOMMATE_GENDERS.map((option) => {
+                      const active = preferredRoommateGender === option;
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => {
+                            onUpdate("preferredRoommateGender", option);
+                          }}
+                          className={`rounded-xl px-4 py-3 text-sm transition ${
+                            active
+                              ? "bg-(--palette-section-bg) font-bold text-(--palette-purple) shadow-sm"
+                              : "text-(--palette-soft-purple) hover:text-(--palette-deep)"
+                          }`}
+                        >
+                          {PREFERRED_ROOMMATE_GENDER_LABELS[option]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {[

@@ -12,6 +12,7 @@ import {
   Ruler,
   Flag,
   Share2,
+  Users,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -930,6 +931,12 @@ function PropertyDetailsView({
                 {
                   icon: Building2,
                   label: formatPropertyType(property.propertyType),
+                },
+                {
+                  icon: Users,
+                  label: property.allowRoommates
+                    ? "Roommates allowed"
+                    : "Roommates not allowed",
                 },
               ].map((chip) => {
                 const Icon = chip.icon;

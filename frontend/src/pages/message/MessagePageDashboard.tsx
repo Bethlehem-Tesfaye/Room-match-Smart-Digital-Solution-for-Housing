@@ -25,14 +25,7 @@ import type { Message } from "../../features/message/types/type";
 import type { ConversationSummary } from "../../features/message/types/type";
 import DashboardNavbar from "../../features/dashbord/componets/DashboardNavbar";
 import ReportModal from "../../features/reports/components/ReportModal";
-import BlockUserConfirmModal from "../../features/reports/components/BlockUserConfirmModal";
-import {
-  useBlockUser,
-  useReportUser,
-  useUnblockUser,
-  useUserBlockStatus,
-  useUserBlockSync,
-} from "../../features/reports/hooks/useReportHooks";
+import { useReportUser } from "../../features/reports/hooks/useReportHooks";
 import type { ReportReason } from "../../features/reports/constants";
 
 const normalizeConversationId = (value: unknown): string => {
@@ -59,10 +52,7 @@ function MessagePageDashboard() {
   >(() => searchParams.get("conversationId") || undefined);
   const [isConversationListOpen, setIsConversationListOpen] = useState(false);
   const [isReportUserOpen, setIsReportUserOpen] = useState(false);
-  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
   const reportUser = useReportUser();
-  const blockUser = useBlockUser();
-  const unblockUser = useUnblockUser();
 
   const conversationsQuery = useConversations();
   const unreadCountsQuery = useUnreadMessageCounts();
@@ -92,11 +82,6 @@ function MessagePageDashboard() {
   const partnerUserId = selectedPartner?._id;
   const partnerLabel =
     selectedPartner?.name || selectedPartner?.email || "this user";
-  const blockStatusQuery = useUserBlockStatus(partnerUserId);
-  useUserBlockSync(partnerUserId);
-  const blockedByMe = blockStatusQuery.data?.blockedByMe ?? false;
-  const blockedByThem = blockStatusQuery.data?.blockedByThem ?? false;
-
   const handleSubmitUserReport = async (payload: {
     reason: ReportReason;
     description?: string;
@@ -114,46 +99,12 @@ function MessagePageDashboard() {
     }
   };
 
-  const handleBlockPartner = async () => {
-    if (!partnerUserId) return;
-
-    try {
-      await blockUser.mutateAsync({ userId: partnerUserId });
-      toast.success("User blocked.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to block user",
-      );
-      throw error;
-    }
-  };
-
-  const handleUnblockPartner = async () => {
-    if (!partnerUserId) return;
-
-    try {
-      await unblockUser.mutateAsync({ userId: partnerUserId });
-      toast.success("User unblocked.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to unblock user",
-      );
-    }
-  };
-
   const safetyProps = partnerUserId
     ? {
         partnerUserId,
         partnerLabel,
         onReportUser: () => setIsReportUserOpen(true),
-        onBlockUser: () => setIsBlockConfirmOpen(true),
-        onUnblockUser: () => void handleUnblockPartner(),
-        blockedByMe,
-        blockedByThem,
-        isSafetyActionPending:
-          reportUser.isPending ||
-          blockUser.isPending ||
-          unblockUser.isPending,
+        isSafetyActionPending: reportUser.isPending,
       }
     : {};
 
@@ -477,14 +428,6 @@ function MessagePageDashboard() {
         onClose={() => setIsReportUserOpen(false)}
         onSubmit={handleSubmitUserReport}
         isSubmitting={reportUser.isPending}
-      />
-
-      <BlockUserConfirmModal
-        isOpen={isBlockConfirmOpen}
-        userName={partnerLabel}
-        onClose={() => setIsBlockConfirmOpen(false)}
-        onConfirm={handleBlockPartner}
-        isSubmitting={blockUser.isPending}
       />
     </main>
   );

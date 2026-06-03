@@ -6,6 +6,7 @@ export interface RoommatePreferences {
   selectedPropertyId?: string | null;
   currentStatus?: "Student" | "Employed" | "Self-employed" | "Other";
   occupation?: string;
+  gender?: "male" | "female";
   lifestyleType?: string;
   socialLevel?: number;
   cleanliness?: number;
@@ -51,6 +52,7 @@ export interface RoommatePreferences {
     | "Balanced"
     | "Different is fine";
   behaviorStrictness?: number;
+  preferredRoommateGender?: "any" | "male" | "female";
   acceptSmoker?: "yes" | "no";
   acceptPets?: "yes" | "no";
   acceptGuests?: "yes" | "no";
@@ -74,6 +76,7 @@ export interface RoommateProfile {
   selectedPropertyId?: string | null;
   currentStatus?: "Student" | "Employed" | "Self-employed" | "Other";
   occupation?: string;
+  gender?: "male" | "female";
   lifestyleType?: string;
   socialLevel?: number;
   cleanliness?: number;

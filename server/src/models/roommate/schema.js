@@ -33,6 +33,11 @@ const roomateProfileSchema = new Schema(
       default: "Student"
     },
     occupation: { type: String, trim: true, default: "" },
+    gender: {
+      type: String,
+      enum: ["male", "female"],
+      default: "male"
+    },
     lifestyleType: { type: String, trim: true, default: "" },
     socialLevel: { type: Number, min: 1, max: 5, default: 3 },
     cleanliness: { type: Number, min: 1, max: 5, default: 3 },
@@ -132,6 +137,11 @@ const roomatePreferencesSchema = new Schema(
     behaviorStrictness: { type: Number, min: 1, max: 5, default: 3 },
 
     // hard constraints (KEEP ONLY THESE)
+    preferredRoommateGender: {
+      type: String,
+      enum: ["any", "male", "female"],
+      default: "any"
+    },
     acceptSmoker: { type: String, enum: ["yes", "no"], default: "no" },
     acceptPets: { type: String, enum: ["yes", "no"], default: "no" },
     acceptGuests: { type: String, enum: ["yes", "no"], default: "no" },

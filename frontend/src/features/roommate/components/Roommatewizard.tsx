@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { Check, Sparkles } from "lucide-react";
 import type { RoommateFormData } from "../hooks/useRoommateData";
+import {
+  PREFERRED_ROOMMATE_GENDER_LABELS,
+  PREFERRED_ROOMMATE_GENDERS,
+  ROOMMATE_GENDER_LABELS,
+  ROOMMATE_GENDERS,
+} from "../constants/gender";
 
 interface Props {
   preferences: RoommateFormData | null;
@@ -254,6 +260,20 @@ export const RoommateWizard: React.FC<Props> = ({
         />
       </div>
 
+      <div>
+        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
+          Your gender
+        </label>
+        <SegGroup
+          options={ROOMMATE_GENDERS.map((value) => ({
+            label: ROOMMATE_GENDER_LABELS[value],
+            value,
+          }))}
+          value={p.gender ?? "male"}
+          onChange={(v) => onUpdate("gender", v)}
+        />
+      </div>
+
       <div className="rounded-2xl border border-(--palette-border) bg-(--palette-section-bg) p-4">
         <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
           Lifestyle traits
@@ -496,6 +516,22 @@ export const RoommateWizard: React.FC<Props> = ({
           Hard limits
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
+              Preferred roommate gender
+            </label>
+            <SegGroup
+              options={PREFERRED_ROOMMATE_GENDERS.map((value) => ({
+                label: PREFERRED_ROOMMATE_GENDER_LABELS[value],
+                value,
+              }))}
+              value={p.preferredRoommateGender ?? "any"}
+              onChange={(v) => onUpdate("preferredRoommateGender", v)}
+            />
+            <p className="mt-2 text-[12px] leading-relaxed text-(--palette-soft-purple)">
+              Matches outside this preference are excluded (hard filter).
+            </p>
+          </div>
           <div>
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-(--palette-soft-purple)">
               Accept a smoker?

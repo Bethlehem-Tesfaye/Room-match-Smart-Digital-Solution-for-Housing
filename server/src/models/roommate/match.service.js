@@ -56,18 +56,15 @@ const validateTypeAEligibility = async (currentProfile) => {
 
   const activeContract = await Contract.findOne({
     tenantId: currentProfile.userId,
-    status: "ACTIVE"
+    status: "ACTIVE",
+    listingId: propertyId
   })
     .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
     .lean();
 
   const activeListing = activeContract?.listingId;
 
-  if (
-    !activeListing ||
-    typeof activeListing === "string" ||
-    activeListing._id?.toString() !== propertyId.toString()
-  ) {
+  if (!activeListing || typeof activeListing === "string") {
     throw new CustomError(
       "This property does not allow roommate matching",
       400

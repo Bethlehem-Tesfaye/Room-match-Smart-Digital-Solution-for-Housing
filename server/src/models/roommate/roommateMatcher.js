@@ -33,10 +33,22 @@ const budgetOverlap = (a, b) => {
   return a.min <= bMax && b.min <= aMax;
 };
 
+const matchesGenderPreference = (preferences, targetProfile) => {
+  const preferred = preferences?.preferredRoommateGender ?? "any";
+  if (preferred === "any") return true;
+
+  const targetGender = targetProfile?.gender;
+  if (targetGender !== "male" && targetGender !== "female") return false;
+
+  return targetGender === preferred;
+};
+
 // -----------------------------
 // HARD FILTERS
 // -----------------------------
 const applyHardFilters = ({ targetProfile, preferences, propertyContext }) => {
+  if (!matchesGenderPreference(preferences, targetProfile)) return false;
+
   // smoking / pets / guests hard constraints
   if (preferences.acceptSmoker === "no" && targetProfile.smoking === "yes")
     return false;

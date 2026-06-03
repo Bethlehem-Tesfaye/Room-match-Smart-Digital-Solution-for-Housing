@@ -12,6 +12,7 @@ const ROOMMATE_PROFILE_FIELDS = new Set([
   "selectedPropertyId",
   "currentStatus",
   "occupation",
+  "gender",
   "lifestyleType",
   "socialLevel",
   "cleanliness",
@@ -63,6 +64,7 @@ const ROOMMATE_PREFERENCE_FIELDS = new Set([
   "petsImportance",
   "roommateType",
   "behaviorStrictness",
+  "preferredRoommateGender",
   "acceptSmoker",
   "acceptPets",
   "acceptGuests",
@@ -154,6 +156,50 @@ const ensureRoommateEligibleProperty = async (propertyId) => {
   return property;
 };
 
+const resolveTypeAActiveListing = async ({ userId, preferredPropertyId }) => {
+  const activeContracts = await Contract.find({
+    tenantId: userId,
+    status: "ACTIVE"
+  })
+    .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
+    .lean();
+
+  const populatedContracts = activeContracts.filter((contract) => {
+    const listing = contract.listingId;
+    return listing && typeof listing !== "string";
+  });
+
+  if (!populatedContracts.length) {
+    throw new CustomError(
+      "You need an active rental contract before switching to I have a rented place",
+      400
+    );
+  }
+
+  const eligibleContracts = populatedContracts.filter((contract) =>
+    Boolean(contract.listingId.allowRoommates)
+  );
+
+  if (!eligibleContracts.length) {
+    throw new CustomError(
+      "This property does not allow roommate matching",
+      400
+    );
+  }
+
+  const preferredId = preferredPropertyId?.toString?.() ?? null;
+  if (preferredId) {
+    const preferredContract = eligibleContracts.find(
+      (contract) => contract.listingId._id.toString() === preferredId
+    );
+    if (preferredContract) {
+      return preferredContract.listingId;
+    }
+  }
+
+  return eligibleContracts[0].listingId;
+};
+
 const buildRoommateProfileUpdateSet = (payload) => {
   const input = toObjectPayload(payload);
   const updateSet = {};
@@ -207,6 +253,7 @@ const buildDefaultRoommateProfile = (userId) => ({
   selectedPropertyId: null,
   currentStatus: "Student",
   occupation: "",
+  gender: "male",
   lifestyleType: "",
   socialLevel: 3,
   cleanliness: 3,
@@ -247,6 +294,7 @@ const buildDefaultRoommatePreferences = (userId) => ({
   petsImportance: 3,
   roommateType: "Balanced",
   behaviorStrictness: 3,
+  preferredRoommateGender: "any",
   acceptSmoker: "no",
   acceptPets: "no",
   acceptGuests: "no",
@@ -270,21 +318,12 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
     incomingType !== existingProfile.profileType;
 
   if (incomingType === "TYPE_A") {
-    const activeContract = await Contract.findOne({
-      tenantId: userId,
-      status: "ACTIVE"
-    })
-      .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
-      .lean();
-
-    const activeListing = activeContract?.listingId;
-
-    if (!activeListing || typeof activeListing === "string") {
-      throw new CustomError(
-        "You need an active rental contract before switching to I have a rented place",
-        400
-      );
-    }
+    const preferredPropertyId =
+      updateSet.selectedPropertyId ?? payload.selectedPropertyId ?? null;
+    const activeListing = await resolveTypeAActiveListing({
+      userId,
+      preferredPropertyId
+    });
 
     await ensureRoommateEligibleProperty(activeListing._id);
     updateSet.selectedPropertyId = activeListing._id;

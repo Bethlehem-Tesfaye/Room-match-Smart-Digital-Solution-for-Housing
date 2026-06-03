@@ -16,8 +16,6 @@ import {
   MapPin,
   MessageSquare,
   ShieldAlert,
-  UserX,
-  UserCheck,
   X,
   Users,
 } from "lucide-react";
@@ -50,10 +48,6 @@ interface MessageInboxProps {
   partnerUserId?: string;
   partnerLabel?: string;
   onReportUser?: () => void;
-  onBlockUser?: () => void;
-  onUnblockUser?: () => void;
-  blockedByMe?: boolean;
-  blockedByThem?: boolean;
   isSafetyActionPending?: boolean;
 }
 
@@ -75,10 +69,6 @@ interface ContextPanelProps {
   partnerUserId?: string;
   partnerLabel?: string;
   onReportUser?: () => void;
-  onBlockUser?: () => void;
-  onUnblockUser?: () => void;
-  blockedByMe?: boolean;
-  blockedByThem?: boolean;
   isSafetyActionPending?: boolean;
 }
 
@@ -97,15 +87,9 @@ export function ContextPanel({
   partnerUserId,
   partnerLabel,
   onReportUser,
-  onBlockUser,
-  onUnblockUser,
-  blockedByMe = false,
-  blockedByThem = false,
   isSafetyActionPending = false,
 }: ContextPanelProps) {
-  const showSafetyActions = Boolean(
-    partnerUserId && onReportUser && (onBlockUser || onUnblockUser),
-  );
+  const showSafetyActions = Boolean(partnerUserId && onReportUser);
 
   return (
     <aside
@@ -323,16 +307,6 @@ export function ContextPanel({
           <p className="text-[12px]" style={{ color: "var(--palette-soft-purple)" }}>
             Actions for {partnerLabel || "this user"}
           </p>
-          {blockedByThem ? (
-            <p className="text-[12px] font-medium" style={{ color: "#b91c1c" }}>
-              This user has blocked you.
-            </p>
-          ) : null}
-          {blockedByMe ? (
-            <p className="text-[12px] font-medium" style={{ color: "#92400e" }}>
-              You blocked this user.
-            </p>
-          ) : null}
           <button
             type="button"
             onClick={onReportUser}
@@ -347,37 +321,6 @@ export function ContextPanel({
             <ShieldAlert size={14} />
             Report user
           </button>
-          {blockedByMe && onUnblockUser ? (
-            <button
-              type="button"
-              onClick={onUnblockUser}
-              disabled={isSafetyActionPending}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-60"
-              style={{
-                borderColor: "#bbf7d0",
-                color: "#166534",
-                backgroundColor: "#ecfdf5",
-              }}
-            >
-              <UserCheck size={14} />
-              Unblock user
-            </button>
-          ) : onBlockUser ? (
-            <button
-              type="button"
-              onClick={onBlockUser}
-              disabled={isSafetyActionPending || blockedByThem}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-60"
-              style={{
-                borderColor: "var(--palette-border)",
-                color: "var(--palette-deep)",
-                backgroundColor: "var(--palette-card-muted-alt-bg)",
-              }}
-            >
-              <UserX size={14} />
-              Block user
-            </button>
-          ) : null}
         </section>
       ) : null}
     </aside>
@@ -411,10 +354,6 @@ function MessageInbox({
   partnerUserId,
   partnerLabel,
   onReportUser,
-  onBlockUser,
-  onUnblockUser,
-  blockedByMe = false,
-  blockedByThem = false,
   isSafetyActionPending = false,
 }: MessageInboxProps) {
   const [content, setContent] = useState("");
@@ -792,10 +731,6 @@ function MessageInbox({
               partnerUserId={partnerUserId}
               partnerLabel={partnerLabel}
               onReportUser={onReportUser}
-              onBlockUser={onBlockUser}
-              onUnblockUser={onUnblockUser}
-              blockedByMe={blockedByMe}
-              blockedByThem={blockedByThem}
               isSafetyActionPending={isSafetyActionPending}
             />
           </div>

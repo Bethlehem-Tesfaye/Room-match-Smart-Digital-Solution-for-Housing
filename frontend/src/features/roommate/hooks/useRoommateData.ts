@@ -20,6 +20,7 @@ export type RoommateProfile = {
 
   currentStatus: "Student" | "Employed" | "Self-employed" | "Other";
   occupation: string;
+  gender: "male" | "female";
   lifestyleType: string;
 
   socialLevel: number;
@@ -69,6 +70,7 @@ export type RoommatePreferences = {
   roommateType: string;
   behaviorStrictness: number;
 
+  preferredRoommateGender: "any" | "male" | "female";
   acceptSmoker: "yes" | "no";
   acceptPets: "yes" | "no";
   acceptGuests: "yes" | "no";
@@ -118,6 +120,7 @@ export const createDefaultRoommateProfile = (): RoommateProfile => ({
   selectedPropertyId: null,
   currentStatus: "Student",
   occupation: "",
+  gender: "male",
   lifestyleType: "",
   socialLevel: 3,
   cleanliness: 3,
@@ -157,6 +160,7 @@ export const createDefaultRoommatePreferences = (): RoommatePreferences => ({
   petsImportance: 3,
   roommateType: "Balanced",
   behaviorStrictness: 3,
+  preferredRoommateGender: "any",
   acceptSmoker: "no",
   acceptPets: "no",
   acceptGuests: "no",
@@ -237,6 +241,7 @@ export const buildRoommateProfilePayload = ({
     selectedPropertyId: profileType === "TYPE_A" ? selectedPropertyId : null,
     currentStatus: formData.currentStatus,
     occupation: formData.occupation,
+    gender: formData.gender,
     lifestyleType: formData.lifestyleType,
     socialLevel: formData.socialLevel,
     cleanliness: formData.cleanliness,
@@ -279,6 +284,7 @@ export const buildRoommatePreferencesPayload = (
   petsImportance: formData.petsImportance,
   roommateType: formData.roommateType,
   behaviorStrictness: formData.behaviorStrictness,
+  preferredRoommateGender: formData.preferredRoommateGender,
   acceptSmoker: formData.acceptSmoker,
   acceptPets: formData.acceptPets,
   acceptGuests: formData.acceptGuests,
