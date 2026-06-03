@@ -1,4 +1,4 @@
-import React from "react";
+import { adminPalette } from "../theme/palette";
 
 export type SearchFilter =
   | "all"
@@ -25,17 +25,26 @@ const SearchBar: React.FC<{
     { value: "type", label: "Type" },
     { value: "name", label: "Name" },
     { value: "email", label: "Email" },
-    { value: "joined", label: "Joined Date" },
+    { value: "joined", label: "Joined date" },
   ];
 
+  const options = filterOptions ?? defaultOptions;
+  const inputClass =
+    "w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-200";
+
   return (
-    <div className="admin-search">
+    <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
       <select
-        className="admin-input"
+        className={inputClass}
         value={filter}
         onChange={(e) => onFilterChange(e.target.value as SearchFilter)}
+        style={{
+          borderColor: adminPalette.border,
+          backgroundColor: adminPalette.inputBg,
+          color: adminPalette.deep,
+        }}
       >
-        {(filterOptions || defaultOptions).map((option) => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
@@ -44,38 +53,60 @@ const SearchBar: React.FC<{
 
       {filter === "status" ? (
         <select
-          className="admin-input"
+          className={inputClass}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          style={{
+            borderColor: adminPalette.border,
+            backgroundColor: adminPalette.inputBg,
+            color: adminPalette.deep,
+          }}
         >
           <option value="">Select status</option>
           <option value="Active">Active</option>
           <option value="Blocked">Blocked</option>
+          <option value="Rented">Rented</option>
+          <option value="Reserved">Reserved</option>
         </select>
       ) : filter === "type" ? (
         <select
-          className="admin-input"
+          className={inputClass}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          style={{
+            borderColor: adminPalette.border,
+            backgroundColor: adminPalette.inputBg,
+            color: adminPalette.deep,
+          }}
         >
           <option value="">Select type</option>
           <option value="Tenant">Tenant</option>
           <option value="Owner">Owner</option>
+          <option value="Admin">Admin</option>
         </select>
       ) : filter === "joined" ? (
         <input
-          className="admin-input"
+          className={inputClass}
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? "Choose joined date"}
+          style={{
+            borderColor: adminPalette.border,
+            backgroundColor: adminPalette.inputBg,
+            color: adminPalette.deep,
+          }}
         />
       ) : (
         <input
-          className="admin-input"
-          placeholder={placeholder ?? "Search across all records..."}
+          className={inputClass}
+          placeholder={placeholder ?? "Search records..."}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          style={{
+            borderColor: adminPalette.border,
+            backgroundColor: adminPalette.inputBg,
+            color: adminPalette.deep,
+          }}
         />
       )}
     </div>

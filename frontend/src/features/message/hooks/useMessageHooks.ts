@@ -432,7 +432,9 @@ interface UseMessageSocketOptions {
   onReceiveMessage?: (message: Message) => void;
   onReceiveNotification?: (notification: Notification) => void;
   onRentalUnreadUpdate?: (counts: RentalUnreadUpdatePayload) => void;
-  onTenantRentalUnreadUpdate?: (counts: TenantRentalUnreadUpdatePayload) => void;
+  onTenantRentalUnreadUpdate?: (
+    counts: TenantRentalUnreadUpdatePayload,
+  ) => void;
 }
 
 export const useMessageSocket = ({
@@ -448,9 +450,8 @@ export const useMessageSocket = ({
   const onReceiveNotificationRef = useRef<typeof onReceiveNotification>(
     onReceiveNotification,
   );
-  const onRentalUnreadUpdateRef = useRef<typeof onRentalUnreadUpdate>(
-    onRentalUnreadUpdate,
-  );
+  const onRentalUnreadUpdateRef =
+    useRef<typeof onRentalUnreadUpdate>(onRentalUnreadUpdate);
   const onTenantRentalUnreadUpdateRef = useRef<
     typeof onTenantRentalUnreadUpdate
   >(onTenantRentalUnreadUpdate);
@@ -514,13 +515,10 @@ export const useMessageSocket = ({
       onReceiveNotificationRef.current?.(notification);
     });
 
-    socket.on(
-      "rental:unread-update",
-      (counts: RentalUnreadUpdatePayload) => {
-        setOwnerRentalUnreadCounts(queryClient, counts);
-        onRentalUnreadUpdateRef.current?.(counts);
-      },
-    );
+    socket.on("rental:unread-update", (counts: RentalUnreadUpdatePayload) => {
+      setOwnerRentalUnreadCounts(queryClient, counts);
+      onRentalUnreadUpdateRef.current?.(counts);
+    });
 
     socket.on(
       "tenant-rental:unread-update",
@@ -887,6 +885,55 @@ export const useWithdrawTerminationNotice = (): UseMutationResult<
       });
       queryClient.invalidateQueries({
         queryKey: messageQueryKeys.conversationList,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ownerRentalUnreadCountsQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tenantRentalUnreadCountsQueryKey,
+      });
+    },
+  });
+};
+
+export const useCompleteEarlyTermination = (): UseMutationResult<
+  RentRequest,
+  Error,
+  { contractId: string }
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation<RentRequest, Error, { contractId: string }>({
+    mutationFn: async ({ contractId }) => {
+      try {
+        const response = await api.post<{ contract: RentRequest }>(
+          `/api/contracts/${contractId}/terminate-early`,
+        );
+
+        return response.data.contract;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+    onSuccess: (contract) => {
+      queryClient.setQueryData(
+        messageQueryKeys.rentRequestByConversation(contract.conversationId),
+        contract,
+      );
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.tenantRentalContracts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerPendingRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerAcceptedRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerActiveRentRequests,
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageQueryKeys.ownerTerminationRequests,
       });
       queryClient.invalidateQueries({
         queryKey: ownerRentalUnreadCountsQueryKey,

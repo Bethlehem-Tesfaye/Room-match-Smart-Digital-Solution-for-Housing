@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { api } from "../../../lib/axios";
 import type {
+  AccountStatusResponse,
   GetMyProfileResponse,
   Profile,
   RequestUnblockResponse,
@@ -16,6 +17,7 @@ import type {
 
 const profileQueryKeys = {
   me: ["profile", "me"] as const,
+  accountStatus: ["profile", "account-status"] as const,
 };
 
 const getErrorMessage = (error: unknown): string => {
@@ -50,6 +52,30 @@ const hasAnyUpdatableField = (
     payload.imageUrl !== undefined ||
     payload.removeProfilePicture === true
   );
+};
+
+export const useAccountStatus = (
+  enabled = true,
+): UseQueryResult<AccountStatusResponse, Error> => {
+  return useQuery<AccountStatusResponse, Error>({
+    queryKey: profileQueryKeys.accountStatus,
+    enabled,
+    retry: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 20_000,
+    queryFn: async () => {
+      try {
+        const res = await api.get<AccountStatusResponse>(
+          "/api/profile/account-status",
+        );
+        return res.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+  });
 };
 
 export const useMyProfile = (
@@ -123,6 +149,28 @@ export const useRequestUnblock = (): UseMutationResult<
         const res = await api.post<RequestUnblockResponse>(
           "/api/profile/request-unblock",
           { reason }
+        );
+        return res.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+  });
+};
+
+type SubmitSupportResponse = { message: string };
+
+export const useSubmitSupport = (): UseMutationResult<
+  SubmitSupportResponse,
+  Error,
+  { message: string }
+> => {
+  return useMutation<SubmitSupportResponse, Error, { message: string }>({
+    mutationFn: async ({ message }) => {
+      try {
+        const res = await api.post<SubmitSupportResponse>(
+          "/api/profile/support",
+          { message },
         );
         return res.data;
       } catch (error) {

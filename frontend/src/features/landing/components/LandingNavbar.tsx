@@ -3,6 +3,7 @@ import {
   Heart,
   KeyRound,
   LayoutDashboard,
+  LifeBuoy,
   LogIn,
   LogOut,
   Menu,
@@ -336,6 +337,11 @@ function LandingNavbar() {
                     {[
                       { to: "/profile", icon: User, label: "Profile" },
                       { to: "/setting", icon: Settings, label: "Settings" },
+                      {
+                        to: "/support",
+                        icon: LifeBuoy,
+                        label: "Ask support",
+                      },
                     ].map(({ to, icon: Icon, label }) => (
                       <Link
                         key={to}

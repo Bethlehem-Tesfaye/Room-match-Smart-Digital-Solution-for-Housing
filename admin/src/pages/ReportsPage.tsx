@@ -1,24 +1,28 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getAdminReports, AdminReport } from "../lib/api";
 import { useAdminNotifications } from "../context/AdminNotificationContext";
-import AdminNavTabs from "../components/AdminNavTabs";
+import AdminShell from "../components/layout/AdminShell";
+import BentoCard from "../components/layout/BentoCard";
+import AdminPagination from "../components/ui/AdminPagination";
+import {
+  ADMIN_PAGE_SIZE,
+  defaultPagination,
+  type AdminPaginationMeta,
+} from "../lib/pagination";
+import { adminPalette } from "../theme/palette";
 
-// Helper component to display clean, visual status chips for appeal records
-function ReportStatusBadge({ isRead }: { isRead: boolean }) {
-  const baseStyle: React.CSSProperties = {
-    padding: "4px 10px",
-    borderRadius: "12px",
-    fontSize: "0.82rem",
-    fontWeight: "600",
-    display: "inline-block",
-    textAlign: "center",
-  };
-
-  if (!isRead) {
-    return <span style={{ ...baseStyle, backgroundColor: "#fef7e0", color: "#b06000" }}>⚠️ Unread</span>;
-  }
-
-  return <span style={{ ...baseStyle, backgroundColor: "#e6f4ea", color: "#137333" }}>✅ Read</span>;
+function ReportStatusChip({ isRead }: { isRead: boolean }) {
+  return (
+    <span
+      className="inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+      style={{
+        backgroundColor: isRead ? "#dcfce7" : "#fef3c7",
+        color: isRead ? "#166534" : "#92400e",
+      }}
+    >
+      {isRead ? "Read" : "Unread"}
+    </span>
+  );
 }
 
 function ReportsPage() {
@@ -26,95 +30,146 @@ function ReportsPage() {
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<AdminPaginationMeta>(defaultPagination);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await getAdminReports({
+        page,
+        limit: ADMIN_PAGE_SIZE,
+      });
+      setReports(response.reports ?? []);
+      setPagination(response.pagination ?? defaultPagination());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load reports.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
   useEffect(() => {
-    const loadReports = async () => {
-      setLoading(true);
-      setError(null);
+    void clearReportNotifications().catch(() => undefined);
+  }, [clearReportNotifications]);
 
-      try {
-        await clearReportNotifications();
-        const response = await getAdminReports();
-        setReports(response.reports ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load reports.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     void loadReports();
-  }, []);
+  }, [loadReports]);
 
   return (
-    <div className="dashboard-wrapper">
-      <header className="dashboard-hero">
-        <div className="dashboard-inner">
-          <h1 className="hero-title">Incoming Block Reports</h1>
-          <p className="hero-sub">
-            Review unblock requests and clear them from the badge once viewed.
-          </p>
+    <AdminShell
+      eyebrow="Admin · Reports"
+      title="Unblock requests"
+      subtitle="Review appeal messages from blocked users."
+    >
+      {error && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: "#fecaca",
+            backgroundColor: "#fef2f2",
+            color: adminPalette.accent,
+          }}
+        >
+          {error}
         </div>
-      </header>
+      )}
 
-      <main className="dashboard-main">
-        <div className="container-wide">
-          <div className="tabs">
-            <AdminNavTabs />
+      {loading && reports.length === 0 ? (
+        <div
+          className="rounded-2xl border border-dashed px-5 py-12 text-center text-sm"
+          style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+        >
+          Loading reports…
+        </div>
+      ) : reports.length === 0 ? (
+        <div
+          className="rounded-2xl border border-dashed px-5 py-12 text-center text-sm"
+          style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+        >
+          No unblock reports have been submitted yet.
+        </div>
+      ) : (
+        <BentoCard
+          label="Report queue"
+          action={
+            <span className="text-xs font-semibold" style={{ color: adminPalette.muted }}>
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+          }
+        >
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[640px] border-collapse">
+              <thead>
+                <tr
+                  className="border-b text-left text-[11px] font-semibold uppercase tracking-wider"
+                  style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+                >
+                  <th className="px-5 py-3">Requested</th>
+                  <th className="px-5 py-3">Title</th>
+                  <th className="px-5 py-3">Message</th>
+                  <th className="px-5 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((report) => (
+                  <tr
+                    key={report.id}
+                    className="border-b align-top transition-colors hover:bg-[#f8fafc]"
+                    style={{ borderColor: adminPalette.border }}
+                  >
+                    <td
+                      className="px-5 py-4 text-sm whitespace-nowrap"
+                      style={{ color: adminPalette.muted }}
+                    >
+                      {new Date(report.createdAt).toLocaleString()}
+                    </td>
+                    <td className="px-5 py-4 font-semibold" style={{ color: adminPalette.deep }}>
+                      {report.title}
+                    </td>
+                    <td className="max-w-md px-5 py-4 text-sm" style={{ color: adminPalette.muted }}>
+                      {report.content}
+                    </td>
+                    <td className="px-5 py-4">
+                      <ReportStatusChip isRead={report.isRead} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          {error && <div className="alert">{error}</div>}
+          <div className="divide-y md:hidden" style={{ borderColor: adminPalette.border }}>
+            {reports.map((report) => (
+              <article key={report.id} className="space-y-2 px-4 py-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold" style={{ color: adminPalette.deep }}>
+                    {report.title}
+                  </p>
+                  <ReportStatusChip isRead={report.isRead} />
+                </div>
+                <p className="text-sm" style={{ color: adminPalette.muted }}>
+                  {report.content}
+                </p>
+                <p className="text-xs" style={{ color: adminPalette.muted }}>
+                  {new Date(report.createdAt).toLocaleString()}
+                </p>
+              </article>
+            ))}
+          </div>
 
-          {loading ? (
-            <div className="admin-empty">Loading incoming appeal reports...</div>
-          ) : reports.length === 0 ? (
-            <div className="admin-empty">No unblock reports have been submitted yet.</div>
-          ) : (
-            <div className="admin-surface">
-              <div className="admin-surface-head">
-                <p className="admin-mono-label">Report Queue</p>
-              </div>
-              <div className="admin-table-wrap">
-                <table className="user-table">
-                  <thead>
-                    <tr>
-                      <th>Requested At</th>
-                      <th>Title</th>
-                      <th>Details / Appeal Message</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reports.map((report) => (
-                      <tr key={report.id}>
-                        <td>{new Date(report.createdAt).toLocaleString()}</td>
-                        <td>{report.title}</td>
-                        <td>{report.content}</td>
-                        <td>
-                          <ReportStatusBadge isRead={report.isRead} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="admin-user-cards">
-                {reports.map((report) => (
-                  <article key={report.id} className="admin-user-card">
-                    <p className="user-name">{report.title}</p>
-                    <p className="user-meta">{report.content}</p>
-                    <p className="user-meta">
-                      Requested: {new Date(report.createdAt).toLocaleString()}
-                    </p>
-                    <ReportStatusBadge isRead={report.isRead} />
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+          <AdminPagination
+            pagination={pagination}
+            currentCount={reports.length}
+            onPageChange={setPage}
+            loading={loading}
+          />
+        </BentoCard>
+      )}
+    </AdminShell>
   );
 }
 

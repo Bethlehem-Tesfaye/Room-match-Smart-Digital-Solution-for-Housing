@@ -5,6 +5,7 @@ import {
   ConversationParticipant
 } from "../conversation/schema.js";
 import { Message } from "./schema.js";
+import { assertUsersCanCommunicate } from "../user-block/user-block.service.js";
 
 const { Types } = mongoose;
 
@@ -54,6 +55,23 @@ export const createMessage = async ({
     conversationId: normalizedConversationId,
     userId: normalizedSenderId
   });
+
+  const participants = await ConversationParticipant.find({
+    conversationId: normalizedConversationId
+  })
+    .select({ userId: 1 })
+    .lean();
+
+  const otherParticipant = participants.find(
+    (participant) => String(participant.userId) !== String(senderId)
+  );
+
+  if (otherParticipant?.userId) {
+    await assertUsersCanCommunicate(
+      String(senderId),
+      String(otherParticipant.userId)
+    );
+  }
 
   const session = await mongoose.startSession();
 

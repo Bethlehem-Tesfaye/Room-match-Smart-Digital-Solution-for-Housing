@@ -10,6 +10,7 @@ import {
   MapPin,
   RefreshCw,
   Ruler,
+  Flag,
   Share2,
   X,
 } from "lucide-react";
@@ -28,6 +29,8 @@ interface PropertyDetailsViewProps {
   isFavoriteLoading?: boolean;
   onSendMessage?: (payload: { content: string }) => Promise<void>;
   isSendMessageLoading?: boolean;
+  onReportListing?: () => void;
+  showReportListing?: boolean;
 }
 
 const CARD_SHADOW = "0 1px 4px rgba(0,0,0,0.07)";
@@ -135,6 +138,8 @@ function PropertyDetailsView({
   isFavoriteLoading = false,
   onSendMessage,
   isSendMessageLoading = false,
+  onReportListing,
+  showReportListing = false,
 }: PropertyDetailsViewProps) {
   const isUnavailable = property.status !== "Active";
   const orderedImages = useMemo(() => {
@@ -1106,14 +1111,17 @@ function PropertyDetailsView({
 
         <aside className="hidden w-[320px] shrink-0 lg:block">
           {renderContactCard({ sticky: true })}
-          <button
-            type="button"
-            className="mt-3 flex items-center gap-1.5 text-[12px] transition-opacity hover:opacity-80"
-            style={{ color: palette.softPurple }}
-          >
-            {/* <Flag size={12} />
-            Report this listing */}
-          </button>
+          {showReportListing && onReportListing ? (
+            <button
+              type="button"
+              onClick={onReportListing}
+              className="mt-3 flex items-center gap-1.5 text-[12px] transition-opacity hover:opacity-80"
+              style={{ color: palette.softPurple }}
+            >
+              <Flag size={12} />
+              Report listing
+            </button>
+          ) : null}
         </aside>
       </div>
 

@@ -4,6 +4,7 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import MyPropertiesPage from "../pages/dashboard/MyPropertiesPage";
 import ProtectedLayout from "../lib/ProtectedLayout";
+import RootLayout from "../components/RootLayout";
 import VerifyNoticePage from "../features/auth/components/VerifyNoticePage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
@@ -26,121 +27,130 @@ import MessagePageDashboard from "../pages/message/MessagePageDashboard";
 import RentalRequestsPage from "../pages/dashboard/RentalRequestsPage";
 import ReceiptPage from "../pages/dashboard/ReceiptPage";
 import MyRentalsPage from "../pages/rentals/MyRentalsPage";
+import SupportPage from "../pages/support/SupportPage";
+import SupportPageDashboard from "../pages/support/SupportPageDashboard";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <LandingPage />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/properties",
-    element: <PropertiesPage />,
-  },
-  {
-    path: "/properties/:id",
-    element: <PropertyDetailsPage />,
-  },
-  {
-    path: "/verify-notice",
-    element: <VerifyNoticePage />,
-  },
-  {
-    path: "/verify-email",
-    element: <VerifyEmailPage />,
-  },
-  {
-    path: "/forgot-password",
-    element: <ForgotPasswordPage />,
-  },
-  {
-    path: "/reset-password",
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-
-  // protected routes
-  {
-    path: "/",
-    element: <ProtectedLayout />,
+    element: <RootLayout />,
     children: [
       {
-        path: "dashboard",
-        element: <DashboardPage />,
+        path: "/",
+        element: <LandingPage />,
       },
       {
-        path: "dashboard/my-properties",
-        element: <MyPropertiesPage />,
+        path: "/register",
+        element: <RegisterPage />,
       },
       {
-        path: "/properties/create",
-        element: <AddListingsPage />,
+        path: "/login",
+        element: <LoginPage />,
       },
       {
-        path: "/properties/:id/edit",
-        element: <EditListingPage />,
+        path: "/properties",
+        element: <PropertiesPage />,
       },
       {
-        path: "/properties/saved",
-        element: <SavedPropertiesPage />,
+        path: "/properties/:id",
+        element: <PropertyDetailsPage />,
       },
       {
-        path: "/message",
-        element: <MessagePage />,
+        path: "/verify-notice",
+        element: <VerifyNoticePage />,
       },
       {
-        path: "/my-rentals",
-        element: <MyRentalsPage />,
+        path: "/verify-email",
+        element: <VerifyEmailPage />,
       },
       {
-        path: "/profile",
-        element: <ProfilePage />,
+        path: "/forgot-password",
+        element: <ForgotPasswordPage />,
       },
       {
-        path: "/dashboard/profile",
-        element: <ProfilePageDashboard />,
+        path: "/reset-password",
+        element: <ResetPasswordPage />,
       },
       {
-        path: "/setting",
-        element: <SettingPage />,
+        path: "/",
+        element: <ProtectedLayout />,
+        children: [
+          {
+            path: "dashboard",
+            element: <DashboardPage />,
+          },
+          {
+            path: "dashboard/my-properties",
+            element: <MyPropertiesPage />,
+          },
+          {
+            path: "properties/create",
+            element: <AddListingsPage />,
+          },
+          {
+            path: "properties/:id/edit",
+            element: <EditListingPage />,
+          },
+          {
+            path: "properties/saved",
+            element: <SavedPropertiesPage />,
+          },
+          {
+            path: "message",
+            element: <MessagePage />,
+          },
+          {
+            path: "my-rentals",
+            element: <MyRentalsPage />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "dashboard/profile",
+            element: <ProfilePageDashboard />,
+          },
+          {
+            path: "setting",
+            element: <SettingPage />,
+          },
+          {
+            path: "support",
+            element: <SupportPage />,
+          },
+          {
+            path: "dashboard/setting",
+            element: <SettingPageDashboard />,
+          },
+          {
+            path: "dashboard/support",
+            element: <SupportPageDashboard />,
+          },
+          {
+            path: "properties/preview/:id",
+            element: <PropertyPreviewPage />,
+          },
+          {
+            path: "roommate",
+            element: <RoommatePage />,
+          },
+          {
+            path: "dashboard/message",
+            element: <MessagePageDashboard />,
+          },
+          {
+            path: "dashboard/rental-requests",
+            element: <RentalRequestsPage />,
+          },
+          {
+            path: "dashboard/receipts/:contractId",
+            element: <ReceiptPage />,
+          },
+        ],
       },
       {
-        path: "/dashboard/setting",
-        element: <SettingPageDashboard />,
-      },
-      {
-        path: "/properties/preview/:id",
-        element: <PropertyPreviewPage />,
-      },
-      {
-        path: "roommate",
-        element: <RoommatePage />,
-      },
-      {
-        path: "/message",
-        element: <MessagePage />,
-      },
-      {
-        path: "/dashboard/message",
-        element: <MessagePageDashboard />,
-      },
-      {
-        path: "/dashboard/rental-requests",
-        element: <RentalRequestsPage />,
-      },
-      {
-        path: "/dashboard/receipts/:contractId",
-        element: <ReceiptPage />,
+        path: "*",
+        element: <NotFound />,
       },
     ],
   },

@@ -1,8 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import { ObjectId } from "mongodb";
+import { fromNodeHeaders } from "better-auth/node";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import adminMiddleware from "../middlewares/admin.middleware.js";
+import { auth } from "../models/auth/auth.js";
 import { env } from "../config/evnironments.js";
 import { UserProfile } from "../models/profile/schema.js";
 import { Property, PropertyImage } from "../models/property/schema.js";
@@ -12,18 +14,108 @@ import {
   emitAdminNotificationCounts,
   getAdminNotificationCountsForUser,
   markAdminPropertyNotificationsAsRead,
-  markAdminReportNotificationsAsRead
+  markAdminReportNotificationsAsRead,
+  markAdminScamReportNotificationsAsRead,
+  markAdminSupportNotificationsAsRead
 } from "../models/notification/notification.service.js";
+import { ScamReport } from "../models/scam-report/schema.js";
+import {
+  getReportCountsForUser,
+  getScamReportById
+} from "../models/scam-report/scam-report.service.js";
+import { User } from "../models/auth/schema.js";
 import {
   attachUploadedPropertyImages,
   makeUploader,
   normalizePropertyMultipartBody
 } from "../middlewares/upload.middleware.js";
 import { syncPropertyImages } from "../utils/property.creator.utils.js";
+import {
+  buildAdminPaginationMeta,
+  escapeRegex,
+  parseAdminPagination
+} from "../utils/adminPagination.js";
 
 const uploader = makeUploader();
 
 const adminRouter = express.Router();
+
+const isValidAdminSecret = (adminSecret) =>
+  Boolean(adminSecret) && adminSecret === env.ADMIN_SECRET_KEY;
+
+adminRouter.post("/validate-secret", async (req, res) => {
+  const { adminSecret } = req.body ?? {};
+
+  if (!adminSecret) {
+    return res.status(400).json({ message: "Admin secret key is required." });
+  }
+
+  if (!isValidAdminSecret(adminSecret)) {
+    return res.status(403).json({ message: "Invalid admin secret key." });
+  }
+
+  return res.status(200).json({ valid: true });
+});
+
+adminRouter.get("/me", authMiddleware, async (req, res) => {
+  const profile = req.userProfile;
+
+  if (!profile || profile.role !== "admin") {
+    return res.status(403).json({
+      message: "This account does not have admin access. Use an admin account."
+    });
+  }
+
+  return res.status(200).json({
+    isAdmin: true,
+    user: {
+      id: req.userId,
+      email: req.user?.email ?? "",
+      name: req.user?.name ?? profile.fullName ?? ""
+    }
+  });
+});
+
+adminRouter.post("/signup-rollback", authMiddleware, async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const profile = await UserProfile.findOne({ userId }).lean();
+
+    if (profile?.role === "admin") {
+      return res
+        .status(400)
+        .json({ message: "Cannot rollback a promoted admin account." });
+    }
+
+    const db = mongoose.connection.db;
+    if (!db) {
+      return res
+        .status(500)
+        .json({ message: "Database connection is not available." });
+    }
+
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user id." });
+    }
+
+    const userObjectId = new ObjectId(userId);
+
+    await db.collection("user").deleteOne({ _id: userObjectId });
+    await db.collection("session").deleteMany({ userId });
+    await db.collection("account").deleteMany({ userId });
+    await UserProfile.deleteOne({ userId });
+
+    try {
+      await auth.api.signOut({ headers: fromNodeHeaders(req.headers) });
+    } catch {
+      // Session may already be invalid after user deletion.
+    }
+
+    return res.status(200).json({ message: "Incomplete admin signup removed." });
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.post("/promote", async (req, res, next) => {
   try {
@@ -35,7 +127,7 @@ adminRouter.post("/promote", async (req, res, next) => {
         .json({ message: "userId and adminSecret are required." });
     }
 
-    if (adminSecret !== env.ADMIN_SECRET_KEY) {
+    if (!isValidAdminSecret(adminSecret)) {
       return res.status(403).json({ message: "Invalid admin secret key." });
     }
 
@@ -140,11 +232,128 @@ adminRouter.get(
           .json({ message: "Database connection is not available." });
       }
 
+      const { page, limit, skip } = parseAdminPagination(req.query);
+      const roleFilter = req.query.role === "admin" ? "admin" : "user";
+      const search = String(req.query.search ?? "").trim();
+      const searchField = String(req.query.searchField ?? "all");
+
+      const adminProfiles = await UserProfile.find({ role: "admin" })
+        .select("userId")
+        .lean();
+      const adminUserIds = adminProfiles
+        .map((profile) => profile.userId)
+        .filter((id) => ObjectId.isValid(String(id)))
+        .map((id) => new ObjectId(String(id)));
+
+      const userQuery = { deletedAt: null };
+
+      if (roleFilter === "admin") {
+        userQuery._id = { $in: adminUserIds.length ? adminUserIds : [] };
+      } else {
+        userQuery._id = { $nin: adminUserIds };
+      }
+
+      const ownerIdStrings = (
+        await Property.distinct("ownerId", { deletedAt: null })
+      ).map(String);
+      const ownerObjectIds = ownerIdStrings
+        .filter((id) => ObjectId.isValid(id))
+        .map((id) => new ObjectId(id));
+
+      if (search) {
+        if (searchField === "joined") {
+          const joinedDate = new Date(search);
+          if (!Number.isNaN(joinedDate.getTime())) {
+            const start = new Date(joinedDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(joinedDate);
+            end.setHours(23, 59, 59, 999);
+            userQuery.createdAt = { $gte: start, $lte: end };
+          }
+        } else if (searchField === "type") {
+          const normalizedType = search.toLowerCase();
+          if (normalizedType === "admin") {
+            userQuery._id = {
+              $in: adminUserIds.length ? adminUserIds : []
+            };
+          } else if (normalizedType === "owner") {
+            userQuery._id = {
+              $in: ownerObjectIds.length ? ownerObjectIds : [],
+              $nin: adminUserIds
+            };
+          } else if (normalizedType === "tenant") {
+            userQuery._id = {
+              $nin: [...adminUserIds, ...ownerObjectIds]
+            };
+          }
+        } else {
+          const regex = new RegExp(escapeRegex(search), "i");
+          const searchClauses = [];
+
+          if (searchField === "all" || searchField === "email") {
+            searchClauses.push({ email: regex });
+          }
+          if (searchField === "all" || searchField === "name") {
+            searchClauses.push({ name: regex });
+            const profileMatches = await UserProfile.find({
+              fullName: regex
+            })
+              .select("userId")
+              .lean();
+            const profileUserIds = profileMatches
+              .map((profile) => profile.userId)
+              .filter((id) => ObjectId.isValid(String(id)))
+              .map((id) => new ObjectId(String(id)));
+            if (profileUserIds.length) {
+              searchClauses.push({ _id: { $in: profileUserIds } });
+            }
+          }
+          if (searchField === "status") {
+            const isBlocked = search.toLowerCase().includes("block");
+            const statusProfiles = await UserProfile.find({
+              deletedAt: isBlocked ? { $ne: null } : null
+            })
+              .select("userId")
+              .lean();
+            const statusUserIds = statusProfiles
+              .map((profile) => profile.userId)
+              .filter((id) => ObjectId.isValid(String(id)))
+              .map((id) => new ObjectId(String(id)));
+            if (statusUserIds.length) {
+              searchClauses.push({ _id: { $in: statusUserIds } });
+            }
+          }
+
+          if (searchField === "all") {
+            if (search.toLowerCase().includes("owner") && ownerObjectIds.length) {
+              searchClauses.push({ _id: { $in: ownerObjectIds } });
+            }
+            if (search.toLowerCase().includes("tenant")) {
+              searchClauses.push({
+                _id: { $nin: [...adminUserIds, ...ownerObjectIds] }
+              });
+            }
+            if (search.toLowerCase().includes("admin") && adminUserIds.length) {
+              searchClauses.push({ _id: { $in: adminUserIds } });
+            }
+          }
+
+          if (searchClauses.length) {
+            userQuery.$and = [
+              ...(userQuery.$and ?? []),
+              { $or: searchClauses }
+            ];
+          }
+        }
+      }
+
+      const total = await db.collection("user").countDocuments(userQuery);
       const users = await db
         .collection("user")
-        .find({ deletedAt: null })
+        .find(userQuery)
         .sort({ createdAt: -1 })
-        .limit(100)
+        .skip(skip)
+        .limit(limit)
         .toArray();
 
       const userIds = users.map((user) => String(user._id));
@@ -154,9 +363,7 @@ adminRouter.get(
       const profileMap = new Map(
         profiles.map((profile) => [String(profile.userId), profile])
       );
-      const ownerIds = new Set(
-        await Property.distinct("ownerId", { deletedAt: null })
-      );
+      const ownerIds = new Set(ownerIdStrings);
 
       const formattedUsers = users.map((user) => {
         const profile = profileMap.get(String(user._id));
@@ -187,7 +394,10 @@ adminRouter.get(
         };
       });
 
-      return res.status(200).json({ users: formattedUsers });
+      return res.status(200).json({
+        users: formattedUsers,
+        pagination: buildAdminPaginationMeta(total, page, limit)
+      });
     } catch (error) {
       next(error);
     }
@@ -200,14 +410,31 @@ adminRouter.get(
   adminMiddleware,
   async (req, res, next) => {
     try {
-      const reports = await Notification.find({
+      const { page, limit, skip } = parseAdminPagination(req.query);
+      const reportQuery = {
         userId: req.userId,
         title: { $regex: /^Unblock request from/i }
-      })
+      };
+
+      const total = await Notification.countDocuments(reportQuery);
+      const reports = await Notification.find(reportQuery)
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .lean();
 
-      return res.status(200).json({ reports });
+      const formattedReports = reports.map((report) => ({
+        id: String(report._id),
+        title: report.title,
+        content: report.content,
+        isRead: report.isRead,
+        createdAt: report.createdAt
+      }));
+
+      return res.status(200).json({
+        reports: formattedReports,
+        pagination: buildAdminPaginationMeta(total, page, limit)
+      });
     } catch (error) {
       next(error);
     }
@@ -233,6 +460,62 @@ adminRouter.patch(
   }
 );
 
+adminRouter.get(
+  "/support-messages",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const { page, limit, skip } = parseAdminPagination(req.query);
+      const supportQuery = {
+        userId: req.userId,
+        type: "Support"
+      };
+
+      const total = await Notification.countDocuments(supportQuery);
+      const messages = await Notification.find(supportQuery)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const formattedMessages = messages.map((entry) => ({
+        id: String(entry._id),
+        title: entry.title,
+        content: entry.content,
+        isRead: entry.isRead,
+        createdAt: entry.createdAt
+      }));
+
+      return res.status(200).json({
+        messages: formattedMessages,
+        pagination: buildAdminPaginationMeta(total, page, limit)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.patch(
+  "/support-messages/read-all",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const result = await markAdminSupportNotificationsAsRead(req.userId);
+      const counts = await emitAdminNotificationCounts(req.userId);
+
+      return res.status(200).json({
+        ...result,
+        counts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 adminRouter.patch(
   "/notifications/properties/read-all",
   authMiddleware,
@@ -240,6 +523,195 @@ adminRouter.patch(
   async (req, res, next) => {
     try {
       const result = await markAdminPropertyNotificationsAsRead(req.userId);
+      const counts = await emitAdminNotificationCounts(req.userId);
+
+      return res.status(200).json({
+        ...result,
+        counts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+const resolveUserLabels = async (userIds) => {
+  const uniqueIds = [...new Set(userIds.filter(Boolean))];
+  const objectIds = uniqueIds
+    .filter((id) => ObjectId.isValid(id))
+    .map((id) => new ObjectId(id));
+
+  const [profiles, users] = await Promise.all([
+    UserProfile.find({ userId: { $in: uniqueIds } }).lean(),
+    objectIds.length
+      ? User.find({ _id: { $in: objectIds } })
+          .select({ _id: 1, name: 1, email: 1 })
+          .lean()
+      : []
+  ]);
+
+  const profileByUserId = new Map(
+    profiles.map((profile) => [String(profile.userId), profile])
+  );
+  const userById = new Map(users.map((user) => [String(user._id), user]));
+
+  const labelFor = (userId) => {
+    const profile = profileByUserId.get(String(userId));
+    const authUser = userById.get(String(userId));
+    const name =
+      profile?.fullName?.trim() || authUser?.name?.trim() || "Unknown user";
+    const email = authUser?.email || "";
+    return { userId: String(userId), name, email };
+  };
+
+  return new Map(uniqueIds.map((id) => [String(id), labelFor(id)]));
+};
+
+const formatScamReportRow = (report, labels, propertyTitle = null) => {
+  const reporter = labels.get(String(report.reporterUserId)) ?? {
+    userId: String(report.reporterUserId),
+    name: "Unknown user",
+    email: ""
+  };
+  const reported = labels.get(String(report.reportedUserId)) ?? {
+    userId: String(report.reportedUserId),
+    name: "Unknown user",
+    email: ""
+  };
+
+  return {
+    id: String(report._id),
+    reportType: report.reportType,
+    reason: report.reason,
+    description: report.description || "",
+    propertyId: report.propertyId ? String(report.propertyId) : null,
+    propertyTitle,
+    reporter,
+    reported,
+    createdAt: report.createdAt
+  };
+};
+
+adminRouter.get(
+  "/scam-reports",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const { page, limit, skip } = parseAdminPagination(req.query);
+      const total = await ScamReport.countDocuments();
+      const reports = await ScamReport.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const userIds = reports.flatMap((report) => [
+        report.reporterUserId,
+        report.reportedUserId
+      ]);
+      const labels = await resolveUserLabels(userIds);
+
+      const propertyIds = reports
+        .map((report) => report.propertyId)
+        .filter(Boolean);
+      const properties = propertyIds.length
+        ? await Property.find({ _id: { $in: propertyIds } })
+            .select({ _id: 1, title: 1 })
+            .lean()
+        : [];
+      const propertyTitleById = new Map(
+        properties.map((property) => [String(property._id), property.title])
+      );
+
+      const formattedReports = reports.map((report) =>
+        formatScamReportRow(
+          report,
+          labels,
+          report.propertyId
+            ? propertyTitleById.get(String(report.propertyId)) ?? null
+            : null
+        )
+      );
+
+      return res.status(200).json({
+        reports: formattedReports,
+        pagination: buildAdminPaginationMeta(total, page, limit)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.get(
+  "/scam-reports/:id",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const report = await getScamReportById(req.params.id);
+      const labels = await resolveUserLabels([
+        report.reporterUserId,
+        report.reportedUserId
+      ]);
+
+      let propertyTitle = null;
+      if (report.propertyId) {
+        const property = await Property.findById(report.propertyId)
+          .select({ title: 1 })
+          .lean();
+        propertyTitle = property?.title ?? null;
+      }
+
+      const reportedCounts = await getReportCountsForUser(
+        report.reportedUserId
+      );
+
+      return res.status(200).json({
+        report: formatScamReportRow(report, labels, propertyTitle),
+        reportedCounts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.get(
+  "/users/:id/scam-report-summary",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const userId = req.params.id;
+      const counts = await getReportCountsForUser(userId);
+      const labels = await resolveUserLabels([userId]);
+      const profile = await UserProfile.findOne({ userId }).lean();
+
+      return res.status(200).json({
+        user: labels.get(String(userId)) ?? {
+          userId: String(userId),
+          name: "Unknown user",
+          email: ""
+        },
+        status: profile?.deletedAt ? "Blocked" : "Active",
+        blockedReason: profile?.blockedReason ?? null,
+        ...counts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.patch(
+  "/scam-reports/read-all",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res, next) => {
+    try {
+      const result = await markAdminScamReportNotificationsAsRead(req.userId);
       const counts = await emitAdminNotificationCounts(req.userId);
 
       return res.status(200).json({
@@ -280,14 +752,75 @@ adminRouter.get(
           .status(500)
           .json({ message: "Database connection unavailable." });
 
-      const props = await Property.find({ deletedAt: null })
+      const { page, limit, skip } = parseAdminPagination(req.query);
+      const search = String(req.query.search ?? "").trim();
+      const searchField = String(req.query.searchField ?? "all");
+
+      const propertyFilter = { deletedAt: null };
+
+      if (search) {
+        const regex = new RegExp(escapeRegex(search), "i");
+        const searchClauses = [];
+
+        if (searchField === "all" || searchField === "title") {
+          searchClauses.push({ title: regex });
+        }
+        if (searchField === "all" || searchField === "place") {
+          searchClauses.push({ address: regex }, { city: regex });
+        }
+        if (searchField === "all" || searchField === "status") {
+          searchClauses.push({ status: regex });
+        }
+        if (searchField === "all" || searchField === "owner" || searchField === "email") {
+          const ownerQuery = { deletedAt: null };
+          if (searchField === "email") {
+            ownerQuery.email = regex;
+          } else if (searchField === "owner") {
+            ownerQuery.name = regex;
+          } else {
+            ownerQuery.$or = [{ email: regex }, { name: regex }];
+          }
+
+          const matchingOwners = await db
+            .collection("user")
+            .find(ownerQuery)
+            .project({ _id: 1 })
+            .toArray();
+          const ownerIds = matchingOwners.map((owner) => String(owner._id));
+          if (ownerIds.length) {
+            searchClauses.push({ ownerId: { $in: ownerIds } });
+          } else if (searchField === "owner" || searchField === "email") {
+            searchClauses.push({ ownerId: "__no_match__" });
+          }
+        }
+
+        if (searchClauses.length) {
+          propertyFilter.$or = searchClauses;
+        }
+      }
+
+      const total = await Property.countDocuments(propertyFilter);
+      const props = await Property.find(propertyFilter)
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .lean();
+
       const ownerIds = [...new Set(props.map((p) => p.ownerId))];
-      const owners = await db
-        .collection("user")
-        .find({ _id: { $in: ownerIds.map((id) => new ObjectId(id)) } })
-        .toArray();
+      const owners =
+        ownerIds.length > 0
+          ? await db
+              .collection("user")
+              .find({
+                _id: {
+                  $in: ownerIds
+                    .filter((id) => ObjectId.isValid(String(id)))
+                    .map((id) => new ObjectId(String(id)))
+                }
+              })
+              .toArray()
+          : [];
+
       const ownerMap = new Map(
         owners.map((o) => [
           String(o._id),
@@ -317,7 +850,11 @@ adminRouter.get(
             : ""
         };
       });
-      return res.status(200).json({ properties: formatted });
+
+      return res.status(200).json({
+        properties: formatted,
+        pagination: buildAdminPaginationMeta(total, page, limit)
+      });
     } catch (error) {
       next(error);
     }

@@ -31,6 +31,8 @@ const toNotificationPayload = (notification) => {
 const isAdminDashboardNotification = ({ type, title }) => {
   return (
     type === "ListingUpdate" ||
+    type === "Support" ||
+    type === "ScamReport" ||
     (typeof title === "string" && UNBLOCK_REPORT_TITLE_PATTERN.test(title))
   );
 };
@@ -80,7 +82,12 @@ export const createNotification = async ({
 export const getAdminNotificationCountsForUser = async (userId) => {
   const normalizedUserId = toObjectId(userId, "user id");
 
-  const [propertyNotifications, reportNotifications] = await Promise.all([
+  const [
+    propertyNotifications,
+    reportNotifications,
+    supportNotifications,
+    scamReportNotifications
+  ] = await Promise.all([
     Notification.countDocuments({
       userId: normalizedUserId,
       type: "ListingUpdate",
@@ -90,12 +97,24 @@ export const getAdminNotificationCountsForUser = async (userId) => {
       userId: normalizedUserId,
       title: { $regex: UNBLOCK_REPORT_TITLE_PATTERN },
       isRead: false
+    }),
+    Notification.countDocuments({
+      userId: normalizedUserId,
+      type: "Support",
+      isRead: false
+    }),
+    Notification.countDocuments({
+      userId: normalizedUserId,
+      type: "ScamReport",
+      isRead: false
     })
   ]);
 
   return {
     propertyNotifications,
-    reportNotifications
+    reportNotifications,
+    supportNotifications,
+    scamReportNotifications
   };
 };
 
@@ -112,6 +131,36 @@ export const markAdminReportNotificationsAsRead = async (userId) => {
     {
       userId: normalizedUserId,
       title: { $regex: UNBLOCK_REPORT_TITLE_PATTERN },
+      isRead: false
+    },
+    { $set: { isRead: true } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const markAdminScamReportNotificationsAsRead = async (userId) => {
+  const normalizedUserId = toObjectId(userId, "user id");
+
+  const result = await Notification.updateMany(
+    {
+      userId: normalizedUserId,
+      type: "ScamReport",
+      isRead: false
+    },
+    { $set: { isRead: true } }
+  );
+
+  return { updatedCount: result.modifiedCount ?? 0 };
+};
+
+export const markAdminSupportNotificationsAsRead = async (userId) => {
+  const normalizedUserId = toObjectId(userId, "user id");
+
+  const result = await Notification.updateMany(
+    {
+      userId: normalizedUserId,
+      type: "Support",
       isRead: false
     },
     { $set: { isRead: true } }

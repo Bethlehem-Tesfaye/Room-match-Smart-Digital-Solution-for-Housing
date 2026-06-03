@@ -19,6 +19,7 @@ import {
   markTenantTerminationRead,
   rejectRequest,
   createTerminationNoticeHandler,
+  completeEarlyTerminationHandler,
   withdrawTerminationNoticeHandler,
   requestToRent
 } from "./contract.controller.js";
@@ -124,6 +125,13 @@ contractRouter.post(
   authMiddleware,
   validate(contractParamsSchema, "params"),
   createTerminationNoticeHandler
+);
+
+contractRouter.post(
+  "/:id/terminate-early",
+  authMiddleware,
+  validate(contractParamsSchema, "params"),
+  completeEarlyTerminationHandler
 );
 
 contractRouter.post(

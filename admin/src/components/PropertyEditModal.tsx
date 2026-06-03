@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { AdminPropertyDetail } from "../lib/api";
+import { adminPalette } from "../theme/palette";
 
 interface PropertyEditModalProps {
   property: AdminPropertyDetail | null;
@@ -100,21 +102,45 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
   if (!open || !property) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Edit Property</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border shadow-xl"
+        style={{
+          borderColor: adminPalette.border,
+          backgroundColor: adminPalette.cardBg,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between border-b px-5 py-4"
+          style={{
+            borderColor: adminPalette.border,
+            backgroundColor: adminPalette.cardBg,
+          }}
+        >
+          <h2 className="text-lg font-semibold" style={{ color: adminPalette.deep }}>
+            Edit property
+          </h2>
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
+            style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+            onClick={onClose}
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        <div className="modal-body">
-          <form onSubmit={handleSubmit} className="property-form">
-            {/* Basic Info */}
-            <fieldset className="form-section">
+        <div className="px-5 py-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <fieldset className="admin-form-section">
               <legend>Basic Information</legend>
 
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="title">Title</label>
                   <input
                     id="title"
@@ -125,7 +151,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                     required
                   />
                 </div>
-                <div className="form-field">
+                <div className="admin-form-field">
                   <label htmlFor="propertyType">Property Type</label>
                   <select
                     id="propertyType"
@@ -144,7 +170,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                 </div>
               </div>
 
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="description">Description</label>
                 <textarea
                   id="description"
@@ -157,9 +183,9 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
             </fieldset>
 
             {/* Location */}
-            <fieldset className="form-section">
+            <fieldset className="admin-form-section">
               <legend>Location</legend>
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="address">Address</label>
                 <input
                   id="address"
@@ -170,7 +196,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   required
                 />
               </div>
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="city">City</label>
                 <input
                   id="city"
@@ -184,10 +210,10 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
             </fieldset>
 
             {/* Pricing */}
-            <fieldset className="form-section">
+            <fieldset className="admin-form-section">
               <legend>Pricing</legend>
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="price">Price</label>
                   <input
                     id="price"
@@ -199,7 +225,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                     required
                   />
                 </div>
-                <div className="form-field">
+                <div className="admin-form-field">
                   <label htmlFor="currency">Currency</label>
                   <input
                     id="currency"
@@ -210,8 +236,8 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   />
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="initialPayment">Initial Payment</label>
                   <input
                     id="initialPayment"
@@ -224,7 +250,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   />
                 </div>
               </div>
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="leasePeriod">Lease Period (months)</label>
                 <input
                   id="leasePeriod"
@@ -239,10 +265,10 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
             </fieldset>
 
             {/* Details */}
-            <fieldset className="form-section">
+            <fieldset className="admin-form-section">
               <legend>Property Details</legend>
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="numberOfBedrooms">Bedrooms</label>
                   <input
                     id="numberOfBedrooms"
@@ -253,7 +279,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                     onChange={handleChange}
                   />
                 </div>
-                <div className="form-field">
+                <div className="admin-form-field">
                   <label htmlFor="numberOfBathrooms">Bathrooms</label>
                   <input
                     id="numberOfBathrooms"
@@ -265,8 +291,8 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   />
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="floorNumber">Floor Number</label>
                   <input
                     id="floorNumber"
@@ -277,7 +303,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                     onChange={handleChange}
                   />
                 </div>
-                <div className="form-field">
+                <div className="admin-form-field">
                   <label htmlFor="totalFloors">Total Floors</label>
                   <input
                     id="totalFloors"
@@ -289,7 +315,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   />
                 </div>
               </div>
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="areaSqFt">Area (Sq Ft)</label>
                 <input
                   id="areaSqFt"
@@ -300,7 +326,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   onChange={handleChange}
                 />
               </div>
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="isFurnished">
                   <input
                     id="isFurnished"
@@ -315,7 +341,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
             </fieldset>
 
             {/* Images */}
-            <fieldset className="form-section">
+            <fieldset className="admin-form-section">
               <legend>Images</legend>
               {existingImageUrls.length > 0 && (
                 <div className="image-preview-grid">
@@ -324,7 +350,6 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                       <img src={imageUrl} alt="Existing property" />
                       <button
                         type="button"
-                        className="button tiny danger"
                         onClick={() => handleRemoveExistingImage(imageUrl)}
                       >
                         Remove
@@ -333,7 +358,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                   ))}
                 </div>
               )}
-              <div className="form-field">
+              <div className="admin-form-field">
                 <label htmlFor="images">Add Images</label>
                 <input
                   id="images"
@@ -350,10 +375,10 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
             </fieldset>
 
             {/* Availability & Status */}
-            <fieldset className="form-section">
+            <fieldset className="admin-form-section">
               <legend>Availability & Status</legend>
-              <div className="form-row">
-                <div className="form-field">
+              <div className="admin-form-row">
+                <div className="admin-form-field">
                   <label htmlFor="availableFrom">Available From</label>
                   <input
                     id="availableFrom"
@@ -363,7 +388,7 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
                     onChange={handleChange}
                   />
                 </div>
-                <div className="form-field">
+                <div className="admin-form-field">
                   <label htmlFor="status">Status</label>
                   <select
                     id="status"
@@ -380,10 +405,25 @@ function PropertyEditModal({ property, open, onClose, onSave, loading }: Propert
               </div>
             </fieldset>
 
-            <div className="modal-actions">
-              <button type="button" className="btn" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? "Saving..." : "Save Changes"}
+            <div
+              className="flex justify-end gap-2 border-t pt-4"
+              style={{ borderColor: adminPalette.border }}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                style={{ borderColor: adminPalette.border, color: adminPalette.deep }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: adminPalette.accent }}
+              >
+                {loading ? "Saving…" : "Save changes"}
               </button>
             </div>
           </form>

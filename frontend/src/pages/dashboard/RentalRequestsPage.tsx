@@ -17,6 +17,7 @@ import {
   useAcceptRentRequest,
   useCancelRentRequest,
   useCreateTerminationNotice,
+  useCompleteEarlyTermination,
   useOwnerActiveRentRequests,
   useOwnerAcceptedRentRequests,
   useOwnerPendingRentRequests,
@@ -237,12 +238,14 @@ function ActiveRentalCard({
   user,
   onCreateTermination,
   onWithdrawTermination,
+  onCompleteEarlyTermination,
   isPending,
 }: {
   request: RentRequest;
   user: { id: string } | null;
   onCreateTermination: (id: string) => void;
   onWithdrawTermination: (id: string) => void;
+  onCompleteEarlyTermination: (id: string) => void;
   isPending: boolean;
 }) {
   const listingId = getListingId(request.listingId);
@@ -370,7 +373,22 @@ function ActiveRentalCard({
             <RotateCcw size={13} />
             Withdraw notice
           </button>
-        ) : !isNoticeActive ? (
+        ) : isNoticeActive ? (
+          <button
+            type="button"
+            onClick={() => onCompleteEarlyTermination(request._id)}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            style={{
+              borderColor: "#bbf7d0",
+              color: "#166534",
+              backgroundColor: "#ecfdf5",
+            }}
+          >
+            <CheckCircle size={13} />
+            Early termination
+          </button>
+        ) : (
           <button
             type="button"
             onClick={() => onCreateTermination(request._id)}
@@ -385,7 +403,7 @@ function ActiveRentalCard({
             <AlertTriangle size={13} />
             Create termination notice
           </button>
-        ) : null}
+        )}
 
         <Link
           to={`/dashboard/receipts/${request._id}`}
@@ -422,6 +440,7 @@ function RequestCard({
   onReject,
   onCancel,
   onWithdrawTermination,
+  onCompleteEarlyTermination,
   isMutating,
 }: {
   request: RentRequest;
@@ -431,6 +450,7 @@ function RequestCard({
   onReject: (id: string) => void;
   onCancel: (id: string) => void;
   onWithdrawTermination: (id: string) => void;
+  onCompleteEarlyTermination: (id: string) => void;
   isMutating: boolean;
   nowTick: number;
 }) {
@@ -582,7 +602,7 @@ function RequestCard({
           </button>
         )}
 
-        {activeTab === "termination" && isNoticeInitiator && (
+        {activeTab === "termination" && isNoticeActive && isNoticeInitiator && (
           <button
             type="button"
             onClick={() => onWithdrawTermination(request._id)}
@@ -596,6 +616,23 @@ function RequestCard({
           >
             <RotateCcw size={13} />
             Withdraw notice
+          </button>
+        )}
+
+        {activeTab === "termination" && isNoticeActive && !isNoticeInitiator && (
+          <button
+            type="button"
+            onClick={() => onCompleteEarlyTermination(request._id)}
+            disabled={isMutating}
+            className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            style={{
+              borderColor: "#bbf7d0",
+              color: "#166534",
+              backgroundColor: "#ecfdf5",
+            }}
+          >
+            <CheckCircle size={13} />
+            Early termination
           </button>
         )}
       </div>
@@ -646,6 +683,7 @@ function RentalRequestsPage() {
   const rejectRequest = useRejectRentRequest();
   const cancelRequest = useCancelRentRequest();
   const createTerminationNotice = useCreateTerminationNotice();
+  const completeEarlyTermination = useCompleteEarlyTermination();
   const withdrawTerminationNotice = useWithdrawTerminationNotice();
 
   const incomingMarkStartedRef = useRef(false);
@@ -713,7 +751,8 @@ function RentalRequestsPage() {
     rejectRequest.isPending ||
     cancelRequest.isPending ||
     createTerminationNotice.isPending ||
-    withdrawTerminationNotice.isPending;
+    withdrawTerminationNotice.isPending ||
+    completeEarlyTermination.isPending;
 
   const handleAccept = async (contractId: string) => {
     try {
@@ -778,6 +817,22 @@ function RentalRequestsPage() {
         error instanceof Error
           ? error.message
           : "Failed to withdraw termination notice",
+      );
+    }
+  };
+
+  const handleCompleteEarlyTermination = async (contractId: string) => {
+    try {
+      await completeEarlyTermination.mutateAsync({ contractId });
+      toast.success("Rental ended early");
+      activeRequestsQuery.refetch();
+      terminationRequestsQuery.refetch();
+      acceptedRequestsQuery.refetch();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to complete early termination",
       );
     }
   };
@@ -886,6 +941,9 @@ function RentalRequestsPage() {
                     onWithdrawTermination={(id) =>
                       void handleWithdrawTerminationNotice(id)
                     }
+                    onCompleteEarlyTermination={(id) =>
+                      void handleCompleteEarlyTermination(id)
+                    }
                     isPending={isMutating}
                   />
                 ) : (
@@ -899,6 +957,9 @@ function RentalRequestsPage() {
                     onCancel={(id) => void handleCancel(id)}
                     onWithdrawTermination={(id) =>
                       void handleWithdrawTerminationNotice(id)
+                    }
+                    onCompleteEarlyTermination={(id) =>
+                      void handleCompleteEarlyTermination(id)
                     }
                     isMutating={isMutating}
                     nowTick={nowTick}

@@ -4,6 +4,7 @@ import {
   completeContractPayment,
   createRentRequest,
   createTerminationNotice,
+  completeEarlyTermination,
   getConversationRentRequest,
   getOwnerActiveRentRequests,
   getOwnerAcceptedRentRequests,
@@ -109,6 +110,22 @@ export const createTerminationNoticeHandler = async (req, res, next) => {
     const { id } = req.params;
 
     const contract = await createTerminationNotice({
+      contractId: id,
+      requesterUserId: req.userId
+    });
+
+    return res.status(200).json({ contract });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// POST /contracts/:id/terminate-early
+export const completeEarlyTerminationHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const contract = await completeEarlyTermination({
       contractId: id,
       requesterUserId: req.userId
     });

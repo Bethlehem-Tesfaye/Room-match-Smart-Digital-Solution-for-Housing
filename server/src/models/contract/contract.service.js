@@ -596,7 +596,7 @@ export const createTerminationNotice = async ({
         type: "ListingUpdate",
         title: "Termination notice created",
         content:
-          "A termination notice was created for this contract. The rental will automatically terminate when the notice period ends unless the initiator withdraws it first.",
+          "A termination notice was created for this contract. The rental will automatically terminate in 30 days unless the initiator withdraws it first.",
         relatedEntityId: contract._id
       });
 
@@ -612,6 +612,84 @@ export const createTerminationNotice = async ({
         () => undefined
       );
     }
+
+    return hydrateContract(contract._id);
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const completeEarlyTermination = async ({
+  contractId,
+  requesterUserId
+}) => {
+  const normalizedContractId = toObjectId(contractId, "contract id");
+  const normalizedRequesterId = toObjectId(requesterUserId, "user id");
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const contract =
+      await Contract.findById(normalizedContractId).session(session);
+
+    if (!contract) {
+      throw new CustomError("Rent request not found", 404);
+    }
+
+    if (contract.status !== "TERMINATION_PENDING") {
+      throw new CustomError("No termination notice is active", 400);
+    }
+
+    if (!contract.terminationRequestedBy) {
+      throw new CustomError("No termination notice is active", 400);
+    }
+
+    if (contract.terminationRequestedBy.equals(normalizedRequesterId)) {
+      throw new CustomError(
+        "Only the receiving party can complete early termination",
+        403
+      );
+    }
+
+    const isOwner = contract.ownerId.equals(normalizedRequesterId);
+    const isTenant = contract.tenantId.equals(normalizedRequesterId);
+
+    if (!isOwner && !isTenant) {
+      throw new CustomError(
+        "You are not allowed to terminate this contract",
+        403
+      );
+    }
+
+    contract.terminationEffectiveDate = new Date();
+    await completeTerminationNotice(contract, session);
+
+    await session.commitTransaction();
+
+    const notifierId = contract.terminationRequestedBy;
+
+    try {
+      const notification = await notificationService.createNotification({
+        userId: notifierId,
+        type: "ListingUpdate",
+        title: "Rental ended early",
+        content:
+          "The other party completed early termination. This rental has been ended immediately.",
+        relatedEntityId: contract._id
+      });
+
+      emitToUser(notifierId, "notification:receive", notification);
+    } catch (notifyErr) {
+      // swallow notification errors so the termination still completes
+    }
+
+    void emitOwnerRentalUnreadUpdate(contract.ownerId).catch(() => undefined);
+    void emitTenantRentalUnreadUpdate(contract.tenantId).catch(() => undefined);
 
     return hydrateContract(contract._id);
   } catch (error) {

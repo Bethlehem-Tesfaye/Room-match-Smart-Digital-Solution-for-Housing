@@ -24,6 +24,12 @@ export interface GetMyProfileResponse {
   profile: Profile;
 }
 
+export interface AccountStatusResponse {
+  blocked: boolean;
+  message: string | null;
+  blockedReason: string | null;
+}
+
 export interface RequestUnblockResponse {
   message: string;
 }

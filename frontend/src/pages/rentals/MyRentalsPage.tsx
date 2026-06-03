@@ -15,6 +15,7 @@ import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import {
   useCancelRentRequest,
   useCreateTerminationNotice,
+  useCompleteEarlyTermination,
   useWithdrawTerminationNotice,
   useTenantRentalContracts,
 } from "../../features/message/hooks/useMessageHooks";
@@ -195,6 +196,7 @@ function MyRentalsPage() {
   const rentalsQuery = useTenantRentalContracts();
   const cancelRentRequest = useCancelRentRequest();
   const createTerminationNotice = useCreateTerminationNotice();
+  const completeEarlyTermination = useCompleteEarlyTermination();
   const withdrawTerminationNotice = useWithdrawTerminationNotice();
 
   useEffect(() => {
@@ -361,6 +363,20 @@ function MyRentalsPage() {
         error instanceof Error
           ? error.message
           : "Failed to withdraw termination notice",
+      );
+    }
+  };
+
+  const handleCompleteEarlyTermination = async (contractId: string) => {
+    try {
+      await completeEarlyTermination.mutateAsync({ contractId });
+      await rentalsQuery.refetch();
+      toast.success("Rental ended early");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to complete early termination",
       );
     }
   };
@@ -783,7 +799,7 @@ function MyRentalsPage() {
                     {/* Rented tab actions */}
                     {activeTab === "rented" &&
                       (contract.status === "TERMINATION_PENDING" ? (
-                        isTerminationRequester(contract) && (
+                        isTerminationRequester(contract) ? (
                           <ActionBtn
                             variant="ghost"
                             onClick={() =>
@@ -792,6 +808,16 @@ function MyRentalsPage() {
                             disabled={withdrawTerminationNotice.isPending}
                           >
                             Withdraw notice
+                          </ActionBtn>
+                        ) : (
+                          <ActionBtn
+                            variant="primary"
+                            onClick={() =>
+                              void handleCompleteEarlyTermination(contract._id)
+                            }
+                            disabled={completeEarlyTermination.isPending}
+                          >
+                            Early termination
                           </ActionBtn>
                         )
                       ) : (
@@ -808,7 +834,7 @@ function MyRentalsPage() {
 
                     {/* Termination tab actions */}
                     {activeTab === "termination" &&
-                      isTerminationRequester(contract) && (
+                      (isTerminationRequester(contract) ? (
                         <ActionBtn
                           variant="ghost"
                           onClick={() =>
@@ -818,7 +844,17 @@ function MyRentalsPage() {
                         >
                           Withdraw notice
                         </ActionBtn>
-                      )}
+                      ) : (
+                        <ActionBtn
+                          variant="primary"
+                          onClick={() =>
+                            void handleCompleteEarlyTermination(contract._id)
+                          }
+                          disabled={completeEarlyTermination.isPending}
+                        >
+                          Early termination
+                        </ActionBtn>
+                      ))}
 
                     {/* Spacer */}
                     <div className="flex-1" />

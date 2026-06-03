@@ -18,6 +18,10 @@ export const updateProfileSchema = z
     "At least one profile field must be provided"
   );
 
+export const submitSupportSchema = z.object({
+  message: z.string().trim().min(1).max(4000)
+});
+
 export const setupBankSchema = z.object({
   accountName: z.string().trim().min(1).max(200),
   accountNumber: z.string().trim().min(1).max(50),

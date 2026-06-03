@@ -12,12 +12,16 @@ import {
   getAdminNotificationCounts,
   markAdminPropertyNotificationsAsRead,
   markAdminReportsAsRead,
+  markAdminScamReportsAsRead,
+  markAdminSupportMessagesAsRead,
   type AdminNotificationCountResponse,
 } from "../lib/api";
 
 const defaultCounts: AdminNotificationCountResponse = {
   propertyNotifications: 0,
   reportNotifications: 0,
+  supportNotifications: 0,
+  scamReportNotifications: 0,
 };
 
 type AdminNotificationContextValue = {
@@ -25,6 +29,8 @@ type AdminNotificationContextValue = {
   refreshCounts: () => Promise<void>;
   clearPropertyNotifications: () => Promise<void>;
   clearReportNotifications: () => Promise<void>;
+  clearSupportNotifications: () => Promise<void>;
+  clearScamReportNotifications: () => Promise<void>;
   isSocketConnected: boolean;
 };
 
@@ -42,6 +48,8 @@ export function AdminNotificationProvider() {
     setCounts({
       propertyNotifications: response.propertyNotifications ?? 0,
       reportNotifications: response.reportNotifications ?? 0,
+      supportNotifications: response.supportNotifications ?? 0,
+      scamReportNotifications: response.scamReportNotifications ?? 0,
     });
   }, []);
 
@@ -56,6 +64,24 @@ export function AdminNotificationProvider() {
 
   const clearReportNotifications = useCallback(async () => {
     const response = await markAdminReportsAsRead();
+    if (response.counts) {
+      setCounts(response.counts);
+      return;
+    }
+    await refreshCounts();
+  }, [refreshCounts]);
+
+  const clearSupportNotifications = useCallback(async () => {
+    const response = await markAdminSupportMessagesAsRead();
+    if (response.counts) {
+      setCounts(response.counts);
+      return;
+    }
+    await refreshCounts();
+  }, [refreshCounts]);
+
+  const clearScamReportNotifications = useCallback(async () => {
+    const response = await markAdminScamReportsAsRead();
     if (response.counts) {
       setCounts(response.counts);
       return;
@@ -88,6 +114,8 @@ export function AdminNotificationProvider() {
         setCounts({
           propertyNotifications: payload.propertyNotifications ?? 0,
           reportNotifications: payload.reportNotifications ?? 0,
+          supportNotifications: payload.supportNotifications ?? 0,
+          scamReportNotifications: payload.scamReportNotifications ?? 0,
         });
       },
     );
@@ -95,6 +123,8 @@ export function AdminNotificationProvider() {
     socket.on("notification:receive", (notification: { type?: string; title?: string }) => {
       if (
         notification?.type === "ListingUpdate" ||
+        notification?.type === "Support" ||
+        notification?.type === "ScamReport" ||
         (typeof notification?.title === "string" &&
           notification.title.startsWith("Unblock request from"))
       ) {
@@ -113,6 +143,8 @@ export function AdminNotificationProvider() {
       refreshCounts,
       clearPropertyNotifications,
       clearReportNotifications,
+      clearSupportNotifications,
+      clearScamReportNotifications,
       isSocketConnected,
     }),
     [
@@ -120,6 +152,8 @@ export function AdminNotificationProvider() {
       refreshCounts,
       clearPropertyNotifications,
       clearReportNotifications,
+      clearSupportNotifications,
+      clearScamReportNotifications,
       isSocketConnected,
     ],
   );

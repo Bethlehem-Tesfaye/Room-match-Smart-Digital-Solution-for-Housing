@@ -15,6 +15,9 @@ import {
   Info,
   MapPin,
   MessageSquare,
+  ShieldAlert,
+  UserX,
+  UserCheck,
   X,
   Users,
 } from "lucide-react";
@@ -44,6 +47,14 @@ interface MessageInboxProps {
   onLoadOlder: () => void;
   onSendMessage: (content: string) => Promise<void>;
   isRoommateChat?: boolean;
+  partnerUserId?: string;
+  partnerLabel?: string;
+  onReportUser?: () => void;
+  onBlockUser?: () => void;
+  onUnblockUser?: () => void;
+  blockedByMe?: boolean;
+  blockedByThem?: boolean;
+  isSafetyActionPending?: boolean;
 }
 
 const getSenderId = (sender: Message["senderId"]) =>
@@ -61,6 +72,14 @@ interface ContextPanelProps {
   onAcceptRentRequest?: () => Promise<void>;
   onRejectRentRequest?: () => Promise<void>;
   isRoommateChat?: boolean;
+  partnerUserId?: string;
+  partnerLabel?: string;
+  onReportUser?: () => void;
+  onBlockUser?: () => void;
+  onUnblockUser?: () => void;
+  blockedByMe?: boolean;
+  blockedByThem?: boolean;
+  isSafetyActionPending?: boolean;
 }
 
 export function ContextPanel({
@@ -75,7 +94,19 @@ export function ContextPanel({
   onAcceptRentRequest,
   onRejectRentRequest,
   isRoommateChat = false,
+  partnerUserId,
+  partnerLabel,
+  onReportUser,
+  onBlockUser,
+  onUnblockUser,
+  blockedByMe = false,
+  blockedByThem = false,
+  isSafetyActionPending = false,
 }: ContextPanelProps) {
+  const showSafetyActions = Boolean(
+    partnerUserId && onReportUser && (onBlockUser || onUnblockUser),
+  );
+
   return (
     <aside
       className="flex h-full min-h-0 flex-col overflow-y-auto border-l border-(--palette-border) bg-(--palette-card-bg) p-4"
@@ -280,6 +311,75 @@ export function ContextPanel({
           ) : null}
         </section>
       ) : null}
+
+      {showSafetyActions ? (
+        <section className="mt-4 space-y-3 rounded-xl border border-(--palette-border) p-4">
+          <p
+            className="text-[11px] font-medium uppercase tracking-[0.22em]"
+            style={{ color: "var(--palette-soft-purple)" }}
+          >
+            Safety
+          </p>
+          <p className="text-[12px]" style={{ color: "var(--palette-soft-purple)" }}>
+            Actions for {partnerLabel || "this user"}
+          </p>
+          {blockedByThem ? (
+            <p className="text-[12px] font-medium" style={{ color: "#b91c1c" }}>
+              This user has blocked you.
+            </p>
+          ) : null}
+          {blockedByMe ? (
+            <p className="text-[12px] font-medium" style={{ color: "#92400e" }}>
+              You blocked this user.
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={onReportUser}
+            disabled={isSafetyActionPending}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-60"
+            style={{
+              borderColor: "#fecaca",
+              color: "#b91c1c",
+              backgroundColor: "#fff",
+            }}
+          >
+            <ShieldAlert size={14} />
+            Report user
+          </button>
+          {blockedByMe && onUnblockUser ? (
+            <button
+              type="button"
+              onClick={onUnblockUser}
+              disabled={isSafetyActionPending}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-60"
+              style={{
+                borderColor: "#bbf7d0",
+                color: "#166534",
+                backgroundColor: "#ecfdf5",
+              }}
+            >
+              <UserCheck size={14} />
+              Unblock user
+            </button>
+          ) : onBlockUser ? (
+            <button
+              type="button"
+              onClick={onBlockUser}
+              disabled={isSafetyActionPending || blockedByThem}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-60"
+              style={{
+                borderColor: "var(--palette-border)",
+                color: "var(--palette-deep)",
+                backgroundColor: "var(--palette-card-muted-alt-bg)",
+              }}
+            >
+              <UserX size={14} />
+              Block user
+            </button>
+          ) : null}
+        </section>
+      ) : null}
     </aside>
   );
 }
@@ -308,6 +408,14 @@ function MessageInbox({
   hasMore,
   onLoadOlder,
   onSendMessage,
+  partnerUserId,
+  partnerLabel,
+  onReportUser,
+  onBlockUser,
+  onUnblockUser,
+  blockedByMe = false,
+  blockedByThem = false,
+  isSafetyActionPending = false,
 }: MessageInboxProps) {
   const [content, setContent] = useState("");
   const [isContextPanelOpen, setIsContextPanelOpen] = useState(false);
@@ -681,6 +789,14 @@ function MessageInbox({
               onAcceptRentRequest={onAcceptRentRequest}
               onRejectRentRequest={onRejectRentRequest}
               isRoommateChat={isRoommateChat}
+              partnerUserId={partnerUserId}
+              partnerLabel={partnerLabel}
+              onReportUser={onReportUser}
+              onBlockUser={onBlockUser}
+              onUnblockUser={onUnblockUser}
+              blockedByMe={blockedByMe}
+              blockedByThem={blockedByThem}
+              isSafetyActionPending={isSafetyActionPending}
             />
           </div>
         </div>

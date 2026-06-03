@@ -9,6 +9,7 @@ import {
   useThemePreference,
 } from "../hooks/useSettingHooks";
 import type { ThemePreference } from "../types/types";
+import BlockedUsersSection from "./BlockedUsersSection";
 
 function SettingsPanel() {
   const { data: hasPassword = false, isLoading: isPasswordModeLoading } =
@@ -284,6 +285,8 @@ function SettingsPanel() {
             </div>
           </div>
         </article>
+
+        <BlockedUsersSection />
 
         {/* ── Danger zone card ── */}
         <article

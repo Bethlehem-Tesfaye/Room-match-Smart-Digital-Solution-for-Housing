@@ -6,10 +6,74 @@ import {
 import { createNotification } from "../notification/notification.service.js";
 import { UserProfile } from "./schema.js";
 
+export const getAccountStatus = async (req, res, next) => {
+  try {
+    if (!req.userId) {
+      return res
+        .status(401)
+        .json({ message: "You must be signed in to check account status." });
+    }
+
+    const profile = await UserProfile.findOne({ userId: req.userId }).lean();
+
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found." });
+    }
+
+    const blocked = Boolean(profile.deletedAt);
+    const reasonMessage = profile.blockedReason
+      ? ` Reason: ${profile.blockedReason}`
+      : "";
+
+    return res.status(200).json({
+      blocked,
+      message: blocked
+        ? `Your account has been blocked.${reasonMessage} Contact support for help.`
+        : null,
+      blockedReason: profile.blockedReason ?? null
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 export const getMyProfile = async (req, res, next) => {
   try {
     const profile = await getProfileByUserId(req.userId);
     return res.status(200).json({ profile });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const submitSupport = async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    const profile = await getProfileByUserId(req.userId);
+    const requesterName =
+      profile?.fullName || req.user?.name || req.user?.email || "Unknown user";
+    const email = req.user?.email || "no email";
+    const phone = profile?.phoneNumber?.trim() || "not provided";
+    const body = message.trim();
+
+    const adminProfiles = await UserProfile.find({ role: "admin" }).lean();
+    const adminNotifications = adminProfiles
+      .map((adminProfile) => adminProfile.userId)
+      .filter(Boolean)
+      .map((adminId) =>
+        createNotification({
+          userId: adminId,
+          type: "Support",
+          title: `Support request from ${requesterName}`,
+          content: `Email: ${email}\nPhone: ${phone}\n\n${body}`
+        })
+      );
+
+    await Promise.all(adminNotifications);
+
+    return res.status(200).json({
+      message: "Your support message has been sent to admins."
+    });
   } catch (err) {
     return next(err);
   }

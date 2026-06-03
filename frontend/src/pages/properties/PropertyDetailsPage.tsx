@@ -16,6 +16,9 @@ import {
 } from "../../features/property/hooks/usePropertyHooks";
 import type { Property } from "../../features/property/types/type";
 import { palette } from "../../theme/palette";
+import ReportModal from "../../features/reports/components/ReportModal";
+import { useReportListing } from "../../features/reports/hooks/useReportHooks";
+import type { ReportReason } from "../../features/reports/constants";
 
 function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +26,8 @@ function PropertyDetailsPage() {
   const location = useLocation();
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const reportListing = useReportListing();
 
   const {
     data: property,
@@ -58,6 +63,48 @@ function PropertyDetailsPage() {
       }
     } finally {
       setIsFavoriteLoading(false);
+    }
+  };
+
+  const canReportListing = Boolean(
+    isAuthenticated &&
+      property &&
+      user?.id &&
+      property.ownerId !== user.id,
+  );
+
+  const handleOpenReportListing = () => {
+    if (isPending) return;
+
+    if (!isAuthenticated) {
+      navigate("/login", {
+        state: {
+          from: `${location.pathname}${location.search}${location.hash}`,
+        },
+      });
+      return;
+    }
+
+    setIsReportModalOpen(true);
+  };
+
+  const handleSubmitListingReport = async (payload: {
+    reason: ReportReason;
+    description?: string;
+  }) => {
+    if (!property) return;
+
+    try {
+      await reportListing.mutateAsync({
+        propertyId: property._id,
+        ...payload,
+      });
+      toast.success("Report submitted. Our team will review it.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit report",
+      );
+      throw error;
     }
   };
 
@@ -191,6 +238,8 @@ function PropertyDetailsPage() {
               isFavoriteLoading={isFavoriteLoading}
               onSendMessage={handleSendMessage}
               isSendMessageLoading={sendPropertyMessage.isPending}
+              showReportListing={canReportListing}
+              onReportListing={handleOpenReportListing}
             />
           )}
         </div>
@@ -199,6 +248,15 @@ function PropertyDetailsPage() {
       <FavoriteAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        title="Report listing"
+        subtitle="Tell us why this listing looks suspicious or inappropriate."
+        onClose={() => setIsReportModalOpen(false)}
+        onSubmit={handleSubmitListingReport}
+        isSubmitting={reportListing.isPending}
       />
     </main>
   );

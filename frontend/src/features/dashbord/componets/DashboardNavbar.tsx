@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Home,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   MessageCircle,
@@ -325,6 +326,11 @@ function DashboardNavbar({ activeTab, onTabChange }: DashboardNavbarProps) {
                       to: "/dashboard/setting",
                       icon: Settings,
                       label: "Settings",
+                    },
+                    {
+                      to: "/dashboard/support",
+                      icon: LifeBuoy,
+                      label: "Ask support",
                     },
                   ].map(({ to, icon: Icon, label }) => (
                     <Link

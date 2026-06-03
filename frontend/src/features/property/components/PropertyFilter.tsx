@@ -173,7 +173,7 @@ function FilterPanelContent({
   });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {showHeader ? (
         <div
           className="flex items-center justify-between border-b px-5 py-4"
@@ -206,7 +206,7 @@ function FilterPanelContent({
         </h2>
       )}
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 lg:px-0 lg:py-0">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-0 lg:py-0">
         <div className="mb-6">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-wide" style={sectionLabelStyle}>
             Price range
@@ -409,11 +409,11 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
   return (
     <>
       <aside
-        className="hidden w-[280px] shrink-0 lg:block"
+        className="hidden min-h-0 w-[280px] shrink-0 lg:flex lg:flex-col"
         aria-label="Property filters"
       >
         <div
-          className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border p-5"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border p-5"
           style={{
             borderColor: palette.border,
             backgroundColor: palette.cardBg,
@@ -432,7 +432,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({
           aria-hidden="true"
         />
         <aside
-          className={`fixed bottom-0 left-0 right-0 z-700 max-h-[85vh] transform rounded-t-xl border-t transition-transform duration-300 ${isOpen ? "translate-y-0" : "translate-y-full"}`}
+          className={`fixed bottom-0 left-0 right-0 z-700 flex max-h-[85vh] transform flex-col overflow-hidden rounded-t-xl border-t transition-transform duration-300 ${isOpen ? "translate-y-0" : "translate-y-full"}`}
           style={{
             backgroundColor: palette.cardBg,
             borderColor: palette.border,

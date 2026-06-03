@@ -1,17 +1,31 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import StatsCards from "../components/StatsCards";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Building2,
+  Eye,
+  Home,
+  Shield,
+  Users,
+  UsersRound,
+} from "lucide-react";
 import SearchBar, { SearchFilter } from "../components/SearchBar";
 import UserTable, { UserRow } from "../components/UserTable";
 import BlockUserModal from "../components/BlockUserModal";
+import DeleteUserModal from "../components/DeleteUserModal";
+import AdminShell from "../components/layout/AdminShell";
+import AdminStatGrid from "../components/layout/AdminStatGrid";
+import BentoCard from "../components/layout/BentoCard";
 import {
   getAdminDashboardSummary,
   getAdminUsers,
   setUserBlockedStatus,
   deleteAdminUser,
-  signOutAdmin,
 } from "../lib/api";
-import AdminNavTabs from "../components/AdminNavTabs";
+import {
+  ADMIN_PAGE_SIZE,
+  defaultPagination,
+  type AdminPaginationMeta,
+} from "../lib/pagination";
+import { adminPalette } from "../theme/palette";
 
 const defaultStats = {
   totalUsers: 0,
@@ -19,7 +33,8 @@ const defaultStats = {
   tenants: 0,
   properties: 0,
   activeListings: 0,
-  roommateProfiles: 0
+  roommateProfiles: 0,
+  totalAdmins: 0,
 };
 
 function DashboardPage() {
@@ -28,59 +43,74 @@ function DashboardPage() {
   const [activeUserTab, setActiveUserTab] = useState<"users" | "admins">("users");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserRow | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [statsData, setStatsData] = useState(defaultStats);
   const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<SearchFilter>("all");
-  const loadAdminData = async () => {
-    setLoading(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<AdminPaginationMeta>(defaultPagination);
+
+  const loadSummary = async () => {
+    try {
+      const summary = await getAdminDashboardSummary();
+      setStatsData({ ...defaultStats, ...summary });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to load admin dashboard data.",
+      );
+    }
+  };
+
+  const loadUsers = useCallback(async () => {
+    setListLoading(true);
     setError(null);
 
     try {
-      const summary = await getAdminDashboardSummary();
-      setStatsData(summary);
-
-      const usersResponse = await getAdminUsers();
-      setUsers(usersResponse.users ?? []);
-
+      const response = await getAdminUsers({
+        page,
+        limit: ADMIN_PAGE_SIZE,
+        role: activeUserTab === "admins" ? "admin" : "user",
+        search: search || undefined,
+        searchField: filter,
+      });
+      setUsers(response.users ?? []);
+      setPagination(response.pagination ?? defaultPagination());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load admin dashboard data.");
+      setError(
+        err instanceof Error ? err.message : "Unable to load user directory.",
+      );
     } finally {
+      setListLoading(false);
       setLoading(false);
     }
-  };
+  }, [page, activeUserTab, search, filter]);
 
   useEffect(() => {
-    void loadAdminData();
+    void loadSummary();
   }, []);
+
+  useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeUserTab, search, filter]);
 
   const stats = useMemo(
     () => [
-      { label: "Total Users", value: statsData.totalUsers },
-      { label: "Owners", value: statsData.owners },
-      { label: "Tenants", value: statsData.tenants },
-      { label: "Properties", value: statsData.properties },
-      { label: "Active Listings", value: statsData.activeListings }
+      { label: "Total users", value: statsData.totalUsers, icon: Users },
+      { label: "Owners", value: statsData.owners, icon: Home },
+      { label: "Tenants", value: statsData.tenants, icon: UsersRound },
+      { label: "Properties", value: statsData.properties, icon: Building2 },
+      { label: "Active listings", value: statsData.activeListings, icon: Eye },
     ],
-    [statsData]
+    [statsData],
   );
-
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOutAdmin();
-      navigate("/login", { replace: true });
-      window.location.reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Logout failed. Please try again.");
-    }
-  };
-
-  const handleBlockClick = (user: UserRow) => {
-    setSelectedUser(user);
-    setModalOpen(true);
-  };
 
   const handleConfirmBlock = async (reason?: string) => {
     if (!selectedUser) return;
@@ -94,7 +124,7 @@ function DashboardPage() {
             ? {
                 ...u,
                 status: blocked ? "Blocked" : "Active",
-                reason: blocked ? result.reason || reason || "No reason provided." : null
+                reason: blocked ? result.reason || reason || null : null,
               }
             : u,
         ),
@@ -107,125 +137,116 @@ function DashboardPage() {
     }
   };
 
-  const handleDeleteUser = async (user: UserRow) => {
-    const confirmText = `Are you sure you want to permanently delete ${user.name} (${user.role})? This cannot be undone.`;
-    if (!window.confirm(confirmText)) return;
+  const handleDeleteClick = (user: UserRow) => {
+    setUserToDelete(user);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    setDeleteLoading(true);
+    setError(null);
 
     try {
-      await deleteAdminUser(user.id);
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      await deleteAdminUser(userToDelete.id);
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
+
+      if (users.length === 1 && page > 1) {
+        setPage((current) => current - 1);
+      } else {
+        await loadUsers();
+        await loadSummary();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete user.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const filtered = users.filter((u) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-
-    switch (filter) {
-      case "name":
-        return u.name.toLowerCase().includes(q);
-      case "email":
-        return u.email.toLowerCase().includes(q);
-      case "type":
-        return u.type?.toLowerCase().includes(q) ?? false;
-      case "status":
-        return u.status?.toLowerCase().includes(q) ?? false;
-      case "joined": {
-        if (!u.joined) return false;
-        const selectedDate = new Date(search);
-        if (Number.isNaN(selectedDate.getTime())) {
-          return u.joined.toLowerCase().includes(q);
-        }
-        const userDate = new Date(u.joined);
-        return !Number.isNaN(userDate.getTime()) && userDate.toDateString() === selectedDate.toDateString();
-      }
-      default:
-        return (
-          u.name.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          u.type?.toLowerCase().includes(q) ||
-          u.status?.toLowerCase().includes(q) ||
-          u.joined.toLowerCase().includes(q)
-        );
-    }
-  });
-
-  const adminUsers = useMemo(
-    () => filtered.filter((u) => u.role === "admin"),
-    [filtered]
-  );
-
-  const normalUsers = useMemo(
-    () => filtered.filter((u) => u.role !== "admin"),
-    [filtered]
-  );
-
-  const currentViewUsers = activeUserTab === "admins" ? adminUsers : normalUsers;
+  const tabButton = (key: "users" | "admins", label: string, count: number) => {
+    const active = activeUserTab === key;
+    return (
+      <button
+        type="button"
+        onClick={() => setActiveUserTab(key)}
+        className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors"
+        style={{
+          borderColor: active ? adminPalette.deep : adminPalette.border,
+          backgroundColor: active ? adminPalette.deep : adminPalette.cardBg,
+          color: active ? "#fff" : adminPalette.deep,
+        }}
+      >
+        {key === "admins" ? <Shield size={14} /> : <Users size={14} />}
+        {label} ({count})
+      </button>
+    );
+  };
 
   return (
-    <div className="dashboard-wrapper">
-      <header className="dashboard-hero">
-        <div className="dashboard-inner">
-          <div className="dashboard-header-top">
-            <div>
-              <h1 className="hero-title">Admin Dashboard</h1>
-              <p className="hero-sub">
-                Manage users, listings, and reports in one place.
-              </p>
-            </div>
-            <button className="btn btn-danger" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-          <StatsCards items={stats} />
+    <AdminShell
+      eyebrow="Admin · Users"
+      title="User management"
+      subtitle="Search, review, block, or remove platform accounts."
+    >
+      <AdminStatGrid items={stats} loading={loading} />
+
+      <BentoCard label="Search & filter">
+        <div className="p-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            filter={filter}
+            onFilterChange={(newFilter) => {
+              setFilter(newFilter);
+              setSearch("");
+            }}
+            placeholder="Search by name, email, type, or status..."
+          />
         </div>
-      </header>
+      </BentoCard>
 
-      <main className="dashboard-main">
-        <div className="container-wide">
-          <div className="admin-surface">
-            <div className="admin-surface-head">
-              <p className="admin-mono-label">Directory</p>
-            </div>
-            <div className="admin-surface-body">
-              <SearchBar
-                value={search}
-                onChange={setSearch}
-                filter={filter}
-                onFilterChange={(newFilter) => {
-                  setFilter(newFilter);
-                  setSearch("");
-                }}
-              />
-            </div>
-          </div>
+      <div className="flex flex-wrap gap-2">
+        {tabButton("users", "Platform users", statsData.totalUsers)}
+        {tabButton("admins", "Admins", statsData.totalAdmins ?? 0)}
+      </div>
 
-          <div className="tabs">
-            <button
-              className={`tab ${activeUserTab === "users" ? "active" : ""}`}
-              onClick={() => setActiveUserTab("users")}
-            >
-              Users ({loading ? "..." : normalUsers.length})
-            </button>
-            <button
-              className={`tab ${activeUserTab === "admins" ? "active" : ""}`}
-              onClick={() => setActiveUserTab("admins")}
-            >
-              Admins ({loading ? "..." : adminUsers.length})
-            </button>
-            <AdminNavTabs propertiesCount={loading ? "..." : statsData.properties} />
-          </div>
-
-          {error && <div className="alert">{error}</div>}
-          {loading && users.length === 0 ? (
-            <div className="admin-empty">Loading latest admin data...</div>
-          ) : (
-            <UserTable users={currentViewUsers} onBlock={handleBlockClick} onDelete={handleDeleteUser} />
-          )}
+      {error && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: "#fecaca",
+            backgroundColor: "#fef2f2",
+            color: adminPalette.accent,
+          }}
+        >
+          {error}
         </div>
-      </main>
+      )}
+
+      {listLoading && users.length === 0 ? (
+        <div
+          className="rounded-2xl border border-dashed px-5 py-12 text-center text-sm"
+          style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+        >
+          Loading user directory…
+        </div>
+      ) : (
+        <UserTable
+          users={users}
+          onBlock={(user) => {
+            setSelectedUser(user);
+            setModalOpen(true);
+          }}
+          onDelete={handleDeleteClick}
+          title={activeUserTab === "admins" ? "Admin accounts" : "Platform users"}
+          pagination={pagination}
+          onPageChange={setPage}
+          loading={listLoading}
+        />
+      )}
 
       <BlockUserModal
         user={selectedUser}
@@ -233,7 +254,19 @@ function DashboardPage() {
         onClose={() => setModalOpen(false)}
         onConfirm={handleConfirmBlock}
       />
-    </div>
+
+      <DeleteUserModal
+        user={userToDelete}
+        open={deleteModalOpen}
+        loading={deleteLoading}
+        onClose={() => {
+          if (deleteLoading) return;
+          setDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
+    </AdminShell>
   );
 }
 

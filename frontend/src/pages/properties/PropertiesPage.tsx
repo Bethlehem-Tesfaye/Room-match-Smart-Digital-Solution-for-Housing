@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
 import { useCurrentUser } from "../../features/auth/hooks/useCurrentUser";
@@ -87,6 +87,7 @@ function PropertiesPage() {
   const [favoritePropertyId, setFavoritePropertyId] = useState<string | null>(
     null,
   );
+  const propertyListRef = useRef<HTMLElement | null>(null);
 
   const properties = data?.properties ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
@@ -97,6 +98,10 @@ function PropertiesPage() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  useEffect(() => {
+    propertyListRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [page, searchQuery, filters]);
 
   const handleToggleFavorite = async (property: Property) => {
     if (isPending) return;
@@ -202,14 +207,14 @@ function PropertiesPage() {
 
   return (
     <main
-      className="min-h-screen pb-12"
+      className="flex h-dvh flex-col overflow-hidden"
       style={{ backgroundColor: palette.pageBg }}
     >
       <LandingNavbar />
 
-      <div className="mx-auto max-w-7xl px-4 pt-24">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-hidden px-4 pt-24">
         <nav
-          className="mb-2 flex items-center gap-1 text-[11px]"
+          className="mb-2 flex shrink-0 items-center gap-1 text-[11px]"
           style={{ color: palette.softPurple }}
           aria-label="Breadcrumb"
         >
@@ -224,7 +229,7 @@ function PropertiesPage() {
           <span style={{ color: "var(--app-text)" }}>Properties</span>
         </nav>
 
-        <header className="mb-6">
+        <header className="mb-4 shrink-0">
           <h1
             className="font-serif text-3xl font-bold md:text-4xl"
             style={{ color: "var(--palette-deep)" }}
@@ -242,7 +247,7 @@ function PropertiesPage() {
         </header>
 
         <div
-          className="sticky top-18 z-40 -mx-4 mb-6 border-b px-4 py-4"
+          className="z-40 mb-4 shrink-0 border-b pb-4"
           style={{
             backgroundColor: palette.pageBg,
             borderColor: palette.border,
@@ -320,7 +325,7 @@ function PropertiesPage() {
           ) : null}
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex min-h-0 flex-1 gap-8 overflow-hidden">
           <PropertyFilter
             isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
@@ -334,7 +339,10 @@ function PropertiesPage() {
             onClear={handleClearFilters}
           />
 
-          <section className="min-w-0 flex-1">
+          <section
+            ref={propertyListRef}
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6"
+          >
             {isLoading ? (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, idx) => (

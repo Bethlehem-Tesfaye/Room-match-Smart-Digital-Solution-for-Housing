@@ -1,13 +1,22 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { signInAdmin } from "../lib/api";
+import { useLocation, useNavigate } from "react-router-dom";
+import { signInAdmin, signOutAdmin, verifyAdminAccess } from "../lib/api";
+import AuthLayout, {
+  AuthAlert,
+  AuthButton,
+  AuthField,
+  AuthLink,
+} from "../components/layout/AuthLayout";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    (location.state as { error?: string } | null)?.error ?? null,
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -16,6 +25,17 @@ function LoginPage() {
 
     try {
       await signInAdmin(email, password);
+
+      try {
+        await verifyAdminAccess();
+      } catch {
+        await signOutAdmin().catch(() => undefined);
+        setError(
+          "This account does not have admin access. Sign in with an admin account or create one.",
+        );
+        return;
+      }
+
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
@@ -25,41 +45,36 @@ function LoginPage() {
   };
 
   return (
-    <div className="container">
-      <div className="card">
-        <h1 className="heading">Admin Login</h1>
-        {error ? <div className="alert">{error}</div> : null}
-        <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="email">Email address</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </div>
-          <button className="button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-        <div className="link-row">
-          <span>New admin?</span>
-          <Link to="/signup">Create admin account</Link>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="Sign in"
+      subtitle="Access the RoomMatch admin control panel."
+      footer={
+        <>
+          New admin? <AuthLink to="/signup">Create admin account</AuthLink>
+        </>
+      }
+    >
+      {error ? <AuthAlert>{error}</AuthAlert> : null}
+      <form onSubmit={handleSubmit}>
+        <AuthField
+          id="email"
+          label="Email address"
+          type="email"
+          value={email}
+          onChange={setEmail}
+        />
+        <AuthField
+          id="password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+        />
+        <AuthButton disabled={isSubmitting}>
+          {isSubmitting ? "Signing in…" : "Sign in"}
+        </AuthButton>
+      </form>
+    </AuthLayout>
   );
 }
 

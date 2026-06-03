@@ -1,0 +1,15 @@
+export const adminPalette = {
+  accent: "#dc2626",
+  accentHover: "#b91c1c",
+  deep: "var(--admin-deep)",
+  muted: "var(--admin-muted)",
+  pageBg: "var(--admin-page-bg)",
+  sectionBg: "var(--admin-section-bg)",
+  cardBg: "var(--admin-card-bg)",
+  cardMutedBg: "var(--admin-card-muted-bg)",
+  cardMutedAltBg: "var(--admin-card-muted-alt-bg)",
+  border: "var(--admin-border)",
+  chipBg: "var(--admin-chip-bg)",
+  inputBg: "var(--admin-input-bg)",
+  skeleton: "var(--admin-skeleton)",
+} as const;

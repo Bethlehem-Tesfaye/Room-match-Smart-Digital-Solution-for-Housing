@@ -13,7 +13,14 @@ const notificationSchema = new Schema(
 
     type: {
       type: String,
-      enum: ["Message", "Match", "Payment", "ListingUpdate"],
+      enum: [
+        "Message",
+        "Match",
+        "Payment",
+        "ListingUpdate",
+        "Support",
+        "ScamReport"
+      ],
       required: true
     },
 

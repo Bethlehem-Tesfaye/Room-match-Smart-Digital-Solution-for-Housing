@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useAdminNotifications } from "../context/AdminNotificationContext";
-import AdminNavTabs from "../components/AdminNavTabs";
 import {
   getAdminProperties,
   getAdminProperty,
@@ -10,25 +10,18 @@ import {
   AdminPropertyDetail,
 } from "../lib/api";
 import PropertyEditModal from "../components/PropertyEditModal";
+import DeletePropertyModal from "../components/DeletePropertyModal";
 import SearchBar, { SearchFilter } from "../components/SearchBar";
-
-// Helper component to display polished, color-coded status badges
-function StatusBadge({ status }: { status: string | undefined }) {
-  const label = status || "-";
-  const normalized = label.toLowerCase().trim();
-
-  if (normalized === "active") {
-    return <span className="status-chip active">Active</span>;
-  }
-  if (normalized === "rented") {
-    return <span className="status-chip rented">Rented</span>;
-  }
-  if (normalized === "reserved") {
-    return <span className="status-chip reserved">Reserved</span>;
-  }
-
-  return <span className="status-chip">{label}</span>;
-}
+import AdminShell from "../components/layout/AdminShell";
+import BentoCard from "../components/layout/BentoCard";
+import AdminPagination from "../components/ui/AdminPagination";
+import { PropertyStatusChip } from "../components/ui/Chips";
+import {
+  ADMIN_PAGE_SIZE,
+  defaultPagination,
+  type AdminPaginationMeta,
+} from "../lib/pagination";
+import { adminPalette } from "../theme/palette";
 
 function PropertiesPage() {
   const { clearPropertyNotifications } = useAdminNotifications();
@@ -38,25 +31,40 @@ function PropertiesPage() {
   const [selectedProperty, setSelectedProperty] = useState<AdminPropertyDetail | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<AdminPropertyRow | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<SearchFilter>("all");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<AdminPaginationMeta>(defaultPagination);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getAdminProperties();
+      const res = await getAdminProperties({
+        page,
+        limit: ADMIN_PAGE_SIZE,
+        search: search || undefined,
+        searchField: filter,
+      });
       setProperties(res.properties ?? []);
+      setPagination(res.pagination ?? defaultPagination());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load properties.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, filter]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
 
   useEffect(() => {
     void clearPropertyNotifications().catch(() => undefined);
@@ -87,10 +95,12 @@ function PropertiesPage() {
                 ...x,
                 title: res.property.title,
                 status: res.property.status,
-                place: [res.property.address, res.property.city].filter(Boolean).join(", "),
+                place: [res.property.address, res.property.city]
+                  .filter(Boolean)
+                  .join(", "),
               }
-            : x
-        )
+            : x,
+        ),
       );
       setModalOpen(false);
       setSelectedProperty(null);
@@ -101,154 +111,231 @@ function PropertiesPage() {
     }
   };
 
-  const handleDelete = async (prop: AdminPropertyRow) => {
-    if (!window.confirm(`Delete property "${prop.title}"?`)) return;
+  const handleDeleteClick = (prop: AdminPropertyRow) => {
+    setPropertyToDelete(prop);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!propertyToDelete) return;
+
+    setDeleteLoading(true);
+    setError(null);
+
     try {
-      await deleteAdminProperty(prop.id);
-      setProperties((p) => p.filter((x) => x.id !== prop.id));
+      await deleteAdminProperty(propertyToDelete.id);
+      setDeleteModalOpen(false);
+      setPropertyToDelete(null);
+
+      if (properties.length === 1 && page > 1) {
+        setPage((current) => current - 1);
+      } else {
+        await load();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const filteredProperties = useMemo(() => {
-    if (!search) return properties;
-    const q = search.toLowerCase();
-    return properties.filter((prop) => {
-      switch (filter) {
-        case "title":
-          return prop.title.toLowerCase().includes(q);
-        case "owner":
-          return (prop.ownerName ?? "").toLowerCase().includes(q);
-        case "email":
-          return (prop.ownerEmail ?? "").toLowerCase().includes(q);
-        case "place":
-          return (prop.place ?? "").toLowerCase().includes(q);
-        case "status":
-          return (prop.status ?? "").toLowerCase().includes(q);
-        case "all":
-          default:
-            return (
-              prop.title.toLowerCase().includes(q) ||
-              (prop.ownerName ?? "").toLowerCase().includes(q) ||
-              (prop.ownerEmail ?? "").toLowerCase().includes(q) ||
-              (prop.place ?? "").toLowerCase().includes(q) ||
-              (prop.status ?? "").toLowerCase().includes(q)
-            );
-      }
-    });
-  }, [properties, search, filter]);
-
   return (
-    <div className="dashboard-wrapper">
-      <header className="dashboard-hero">
-        <div className="dashboard-inner">
-          <h1 className="hero-title">Properties</h1>
-          <p className="hero-sub">
-            Moderate owner listings and update property details.
-          </p>
+    <AdminShell
+      eyebrow="Admin · Properties"
+      title="Property listings"
+      subtitle="Moderate owner listings and update property details."
+    >
+      <BentoCard
+        label="Search & filter"
+        action={
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-[#f8fafc]"
+            style={{ borderColor: adminPalette.border, color: adminPalette.deep }}
+          >
+            <RefreshCw size={12} />
+            Refresh
+          </button>
+        }
+      >
+        <div className="p-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            filter={filter}
+            onFilterChange={(newFilter) => {
+              setFilter(newFilter);
+              setSearch("");
+            }}
+            placeholder="Search by title, owner, place, or status..."
+            filterOptions={[
+              { value: "all", label: "All fields" },
+              { value: "title", label: "Title" },
+              { value: "owner", label: "Owner" },
+              { value: "email", label: "Owner email" },
+              { value: "place", label: "Place" },
+              { value: "status", label: "Status" },
+            ]}
+          />
         </div>
-      </header>
+      </BentoCard>
 
-      <main className="dashboard-main">
-        <div className="container-wide">
-          <div className="tabs">
-            <AdminNavTabs propertiesCount={loading ? "..." : properties.length} />
-          </div>
+      {error && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: "#fecaca",
+            backgroundColor: "#fef2f2",
+            color: adminPalette.accent,
+          }}
+        >
+          {error}
+        </div>
+      )}
 
-          <div className="admin-surface">
-            <div className="admin-surface-head">
-              <p className="admin-mono-label">Filters</p>
-            </div>
-            <div className="admin-surface-body">
-              <SearchBar
-                value={search}
-                onChange={setSearch}
-                filter={filter}
-                onFilterChange={setFilter}
-                placeholder="Search properties by title, owner, place, or status..."
-                filterOptions={[
-                  { value: "all", label: "All fields" },
-                  { value: "title", label: "Title" },
-                  { value: "owner", label: "Owner" },
-                  { value: "email", label: "Owner Email" },
-                  { value: "place", label: "Place" },
-                  { value: "status", label: "Status" },
-                ]}
-              />
-              <button onClick={load} className="btn">
-                <span>↻</span>
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          {error ? <div className="alert">{error}</div> : null}
-
-          {loading ? (
-            <div className="admin-empty">Loading property database...</div>
-          ) : (
-            <div className="admin-surface">
-              <div className="admin-surface-head">
-                <p className="admin-mono-label">Listing Table</p>
-              </div>
-              <div className="admin-table-wrap">
-                <table className="table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Owner</th>
-                    <th>Email</th>
-                    <th>Place</th>
-                    <th>Posted</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProperties.map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.title}</td>
-                      <td>{p.ownerName || "Unknown"}</td>
-                      <td>{p.ownerEmail || "-"}</td>
-                      <td>{p.place || "-"}</td>
-                      <td>{p.postedDate || "-"}</td>
-                      <td>
-                        <StatusBadge status={p.status} />
-                      </td>
-                      <td className="table-actions">
-                        <button onClick={() => handleEditClick(p)} className="btn">
+      {loading && properties.length === 0 ? (
+        <div
+          className="rounded-2xl border border-dashed px-5 py-12 text-center text-sm"
+          style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+        >
+          Loading property database…
+        </div>
+      ) : (
+        <BentoCard
+          label="Listings"
+          action={
+            <span className="text-xs font-semibold" style={{ color: adminPalette.muted }}>
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+          }
+        >
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[800px] border-collapse">
+              <thead>
+                <tr
+                  className="border-b text-left text-[11px] font-semibold uppercase tracking-wider"
+                  style={{ borderColor: adminPalette.border, color: adminPalette.muted }}
+                >
+                  <th className="px-5 py-3">Title</th>
+                  <th className="px-5 py-3">Owner</th>
+                  <th className="px-5 py-3">Email</th>
+                  <th className="px-5 py-3">Place</th>
+                  <th className="px-5 py-3">Posted</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {properties.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-b transition-colors hover:bg-[#f8fafc]"
+                    style={{ borderColor: adminPalette.border }}
+                  >
+                    <td className="px-5 py-4 font-semibold" style={{ color: adminPalette.deep }}>
+                      {p.title}
+                    </td>
+                    <td className="px-5 py-4 text-sm" style={{ color: adminPalette.muted }}>
+                      {p.ownerName || "Unknown"}
+                    </td>
+                    <td className="px-5 py-4 text-sm" style={{ color: adminPalette.muted }}>
+                      {p.ownerEmail || "—"}
+                    </td>
+                    <td className="px-5 py-4 text-sm" style={{ color: adminPalette.muted }}>
+                      {p.place || "—"}
+                    </td>
+                    <td className="px-5 py-4 text-sm" style={{ color: adminPalette.muted }}>
+                      {p.postedDate || "—"}
+                    </td>
+                    <td className="px-5 py-4">
+                      <PropertyStatusChip status={p.status} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleEditClick(p)}
+                          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-[#f8fafc]"
+                          style={{
+                            borderColor: adminPalette.border,
+                            color: adminPalette.deep,
+                          }}
+                        >
+                          <Pencil size={12} />
                           Edit
                         </button>
-                        <button onClick={() => handleDelete(p)} className="ghost-danger">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(p)}
+                          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-[#fef2f2]"
+                          style={{
+                            borderColor: "#fecaca",
+                            color: adminPalette.accent,
+                          }}
+                        >
+                          <Trash2 size={12} />
                           Delete
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-              <div className="admin-user-cards">
-                {filteredProperties.map((p) => (
-                  <article key={p.id} className="admin-user-card">
-                    <p className="user-name">{p.title}</p>
-                    <p className="user-meta">Owner: {p.ownerName || "Unknown"}</p>
-                    <p className="user-meta">Email: {p.ownerEmail || "-"}</p>
-                    <p className="user-meta">Place: {p.place || "-"}</p>
-                    <p className="user-meta">Posted: {p.postedDate || "-"}</p>
-                    <StatusBadge status={p.status} />
-                    <div className="table-actions">
-                      <button onClick={() => handleEditClick(p)} className="btn">Edit</button>
-                      <button onClick={() => handleDelete(p)} className="ghost-danger">Delete</button>
-                    </div>
-                  </article>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="divide-y md:hidden" style={{ borderColor: adminPalette.border }}>
+            {properties.map((p) => (
+              <article key={p.id} className="space-y-3 px-4 py-4">
+                <p className="font-semibold" style={{ color: adminPalette.deep }}>
+                  {p.title}
+                </p>
+                <p className="text-xs" style={{ color: adminPalette.muted }}>
+                  {p.ownerName || "Unknown"} · {p.ownerEmail || "—"}
+                </p>
+                <p className="text-xs" style={{ color: adminPalette.muted }}>
+                  {p.place || "—"} · Posted {p.postedDate || "—"}
+                </p>
+                <PropertyStatusChip status={p.status} />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleEditClick(p)}
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs font-semibold"
+                    style={{ borderColor: adminPalette.border, color: adminPalette.deep }}
+                  >
+                    <Pencil size={12} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClick(p)}
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs font-semibold"
+                    style={{ borderColor: "#fecaca", color: adminPalette.accent }}
+                  >
+                    <Trash2 size={12} />
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {properties.length === 0 && !loading && (
+            <div className="px-5 py-10 text-center text-sm" style={{ color: adminPalette.muted }}>
+              No properties match your search.
             </div>
           )}
-        </div>
-      </main>
+
+          <AdminPagination
+            pagination={pagination}
+            currentCount={properties.length}
+            onPageChange={setPage}
+            loading={loading}
+          />
+        </BentoCard>
+      )}
 
       <PropertyEditModal
         property={selectedProperty}
@@ -260,7 +347,19 @@ function PropertiesPage() {
         onSave={handleSaveEdit}
         loading={modalLoading}
       />
-    </div>
+
+      <DeletePropertyModal
+        property={propertyToDelete}
+        open={deleteModalOpen}
+        loading={deleteLoading}
+        onClose={() => {
+          if (deleteLoading) return;
+          setDeleteModalOpen(false);
+          setPropertyToDelete(null);
+        }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
+    </AdminShell>
   );
 }
 

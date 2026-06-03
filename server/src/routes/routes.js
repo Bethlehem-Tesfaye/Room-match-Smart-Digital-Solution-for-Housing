@@ -11,6 +11,7 @@ import roommateRouters from "../models/roommate/roommate.routes.js";
 import matchRouter from "../models/roommate/match.routes.js";
 import banksRouter from "./banks.routes.js";
 import paymentRouter from "../models/payment/payment.routes.js";
+import scamReportRouter from "../models/scam-report/scam-report.routes.js";
 // import roomateRouter from "../models/roommate/roommateRoute.js";
 
 export const router = express.Router();
@@ -28,3 +29,4 @@ router.use("/roommate", roommateRouters);
 router.use("/match", matchRouter);
 router.use("/banks", banksRouter);
 router.use("/payments", paymentRouter);
+router.use("/reports", scamReportRouter);

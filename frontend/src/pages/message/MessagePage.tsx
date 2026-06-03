@@ -24,6 +24,16 @@ import {
 import type { Message } from "../../features/message/types/type";
 import type { ConversationSummary } from "../../features/message/types/type";
 import LandingNavbar from "../../features/landing/components/LandingNavbar";
+import ReportModal from "../../features/reports/components/ReportModal";
+import BlockUserConfirmModal from "../../features/reports/components/BlockUserConfirmModal";
+import {
+  useBlockUser,
+  useReportUser,
+  useUnblockUser,
+  useUserBlockStatus,
+  useUserBlockSync,
+} from "../../features/reports/hooks/useReportHooks";
+import type { ReportReason } from "../../features/reports/constants";
 
 const normalizeConversationId = (value: unknown): string => {
   if (typeof value === "string") return value;
@@ -48,6 +58,11 @@ function MessagePage() {
     string | undefined
   >(() => searchParams.get("conversationId") || undefined);
   const [isConversationListOpen, setIsConversationListOpen] = useState(false);
+  const [isReportUserOpen, setIsReportUserOpen] = useState(false);
+  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const reportUser = useReportUser();
+  const blockUser = useBlockUser();
+  const unblockUser = useUnblockUser();
 
   const conversationsQuery = useConversations();
   const unreadCountsQuery = useUnreadMessageCounts();
@@ -73,6 +88,74 @@ function MessagePage() {
   const selectedPartner = selectedConversationId
     ? partnerByConversationId[selectedConversationId]
     : null;
+
+  const partnerUserId = selectedPartner?._id;
+  const partnerLabel =
+    selectedPartner?.name || selectedPartner?.email || "this user";
+  const blockStatusQuery = useUserBlockStatus(partnerUserId);
+  useUserBlockSync(partnerUserId);
+  const blockedByMe = blockStatusQuery.data?.blockedByMe ?? false;
+  const blockedByThem = blockStatusQuery.data?.blockedByThem ?? false;
+
+  const handleSubmitUserReport = async (payload: {
+    reason: ReportReason;
+    description?: string;
+  }) => {
+    if (!partnerUserId) return;
+
+    try {
+      await reportUser.mutateAsync({ userId: partnerUserId, ...payload });
+      toast.success("Report submitted. Our team will review it.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit report",
+      );
+      throw error;
+    }
+  };
+
+  const handleBlockPartner = async () => {
+    if (!partnerUserId) return;
+
+    try {
+      await blockUser.mutateAsync({ userId: partnerUserId });
+      toast.success("User blocked.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to block user",
+      );
+      throw error;
+    }
+  };
+
+  const handleUnblockPartner = async () => {
+    if (!partnerUserId) return;
+
+    try {
+      await unblockUser.mutateAsync({ userId: partnerUserId });
+      toast.success("User unblocked.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to unblock user",
+      );
+    }
+  };
+
+  const safetyProps = partnerUserId
+    ? {
+        partnerUserId,
+        partnerLabel,
+        onReportUser: () => setIsReportUserOpen(true),
+        onBlockUser: () => setIsBlockConfirmOpen(true),
+        onUnblockUser: () => void handleUnblockPartner(),
+        blockedByMe,
+        blockedByThem,
+        isSafetyActionPending:
+          reportUser.isPending ||
+          blockUser.isPending ||
+          unblockUser.isPending,
+      }
+    : {};
 
   // REPLACE the selectedConversation block + isOwnerView derivations with:
   const selectedConversation = selectedConversationId
@@ -364,6 +447,7 @@ function MessagePage() {
               hasMore={messagesState.hasMore}
               onLoadOlder={messagesState.loadOlder}
               onSendMessage={handleSendMessage}
+              {...safetyProps}
             />
           </section>
 
@@ -385,10 +469,28 @@ function MessagePage() {
               onAcceptRentRequest={handleAcceptRentRequest}
               onRejectRentRequest={handleRejectRentRequest}
               isRoommateChat={isRoommateChat}
+              {...safetyProps}
             />
           </section>
         </div>
       </div>
+
+      <ReportModal
+        isOpen={isReportUserOpen}
+        title="Report user"
+        subtitle="Describe why this conversation or user seems suspicious."
+        onClose={() => setIsReportUserOpen(false)}
+        onSubmit={handleSubmitUserReport}
+        isSubmitting={reportUser.isPending}
+      />
+
+      <BlockUserConfirmModal
+        isOpen={isBlockConfirmOpen}
+        userName={partnerLabel}
+        onClose={() => setIsBlockConfirmOpen(false)}
+        onConfirm={handleBlockPartner}
+        isSubmitting={blockUser.isPending}
+      />
     </main>
   );
 }
