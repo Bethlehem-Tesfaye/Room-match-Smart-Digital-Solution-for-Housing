@@ -72,7 +72,10 @@ export const createNotification = async ({
 
   if (isAdminDashboardNotification({ type, title })) {
     void emitAdminNotificationCounts(userId).catch((error) => {
-      logger.warn({ error, userId }, "Failed to emit admin notification counts");
+      logger.warn(
+        { error, userId },
+        "Failed to emit admin notification counts"
+      );
     });
   }
 

@@ -9,10 +9,7 @@ import {
   reportUser,
   unblockUserById
 } from "./scam-report.controller.js";
-import {
-  blockUserParamsSchema,
-  submitReportSchema
-} from "./validation.js";
+import { blockUserParamsSchema, submitReportSchema } from "./validation.js";
 
 const scamReportRouter = Router();
 

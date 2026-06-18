@@ -387,7 +387,9 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
 };
 
 export const getRoommatePreferencesByUserId = async (userId) => {
-  const preferences = await RoommatePreferences.findOne(userIdInFilter(userId)).lean();
+  const preferences = await RoommatePreferences.findOne(
+    userIdInFilter(userId)
+  ).lean();
 
   return preferences || buildDefaultRoommatePreferences(userId);
 };

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import * as scamReportService from "./scam-report.service.js";
 import {
   blockUser,
@@ -7,7 +8,6 @@ import {
 } from "../user-block/user-block.service.js";
 import { UserProfile } from "../profile/schema.js";
 import { User } from "../auth/schema.js";
-import mongoose from "mongoose";
 
 export const reportListing = async (req, res, next) => {
   try {

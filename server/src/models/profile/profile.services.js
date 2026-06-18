@@ -112,10 +112,7 @@ const requestChapaSubaccount = async ({
 
   if (!response.ok) {
     throw new CustomError(
-      resolveChapaBankErrorMessage(
-        responsePayload,
-        response.status || 500
-      ),
+      resolveChapaBankErrorMessage(responsePayload, response.status || 500),
       response.status || 500
     );
   }

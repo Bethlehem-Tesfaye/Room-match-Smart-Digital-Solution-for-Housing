@@ -6,20 +6,22 @@ const startOfToday = () => {
   return today;
 };
 
-const availableFromSchema = z.preprocess(
-  (value) => {
-    if (value === null || value === undefined || value === "") {
-      return undefined;
-    }
-    return value;
-  },
-  z.coerce.date({
-    required_error: "Available from date is required",
-    invalid_type_error: "Available from date is required"
-  })
-).refine((date) => date >= startOfToday(), {
-  message: "Available from date cannot be in the past"
-});
+const availableFromSchema = z
+  .preprocess(
+    (value) => {
+      if (value === null || value === undefined || value === "") {
+        return undefined;
+      }
+      return value;
+    },
+    z.coerce.date({
+      required_error: "Available from date is required",
+      invalid_type_error: "Available from date is required"
+    })
+  )
+  .refine((date) => date >= startOfToday(), {
+    message: "Available from date cannot be in the past"
+  });
 
 const propertyTypeEnum = z.enum([
   "Apartment",

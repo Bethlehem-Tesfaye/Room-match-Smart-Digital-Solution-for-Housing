@@ -87,7 +87,9 @@ const validateTypeAEligibility = async (currentProfile) => {
 };
 
 const ensurePreferencesForUser = async (userId) => {
-  let preferences = await RoommatePreferences.findOne(userIdInFilter(userId)).lean();
+  let preferences = await RoommatePreferences.findOne(
+    userIdInFilter(userId)
+  ).lean();
 
   if (!preferences) {
     preferences = await RoommatePreferences.findOneAndUpdate(
@@ -101,7 +103,9 @@ const ensurePreferencesForUser = async (userId) => {
 };
 
 export const generateMatchesForUser = async (userId) => {
-  const currentProfile = await RoommateProfile.findOne(userIdInFilter(userId)).lean();
+  const currentProfile = await RoommateProfile.findOne(
+    userIdInFilter(userId)
+  ).lean();
 
   if (!currentProfile) {
     throw new CustomError(
@@ -235,7 +239,9 @@ export const generateMatchesForUser = async (userId) => {
 
 // getMatchesForUser stays exactly the same
 export const getMatchesForUser = async (userId) => {
-  const currentProfile = await RoommateProfile.findOne(userIdInFilter(userId)).lean();
+  const currentProfile = await RoommateProfile.findOne(
+    userIdInFilter(userId)
+  ).lean();
   const currentPropertyId = currentProfile?.selectedPropertyId ?? null;
 
   const matches = await RoommateMatch.find(userIdInFilter(userId))

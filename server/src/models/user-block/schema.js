@@ -20,4 +20,5 @@ const userBlockSchema = new Schema(
 
 userBlockSchema.index({ blockerUserId: 1, blockedUserId: 1 }, { unique: true });
 
-export const UserBlock = models.UserBlock || model("UserBlock", userBlockSchema);
+export const UserBlock =
+  models.UserBlock || model("UserBlock", userBlockSchema);

@@ -24,7 +24,12 @@ const getProfileLabel = async (userId) => {
   return profile?.fullName?.trim() || `User ${userId}`;
 };
 
-const notifyAdmins = async ({ report, reporterLabel, reportedLabel, summary }) => {
+const notifyAdmins = async ({
+  report,
+  reporterLabel,
+  reportedLabel,
+  summary
+}) => {
   const adminProfiles = await UserProfile.find({ role: "admin" }).lean();
 
   await Promise.all(

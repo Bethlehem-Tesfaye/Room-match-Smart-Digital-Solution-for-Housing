@@ -111,7 +111,9 @@ adminRouter.post("/signup-rollback", authMiddleware, async (req, res, next) => {
       // Session may already be invalid after user deletion.
     }
 
-    return res.status(200).json({ message: "Incomplete admin signup removed." });
+    return res
+      .status(200)
+      .json({ message: "Incomplete admin signup removed." });
   } catch (error) {
     next(error);
   }
@@ -325,7 +327,10 @@ adminRouter.get(
           }
 
           if (searchField === "all") {
-            if (search.toLowerCase().includes("owner") && ownerObjectIds.length) {
+            if (
+              search.toLowerCase().includes("owner") &&
+              ownerObjectIds.length
+            ) {
               searchClauses.push({ _id: { $in: ownerObjectIds } });
             }
             if (search.toLowerCase().includes("tenant")) {
@@ -629,7 +634,7 @@ adminRouter.get(
           report,
           labels,
           report.propertyId
-            ? propertyTitleById.get(String(report.propertyId)) ?? null
+            ? (propertyTitleById.get(String(report.propertyId)) ?? null)
             : null
         )
       );
@@ -771,7 +776,11 @@ adminRouter.get(
         if (searchField === "all" || searchField === "status") {
           searchClauses.push({ status: regex });
         }
-        if (searchField === "all" || searchField === "owner" || searchField === "email") {
+        if (
+          searchField === "all" ||
+          searchField === "owner" ||
+          searchField === "email"
+        ) {
           const ownerQuery = { deletedAt: null };
           if (searchField === "email") {
             ownerQuery.email = regex;
