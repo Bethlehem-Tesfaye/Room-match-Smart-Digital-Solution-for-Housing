@@ -41,9 +41,10 @@ export const RoommateMatches: React.FC<Props> = ({
 
       {matches.length === 0 ? (
         <div className="py-8 text-center text-[15px] leading-relaxed text-(--palette-soft-purple)">
-          <p>No matches found above 50%.</p>
+          <p>No compatible roommates found yet.</p>
           <p className="mt-2 text-sm leading-relaxed">
-            Try adjusting your preferences to find more matches.
+            Save your profile, set your gender and preferences, then click
+            &quot;Save &amp; Find Matches&quot; to refresh results.
           </p>
         </div>
       ) : (

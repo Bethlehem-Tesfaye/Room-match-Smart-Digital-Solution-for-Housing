@@ -38,7 +38,9 @@ const matchesGenderPreference = (preferences, targetProfile) => {
   if (preferred === "any") return true;
 
   const targetGender = targetProfile?.gender;
-  if (targetGender !== "male" && targetGender !== "female") return false;
+  if (targetGender !== "male" && targetGender !== "female") {
+    return true;
+  }
 
   return targetGender === preferred;
 };
@@ -63,11 +65,13 @@ const applyHardFilters = ({ targetProfile, preferences, propertyContext }) => {
     return false;
   }
 
-  // budget check (profile vs profile range)
+  // budget check (viewer profile vs target profile)
   const targetBudget = normalizeBudgetRange(targetProfile);
-  const userBudget = normalizeBudgetRange(propertyContext?.profile || {});
-
-  if (!budgetOverlap(userBudget, targetBudget)) return false;
+  const viewerProfile = propertyContext?.profile;
+  if (viewerProfile) {
+    const userBudget = normalizeBudgetRange(viewerProfile);
+    if (!budgetOverlap(userBudget, targetBudget)) return false;
+  }
 
   // smoking policy compatibility (soft constraint)
   const smokingPolicy = preferences.smokingPolicy;

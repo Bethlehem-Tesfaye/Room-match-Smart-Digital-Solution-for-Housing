@@ -6,6 +6,11 @@ import {
   clearMatchesForUser,
   generateMatchesForUser
 } from "./match.service.js";
+import {
+  buildUserIdVariants,
+  toUserIdString,
+  userIdInFilter
+} from "./roommate.utils.js";
 
 const ROOMMATE_PROFILE_FIELDS = new Set([
   "profileType",
@@ -158,7 +163,7 @@ const ensureRoommateEligibleProperty = async (propertyId) => {
 
 const resolveTypeAActiveListing = async ({ userId, preferredPropertyId }) => {
   const activeContracts = await Contract.find({
-    tenantId: userId,
+    tenantId: { $in: buildUserIdVariants(userId) },
     status: "ACTIVE"
   })
     .populate({ path: "listingId", select: { _id: 1, allowRoommates: 1 } })
@@ -302,13 +307,14 @@ const buildDefaultRoommatePreferences = (userId) => ({
 });
 
 export const getRoommateProfileByUserId = async (userId) => {
-  const profile = await RoommateProfile.findOne({ userId }).lean();
+  const profile = await RoommateProfile.findOne(userIdInFilter(userId)).lean();
   return profile ?? null;
 };
 
 export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
+  const normalizedUserId = toUserIdString(userId);
   const updateSet = buildRoommateProfileUpdateSet(payload);
-  const existingProfile = await RoommateProfile.findOne({ userId })
+  const existingProfile = await RoommateProfile.findOne(userIdInFilter(userId))
     .select({ budgetMin: 1, budgetMax: 1, profileType: 1 })
     .lean();
   const incomingType = updateSet.profileType ?? existingProfile?.profileType;
@@ -353,10 +359,10 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
 
   try {
     const profile = await RoommateProfile.findOneAndUpdate(
-      { userId },
+      userIdInFilter(userId),
       {
         $set: updateSet,
-        $setOnInsert: { userId }
+        $setOnInsert: { userId: normalizedUserId }
       },
       {
         upsert: true,
@@ -381,7 +387,7 @@ export const updateRoommateProfileByUserId = async ({ userId, payload }) => {
 };
 
 export const getRoommatePreferencesByUserId = async (userId) => {
-  const preferences = await RoommatePreferences.findOne({ userId }).lean();
+  const preferences = await RoommatePreferences.findOne(userIdInFilter(userId)).lean();
 
   return preferences || buildDefaultRoommatePreferences(userId);
 };
@@ -390,14 +396,15 @@ export const updateRoommatePreferencesByUserId = async ({
   userId,
   payload
 }) => {
+  const normalizedUserId = toUserIdString(userId);
   const updateSet = buildRoommatePreferencesUpdateSet(payload);
 
   try {
     const preferences = await RoommatePreferences.findOneAndUpdate(
-      { userId },
+      userIdInFilter(userId),
       {
         $set: updateSet,
-        $setOnInsert: { userId }
+        $setOnInsert: { userId: normalizedUserId }
       },
       {
         upsert: true,
@@ -409,6 +416,17 @@ export const updateRoommatePreferencesByUserId = async ({
 
     if (!preferences) {
       throw new CustomError("Unable to update roommate preferences", 500);
+    }
+
+    const profile = await RoommateProfile.findOne(userIdInFilter(userId))
+      .select({ profileType: 1 })
+      .lean();
+    if (profile?.profileType) {
+      try {
+        await generateMatchesForUser(userId);
+      } catch {
+        // Matching can fail when TYPE_A eligibility is not met yet.
+      }
     }
 
     return preferences;

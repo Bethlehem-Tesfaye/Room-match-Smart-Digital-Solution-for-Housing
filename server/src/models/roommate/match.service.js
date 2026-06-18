@@ -8,15 +8,19 @@ import { Property } from "../property/schema.js";
 import { Contract } from "../contract/schema.js";
 import { calculateRoommateMatch } from "./roommateMatcher.js";
 import CustomError from "../../lib/errors.js";
+import {
+  buildUserIdVariants,
+  propertyIdEquals,
+  toUserIdString,
+  userIdInFilter,
+  userOrTargetInFilter
+} from "./roommate.utils.js";
 
 const getOppositeType = (type) => (type === "TYPE_A" ? "TYPE_B" : "TYPE_A");
-const toUserIdString = (id) => (id ? id.toString() : "");
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const clearMatchesForUser = async (userId) => {
-  return RoommateMatch.deleteMany({
-    $or: [{ userId }, { targetUserId: userId }]
-  });
+  return RoommateMatch.deleteMany(userOrTargetInFilter(userId));
 };
 
 const addMonths = (date, months) => {
@@ -54,8 +58,9 @@ const validateTypeAEligibility = async (currentProfile) => {
     );
   }
 
+  const tenantVariants = buildUserIdVariants(currentProfile.userId);
   const activeContract = await Contract.findOne({
-    tenantId: currentProfile.userId,
+    tenantId: { $in: tenantVariants },
     status: "ACTIVE",
     listingId: propertyId
   })
@@ -81,17 +86,38 @@ const validateTypeAEligibility = async (currentProfile) => {
   return activeListing;
 };
 
-export const generateMatchesForUser = async (userId) => {
-  const currentProfile = await RoommateProfile.findOne({ userId }).lean();
-  const preferences = await RoommatePreferences.findOne({ userId }).lean();
+const ensurePreferencesForUser = async (userId) => {
+  let preferences = await RoommatePreferences.findOne(userIdInFilter(userId)).lean();
 
-  if (!currentProfile || !preferences) {
-    throw new Error("Profile or preferences missing");
+  if (!preferences) {
+    preferences = await RoommatePreferences.findOneAndUpdate(
+      userIdInFilter(userId),
+      { $setOnInsert: { userId: toUserIdString(userId) } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
   }
+
+  return preferences;
+};
+
+export const generateMatchesForUser = async (userId) => {
+  const currentProfile = await RoommateProfile.findOne(userIdInFilter(userId)).lean();
+
+  if (!currentProfile) {
+    throw new CustomError(
+      "Complete your roommate profile before finding matches",
+      400
+    );
+  }
+
+  const preferences = await ensurePreferencesForUser(userId);
 
   await validateTypeAEligibility(currentProfile);
 
+  await RoommateMatch.deleteMany(userIdInFilter(userId));
+
   const currentUserIdStr = toUserIdString(userId);
+  const matchContext = { profile: currentProfile };
 
   const candidateProfiles = await RoommateProfile.find({
     profileType: getOppositeType(currentProfile.profileType)
@@ -129,13 +155,15 @@ export const generateMatchesForUser = async (userId) => {
     const scoreAtoB = calculateRoommateMatch({
       currentProfile,
       targetProfile,
-      preferences
+      preferences,
+      propertyContext: matchContext
     });
 
     const scoreBtoA = calculateRoommateMatch({
       currentProfile: targetProfile,
       targetProfile: currentProfile,
-      preferences: targetPreferences
+      preferences: targetPreferences,
+      propertyContext: { profile: targetProfile }
     });
 
     // If either side is a hard 0, skip the match entirely
@@ -149,11 +177,15 @@ export const generateMatchesForUser = async (userId) => {
     try {
       // A -> B match
       const match = await RoommateMatch.findOneAndUpdate(
-        { userId, targetUserId: targetProfile.userId, propertyId },
+        {
+          userId: currentUserIdStr,
+          targetUserId: toUserIdString(targetProfile.userId),
+          propertyId
+        },
         {
           $set: {
-            userId,
-            targetUserId: targetProfile.userId,
+            userId: currentUserIdStr,
+            targetUserId: toUserIdString(targetProfile.userId),
             propertyId,
             score: mutualScore,
             snapshot: {
@@ -172,14 +204,14 @@ export const generateMatchesForUser = async (userId) => {
       // upsert the reverse match so B sees it too
       await RoommateMatch.findOneAndUpdate(
         {
-          userId: targetProfile.userId,
-          targetUserId: userId,
+          userId: toUserIdString(targetProfile.userId),
+          targetUserId: currentUserIdStr,
           propertyId: targetPropertyId
         },
         {
           $set: {
-            userId: targetProfile.userId,
-            targetUserId: userId,
+            userId: toUserIdString(targetProfile.userId),
+            targetUserId: currentUserIdStr,
             propertyId: targetPropertyId,
             score: mutualScore,
             snapshot: {
@@ -203,18 +235,33 @@ export const generateMatchesForUser = async (userId) => {
 
 // getMatchesForUser stays exactly the same
 export const getMatchesForUser = async (userId) => {
-  const currentProfile = await RoommateProfile.findOne({ userId }).lean();
+  const currentProfile = await RoommateProfile.findOne(userIdInFilter(userId)).lean();
   const currentPropertyId = currentProfile?.selectedPropertyId ?? null;
 
-  const matches = await RoommateMatch.find({
-    userId,
-    propertyId: currentPropertyId
-  })
+  const matches = await RoommateMatch.find(userIdInFilter(userId))
     .sort({ score: -1 })
     .lean();
 
+  const visibleMatches = matches.filter((match) => {
+    if (currentProfile?.profileType === "TYPE_A") {
+      if (!currentPropertyId) return true;
+      return (
+        !match.propertyId ||
+        propertyIdEquals(match.propertyId, currentPropertyId)
+      );
+    }
+
+    if (currentProfile?.profileType === "TYPE_B") {
+      return !match.propertyId;
+    }
+
+    return true;
+  });
+
   const targetUserIds = [
-    ...new Set(matches.map((m) => m.targetUserId?.toString()).filter(Boolean))
+    ...new Set(
+      visibleMatches.map((m) => m.targetUserId?.toString()).filter(Boolean)
+    )
   ];
 
   const userProfiles = await UserProfile.find({
@@ -237,7 +284,7 @@ export const getMatchesForUser = async (userId) => {
 
   const resolvedPropertyIds = [
     ...new Set(
-      matches
+      visibleMatches
         .map((match) => {
           const targetIdStr = match.targetUserId?.toString();
           const targetRoommateProfile = roommateProfileMap[targetIdStr] || null;
@@ -280,7 +327,7 @@ export const getMatchesForUser = async (userId) => {
     activeContractMap[contract.listingId.toString()] = contract;
   }
 
-  return matches.map((match) => {
+  return visibleMatches.map((match) => {
     const targetIdStr = match.targetUserId?.toString();
     const targetRoommateProfile = roommateProfileMap[targetIdStr] || null;
     const resolvedPropertyId =
